@@ -186,3 +186,72 @@ Below is the pin mapping between the original Bally Midway MCR harness and the 2
 
 *Note: You can easily update these constraints in your target project's `.cst` file to match whatever layout you choose for your custom KiCad or Altium PCB Shield.*
 
+---
+
+## 5. DIP-Switch ROM Selection & Game Lists (Multi-Game Cabinet)
+
+Instead of compiling an on-screen game loader, we can place a hardware **DIP Switch Block** on our custom Shield PCB to select which game boots from the MicroSD card. At power-on, the bootloader reads the states of these switches and writes the corresponding ROM assets into BRAM/DRAM, creating an authentic, menu-free arcade experience.
+
+### A. Bally Midway MCR Game Lists
+
+The Bally Midway MCR family is split into five hardware categories:
+
+1. **MCR-1 (3 Games):**
+   * *Kick / Kick-Man*
+   * *Solar Fox*
+2. **MCR-2 (6 Games):**
+   * *Satan's Hollow*
+   * *Tron*
+   * *Kozmik Krooz'r*
+   * *Wacko*
+   * *Domino Man*
+   * *Two Tigers*
+3. **MCR-3 (4 Games):**
+   * *Tapper*
+   * *Discs of Tron*
+   * *Journey*
+   * *Timber*
+4. **MCR-Scroll (3 Games):**
+   * *Spy Hunter*
+   * *Crater Raider*
+   * *Turbo Tag*
+5. **MCR-Monoboard (6 Games):**
+   * *Demolition Derby*
+   * *Rampage*
+   * *Sarge*
+   * *Power Drive*
+   * *Max RPM*
+   * *Star Guards*
+
+*   **Total Unified Library:** **22 Games**
+
+---
+
+### B. Bit Requirements for DIP Switch Selection
+
+To select a game from these lists, we need the following number of binary inputs:
+
+*   **MCR-2 Only Multi-Game:** **3 Bits** ($2^3 = 8$ configurations, covers all 6 MCR-2 titles).
+*   **MCR-3 Only Multi-Game:** **2 Bits** ($2^2 = 4$ configurations, covers all 4 MCR-3 titles).
+*   **Fully Unified MCR Cabinet:** **5 Bits** ($2^5 = 32$ configurations, covers all 22 MCR games in the library).
+
+### C. Recommended Hardware Design
+
+We recommend placing an **8-position DIP Switch Block** on the custom Shield PCB. 
+*   **Switch 1–5:** Game Selector (5 bits, representing binary values `0` to `31` for the 22 games).
+*   **Switch 6–8:** System Config (e.g. Free Play force, Test Mode force, Cabinet CRT aspect/doubler bypass).
+
+```text
+               +5V / +3.3V
+                 |
+               [ 10k Pull-up Array ]
+                 |
+  FPGA GPIOs ----+-------+-------+-------+
+                 |       |       |       |
+               [SW1]   [SW2]   [SW3]   [SW4]  (DIP Switch Block)
+                 |       |       |       |
+                GND     GND     GND     GND
+```
+*   **Pins needed:** Since the **Tang Console 60K/138K** has 92 free GPIOs, allocating **8 dedicated pins** directly to these switches is trivial and leaves the board with massive IO capacity.
+
+
