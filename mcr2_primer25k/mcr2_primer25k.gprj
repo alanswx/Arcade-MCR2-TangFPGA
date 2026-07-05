@@ -1,0 +1,46 @@
+<?xml version="1" encoding="UTF-8"?>
+<!DOCTYPE gowin-fpga-project>
+<Project>
+    <Template>FPGA</Template>
+    <Version>5</Version>
+    <Device name="GW5A-25A" pn="GW5A-LV25MG121NC1/I0">gw5a25a-002</Device>
+    <FileList>
+        <!-- Gowin Project Top-Level Wrapper -->
+        <File path="src/mcr2_primer25k_top.sv" type="file.verilog" enable="1"/>
+
+        <!-- Custom optimized/initialized RAM wrappers -->
+        <File path="src/dpram.sv" type="file.verilog" enable="1"/>
+        <File path="src/gen_ram.sv" type="file.verilog" enable="1"/>
+
+        <!-- Clocks, Video, Audio cores -->
+        <File path="src/gowin_pll/gowin_pll_mcr2.v" type="file.verilog" enable="1"/>
+        <File path="src/dvi_tx/tmds_encoder.sv" type="file.verilog" enable="1"/>
+        <File path="src/dvi_tx/hdmi_tx.sv" type="file.verilog" enable="1"/>
+        <File path="src/audio/ds_dac.sv" type="file.verilog" enable="1"/>
+
+        <!-- MCR2 Arcade Core files (VHDL/SystemVerilog) -->
+        <File path="src/rtl/mcr2.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/mcr_sound_board.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/YM2149_linmix_sep.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/midssio_82s123.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/cmos_ram.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/spinner.sv" type="file.verilog" enable="1"/>
+
+        <!-- Z80 T80 CPU core -->
+        <File path="src/rtl/T80/t80_1_alu.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/T80/t80_2_mcode.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/T80/t80_3_reg.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/T80/t80_4_core.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/T80/t80_5_pa.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/T80/t80_6_s.vhd" type="file.vhdl" enable="1"/>
+
+        <!-- Z80 CTC core -->
+        <File path="src/rtl/Z80CTC/ctc_controler.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/Z80CTC/ctc_counter.vhd" type="file.vhdl" enable="1"/>
+        <File path="src/rtl/Z80CTC/z80ctc_top.vhd" type="file.vhdl" enable="1"/>
+
+        <!-- Physical and Timing Constraints -->
+        <File path="src/mcr2_primer25k.cst" type="file.cst" enable="1"/>
+        <File path="src/mcr2_primer25k.sdc" type="file.sdc" enable="1"/>
+    </FileList>
+</Project>

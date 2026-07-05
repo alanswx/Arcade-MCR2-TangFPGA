@@ -1,0 +1,12 @@
+# Gowin IDE compilation output
+mcr2_primer25k/impl/gwsynthesis/
+mcr2_primer25k/impl/temp/
+
+# User-specific project settings
+*.user
+.DS_Store
+
+# Game ROM files and generated hex ROM tables
+roms/
+mcr2_primer25k/src/*.hex
+mcr2_primer25k/src/roms/*.hex

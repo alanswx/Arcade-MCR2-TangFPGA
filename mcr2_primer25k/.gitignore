@@ -1,0 +1,11 @@
+# Gowin IDE compilation output
+impl/gwsynthesis/
+impl/temp/
+
+# User-specific project settings
+*.user
+.DS_Store
+
+# Generated ROM hex files
+src/*.hex
+src/roms/*.hex

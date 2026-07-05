@@ -1,0 +1,77 @@
+// Physical pin constraints for MCR2 Core on Tang Primer 25K
+
+// Clock and Buttons
+IO_LOC "sys_clk" E2;
+IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "s1" H11; // Board Button S1
+IO_PORT "s1" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_LOC "reset2" H10; // Board Button S2
+IO_PORT "reset2" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// HDMI TMDS Differential Signals
+IO_LOC "tmds_clk_p" H5;
+IO_PORT "tmds_clk_p" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_clk_n" J5;
+IO_PORT "tmds_clk_n" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[0]" H8;
+IO_PORT "tmds_d_p[0]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_n[0]" H7;
+IO_PORT "tmds_d_n[0]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[1]" G7;
+IO_PORT "tmds_d_p[1]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_n[1]" G8;
+IO_PORT "tmds_d_n[1]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[2]" F5;
+IO_PORT "tmds_d_p[2]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_n[2]" G5;
+IO_PORT "tmds_d_n[2]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+
+// PMOD 1 - Cabinet Control Switches (Active Low, Pull-Up enabled)
+IO_LOC "btn_left" L5;
+IO_PORT "btn_left" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_right" K11;
+IO_PORT "btn_right" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_fire" E11;
+IO_PORT "btn_fire" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_shield" A11;
+IO_PORT "btn_shield" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_start" K5;
+IO_PORT "btn_start" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_coin" L11;
+IO_PORT "btn_coin" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_service" E10;
+IO_PORT "btn_service" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_tilt" A10;
+IO_PORT "btn_tilt" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Cabinet Video Output (Mapped to 40-pin header pins)
+IO_LOC "cab_r[0]" K2;
+IO_PORT "cab_r[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_r[1]" K1;
+IO_PORT "cab_r[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_r[2]" L1;
+IO_PORT "cab_r[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[0]" L2;
+IO_PORT "cab_g[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[1]" K4;
+IO_PORT "cab_g[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[2]" J4;
+IO_PORT "cab_g[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[0]" G1;
+IO_PORT "cab_b[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[1]" G2;
+IO_PORT "cab_b[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[2]" E1;
+IO_PORT "cab_b[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_hs" A1;
+IO_PORT "cab_hs" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_vs" F2;
+IO_PORT "cab_vs" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_csync" F1;
+IO_PORT "cab_csync" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+
+// PWM Audio output (Mapped to 40-pin header pins)
+IO_LOC "audio_l" B2;
+IO_PORT "audio_l" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "audio_r" C2;
+IO_PORT "audio_r" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
