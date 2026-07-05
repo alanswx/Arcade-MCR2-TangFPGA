@@ -3,7 +3,7 @@ import sys
 import os
 
 def generate_board():
-    print("Initializing KiCad board generation with native TangMega138K_Console footprint...")
+    print("Initializing KiCad board generation with full ratsnest wire connections...")
     board = pcbnew.BOARD()
 
     # Define board dimensions: 135mm x 95mm
@@ -41,6 +41,31 @@ def generate_board():
 
     print("PCB Edge Outline drawn successfully!")
 
+    # Draw FPGA keepout outline box on the F.Silkscreen layer
+    # Represents the Tang Console board: 80mm x 55mm centered at (72.5, 50.0)
+    fpga_x_min, fpga_x_max = int(32.5 * 1000000), int(112.5 * 1000000)
+    fpga_y_min, fpga_y_max = int(22.5 * 1000000), int(77.5 * 1000000)
+    
+    fpga_corners = [
+        pcbnew.VECTOR2I(fpga_x_min, fpga_y_min),
+        pcbnew.VECTOR2I(fpga_x_max, fpga_y_min),
+        pcbnew.VECTOR2I(fpga_x_max, fpga_y_max),
+        pcbnew.VECTOR2I(fpga_x_min, fpga_y_max)
+    ]
+    
+    for i in range(4):
+        p1 = fpga_corners[i]
+        p2 = fpga_corners[(i + 1) % 4]
+        seg = pcbnew.PCB_SHAPE(board)
+        seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        seg.SetStart(p1)
+        seg.SetEnd(p2)
+        seg.SetLayer(silk_layer)
+        seg.SetWidth(int(0.2 * 1000000)) # Thin line to distinguish from board outline
+        board.Add(seg)
+        
+    print("FPGA keepout silkscreen box drawn successfully!")
+
     # Dict to keep track of placed footprints for net connection
     placed_footprints = {}
 
@@ -74,18 +99,15 @@ def generate_board():
 
     # --- Place Components (Roomy & Safe Layout) ---
     # 1. Native Tang Console Module (Instantiates both headers and mechanical board outline)
-    # Centered at (72.5mm, 50.0mm)
     place_component("U_FPGA", "TangMega138K_Console", "scratch/kicad-libs/0my_project.pretty", "TangMega138K_Console", 72.5, 50.0)
 
     # 2. MCR Top Connectors (Controls, Coin, Video, Power)
-    # Rotated 90 degrees to align horizontally with the top edge
     place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 22.0, 12.0, 90)
     place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 55.0, 12.0, 90)
     place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 80.0, 12.0, 90)
     place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 125.0, 12.0, 90)
 
     # 3. MCR Bottom Connectors (P2 Controls, Spinners)
-    # Rotated 90 degrees to align horizontally with the bottom edge
     place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 22.0, 88.0, 90)
     place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 75.0, 88.0, 90)
     
@@ -120,7 +142,7 @@ def generate_board():
     # Net connections mapping: (NetName, Component1Ref, Pad1Number, Component2Ref, Pad2Number)
     # Note: Sockets on U_FPGA are J9 (Header 1) and J10 (Header 2)
     connections = [
-        # Optocoupler Isolated Inputs mapping:
+        # Optocoupler Isolated Inputs (Player 1 joystick):
         ("CAB_BTN_LEFT",    "J2", "1",   "U2", "1"),
         ("GND",             "U2", "2",   "P_IN", "2"),
         ("BTN_LEFT",        "U2", "16",  "U_FPGA", "J9_1"),
@@ -140,6 +162,47 @@ def generate_board():
         ("GND",             "U2", "8",   "P_IN", "2"),
         ("BTN_SHIELD",      "U2", "10",  "U_FPGA", "J9_4"),
         ("GND",             "U2", "9",   "P_IN", "2"),
+
+        # Optocoupler Isolated Inputs (Player 2 joystick):
+        ("CAB_P2_LEFT",     "J5", "17",  "U3", "1"),  # J5-17 to Opto LED Input 1
+        ("GND",             "U3", "2",   "P_IN", "2"),
+        ("P2_LEFT",         "U3", "16",  "U_FPGA", "J10_1"),
+        ("GND",             "U3", "15",  "P_IN", "2"),
+        
+        ("CAB_P2_RIGHT",    "J5", "18",  "U3", "3"),  # J5-18 to Opto LED Input 2
+        ("GND",             "U3", "4",   "P_IN", "2"),
+        ("P2_RIGHT",        "U3", "14",  "U_FPGA", "J10_2"),
+        ("GND",             "U3", "13",  "P_IN", "2"),
+
+        ("CAB_P2_FIRE",     "J5", "19",  "U3", "5"),  # J5-19 to Opto LED Input 3
+        ("GND",             "U3", "6",   "P_IN", "2"),
+        ("P2_FIRE",         "U3", "12",  "U_FPGA", "J10_3"),
+        ("GND",             "U3", "11",  "P_IN", "2"),
+
+        ("CAB_P2_SHIELD",   "J5", "15",  "U3", "7"),  # J5-15 to Opto LED Input 4
+        ("GND",             "U3", "8",   "P_IN", "2"),
+        ("P2_SHIELD",       "U3", "10",  "U_FPGA", "J10_4"),
+        ("GND",             "U3", "9",   "P_IN", "2"),
+
+        # J5 Remaining Trackball bits (D0 - D7)
+        ("P2_TRACK_D0",     "J5", "1",   "U_FPGA", "J10_5"),
+        ("P2_TRACK_D1",     "J5", "2",   "U_FPGA", "J10_6"),
+        ("P2_TRACK_D2",     "J5", "3",   "U_FPGA", "J10_7"),
+        ("P2_TRACK_D3",     "J5", "4",   "U_FPGA", "J10_8"),
+        ("P2_TRACK_D4",     "J5", "5",   "U_FPGA", "J10_9"),
+        ("P2_TRACK_D5",     "J5", "6",   "U_FPGA", "J10_10"),
+        ("P2_TRACK_D6",     "J5", "15",  "U_FPGA", "J10_11"),
+        ("P2_TRACK_D7",     "J5", "16",  "U_FPGA", "J10_12"),
+
+        # J4 Spinner / Dial connections (D0 - D7)
+        ("SPINNER_D0",      "J4", "1",   "U_FPGA", "J10_13"),
+        ("SPINNER_D1",      "J4", "2",   "U_FPGA", "J10_14"),
+        ("SPINNER_D2",      "J4", "3",   "U_FPGA", "J10_15"),
+        ("SPINNER_D3",      "J4", "4",   "U_FPGA", "J10_16"),
+        ("SPINNER_D4",      "J4", "5",   "U_FPGA", "J10_17"),
+        ("SPINNER_D5",      "J4", "6",   "U_FPGA", "J10_18"),
+        ("SPINNER_D6",      "J4", "7",   "U_FPGA", "J10_19"),
+        ("SPINNER_D7",      "J4", "9",   "U_FPGA", "J10_20"),
 
         # R2R Video DAC - Input from FPGA Header to Pad 1 of Resistors
         ("FPGA_R0",         "U_FPGA", "J9_9",   "R1", "1"),
