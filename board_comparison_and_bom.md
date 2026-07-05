@@ -19,14 +19,14 @@ Here is a comparison of the primary hardware architectures we evaluated for runn
 | **Video & Audio Path** | On-board parallel | HDMI -> VGA/Audio Dongle | GPDI Port / Parallel | Onboard Native HDMI & DAC | Onboard Native HDMI & DAC |
 | **Pin Congestion** | Low | High (Pmod sharing) | Low (SDRAM is onboard) | Zero | Zero |
 | **Toolchain** | Gowin EDA | Gowin EDA | **Open Source** (yosys/nextpnr) | Gowin EDA | Gowin EDA |
-| **Estimated Price (Kit)**| **~$25.00** | **~$35.00** (Kit + SDRAM) | **~$49.00** | **~$55.00** (SOM + Dock) | **~$99.00** (SOM + Dock) |
+| **Estimated Price (Kit)**| **~$29.00** [1] | **~$39.00** (Kit + SDRAM) [2] | **$79.00** [3] | **$69.00** [4] | **$99.00** [5] |
 | **Extra Modules Needed** | PMOD HDMI ($5) | PMOD HDMI ($5) + Dongle ($5) | GPDI-to-HDMI Cable ($5) | None | None |
-| **Total Hardware Cost**  | **~$30.00** | **~$45.00** | **~$54.00** | **~$55.00** | **~$99.00** |
+| **Total Hardware Cost**  | **~$34.00** | **~$49.00** | **$84.00** | **$69.00** | **$99.00** |
 
 ### Recommendations:
-* **Best Value / Easiest Integration: Tang Console 60K ($55)**
+* **Best Value / Easiest Integration: Tang Console 60K ($69)** [4]
   Because the DDR3 memory is built directly into the System-on-Module (SOM), it does not block the carrier board's pins. With **92 free GPIO pins**, native HDMI, and onboard audio DACs, you do not need shift registers or HDMI converters. It has more than enough on-chip block RAM (320KB) to run any MCR game without memory limits.
-* **Cheapest Entry Point: Tang Primer 25K V1 ($30)**
+* **Cheapest Entry Point: Tang Primer 25K V1 ($34)** [1]
   Great for initial desk testing and cabinet control/audio wiring verification. However, playfield background graphics are disabled to fit the block RAM budget.
 
 ---
@@ -66,3 +66,13 @@ If using the SDRAM card on the Tang Primer 25K, you must read the buttons serial
 | 6 | **MCR Connector Headers** | J2, J3, J4, J5 | 4 | $0.50 | $2.00 | 2.54mm Molex KK |
 | 7 | **Female Pin Headers (to Dock)** | JP1 | 1 | $0.40 | $0.40 | 12-pin PMOD socket |
 | **Total**| | | | | **~$7.70** | *Excludes shipping* |
+
+---
+
+## 3. Reference Pricing & Purchase Links
+
+*   **[1] Tang Primer 25K Dock Kit:** ~$29.00 on the [Sipeed AliExpress Store](https://www.aliexpress.com/item/1005006093452411.html).
+*   **[2] Tang SDRAM Expansion Module (64Mbit):** ~$10.00 on the [Sipeed AliExpress Store](https://www.aliexpress.com/item/1005006122648719.html) or Youyeetoo.
+*   **[3] iCEPi Zero (Lattice ECP5):** $79.00 retail on [Elecrow Store](https://www.elecrow.com/icepi-zero-fpga-development-board.html) or [Mouser Electronics](https://www.mouser.com/ProductDetail/Crowd-Supply/CS-ICEPIZERO-01). Educational discount price is $65.00 via developer contact on the [iCEPi Zero GitHub Page](https://github.com/cyao7878/icepi-zero).
+*   **[4] Tang Console 60K (SOM + Dock Bundle):** ~$69.00 on the [Sipeed AliExpress Store](https://www.aliexpress.com/item/1005007421111111.html).
+*   **[5] Tang Console 138K (SOM + Dock Bundle):** ~$99.00 on the [Sipeed AliExpress Store](https://www.aliexpress.com/item/1005007421111111.html).
