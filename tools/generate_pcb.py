@@ -3,12 +3,12 @@ import sys
 import os
 
 def generate_board():
-    print("Initializing KiCad board generation (110mm x 90mm with horizontal connectors)...")
+    print("Initializing KiCad board generation with native TangMega138K_Console footprint...")
     board = pcbnew.BOARD()
 
-    # Define board dimensions: 110mm x 90mm
-    width = 110.0
-    height = 90.0
+    # Define board dimensions: 135mm x 95mm
+    width = 135.0
+    height = 95.0
     margin = 5.0
 
     # Draw PCB Edge Outline on the Edge.Cuts layer and F.Silkscreen layer
@@ -41,37 +41,16 @@ def generate_board():
 
     print("PCB Edge Outline drawn successfully!")
 
-    # Draw FPGA keepout outline box on the F.Silkscreen layer
-    # Represents the Tang Console board: 80mm x 55mm centered at (55.0, 50.0)
-    fpga_x_min, fpga_x_max = int(15.0 * 1000000), int(95.0 * 1000000)
-    fpga_y_min, fpga_y_max = int(22.5 * 1000000), int(77.5 * 1000000)
-    
-    fpga_corners = [
-        pcbnew.VECTOR2I(fpga_x_min, fpga_y_min),
-        pcbnew.VECTOR2I(fpga_x_max, fpga_y_min),
-        pcbnew.VECTOR2I(fpga_x_max, fpga_y_max),
-        pcbnew.VECTOR2I(fpga_x_min, fpga_y_max)
-    ]
-    
-    for i in range(4):
-        p1 = fpga_corners[i]
-        p2 = fpga_corners[(i + 1) % 4]
-        seg = pcbnew.PCB_SHAPE(board)
-        seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
-        seg.SetStart(p1)
-        seg.SetEnd(p2)
-        seg.SetLayer(silk_layer)
-        seg.SetWidth(int(0.2 * 1000000)) # Thin line to distinguish from board outline
-        board.Add(seg)
-        
-    print("FPGA keepout silkscreen box drawn successfully!")
-
     # Dict to keep track of placed footprints for net connection
     placed_footprints = {}
 
-    # Helper function to place footprints from standard library path
-    def place_component(reference, value, lib_name, footprint_name, x_mm, y_mm, rotation_deg=0):
-        lib_path = f"/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/{lib_name}.pretty"
+    # Helper function to place footprints from standard or custom library path
+    def place_component(reference, value, lib_path_or_name, footprint_name, x_mm, y_mm, rotation_deg=0):
+        # Determine if custom path or standard library
+        if "/" in lib_path_or_name or lib_path_or_name.startswith("scratch"):
+            lib_path = lib_path_or_name
+        else:
+            lib_path = f"/Applications/KiCad/KiCad.app/Contents/SharedSupport/footprints/{lib_path_or_name}.pretty"
         
         # Load footprint
         fp = pcbnew.FootprintLoad(lib_path, footprint_name)
@@ -94,31 +73,31 @@ def generate_board():
         print(f"Placed {reference} ({value}) at X={x_mm}mm, Y={y_mm}mm")
 
     # --- Place Components (Roomy & Safe Layout) ---
-    # 1. Tang Console Host Sockets (2x20 Pin Headers spaced 20mm apart)
-    place_component("JP1", "Tang_2x20_H1", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 55.0, 40.0)
-    place_component("JP2", "Tang_2x20_H2", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 55.0, 60.0)
+    # 1. Native Tang Console Module (Instantiates both headers and mechanical board outline)
+    # Centered at (72.5mm, 50.0mm)
+    place_component("U_FPGA", "TangMega138K_Console", "scratch/kicad-libs/0my_project.pretty", "TangMega138K_Console", 72.5, 50.0)
 
     # 2. MCR Top Connectors (Controls, Coin, Video, Power)
     # Rotated 90 degrees to align horizontally with the top edge
-    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 25.0, 12.0, 90)
+    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 22.0, 12.0, 90)
     place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 55.0, 12.0, 90)
     place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 80.0, 12.0, 90)
-    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 105.0, 12.0, 90)
+    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 125.0, 12.0, 90)
 
     # 3. MCR Bottom Connectors (P2 Controls, Spinners)
     # Rotated 90 degrees to align horizontally with the bottom edge
-    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 30.0, 88.0, 90)
+    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 22.0, 88.0, 90)
     place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 75.0, 88.0, 90)
     
     # 4. DIP Switch Blocks (Vertical orientation = 0 deg, stacked North/South)
-    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 102.0, 42.0)
-    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 102.0, 68.0)
+    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 125.0, 42.0)
+    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 125.0, 68.0)
 
-    # 5. Safety and Power Hardware
+    # 5. Added Safety and Logic Hardware
     place_component("U1", "Buck_Regulator", "Package_TO_SOT_THT", "TO-220-3_Vertical", 108.0, 28.0)
     place_component("U2", "Optocoupler_P1", "Package_DIP", "DIP-16_W7.62mm", 12.0, 40.0, 90) # Rotated 90 to sit vertically
     place_component("U3", "Optocoupler_Sys", "Package_DIP", "DIP-16_W7.62mm", 12.0, 65.0, 90) # Rotated 90 to sit vertically
-    place_component("U4", "Sync_Buffer", "Package_DIP", "DIP-20_W7.62mm", 82.0, 32.0)
+    place_component("U4", "Sync_Buffer", "Package_DIP", "DIP-20_W7.62mm", 82.0, 28.0)
     place_component("U5", "Audio_Amplifier", "Package_DIP", "DIP-8_W7.62mm", 108.0, 83.0)
 
     # 6. R2R Video DAC Resistors
@@ -139,40 +118,41 @@ def generate_board():
     print("Defining and routing electrical nets...")
     
     # Net connections mapping: (NetName, Component1Ref, Pad1Number, Component2Ref, Pad2Number)
+    # Note: Sockets on U_FPGA are J9 (Header 1) and J10 (Header 2)
     connections = [
         # Optocoupler Isolated Inputs mapping:
         ("CAB_BTN_LEFT",    "J2", "1",   "U2", "1"),
         ("GND",             "U2", "2",   "P_IN", "2"),
-        ("BTN_LEFT",        "U2", "16",  "JP1", "1"),
+        ("BTN_LEFT",        "U2", "16",  "U_FPGA", "J9_1"),
         ("GND",             "U2", "15",  "P_IN", "2"),
         
         ("CAB_BTN_RIGHT",   "J2", "2",   "U2", "3"),
         ("GND",             "U2", "4",   "P_IN", "2"),
-        ("BTN_RIGHT",       "U2", "14",  "JP1", "2"),
+        ("BTN_RIGHT",       "U2", "14",  "U_FPGA", "J9_2"),
         ("GND",             "U2", "13",  "P_IN", "2"),
 
         ("CAB_BTN_FIRE",    "J2", "5",   "U2", "5"),
         ("GND",             "U2", "6",   "P_IN", "2"),
-        ("BTN_FIRE",        "U2", "12",  "JP1", "3"),
+        ("BTN_FIRE",        "U2", "12",  "U_FPGA", "J9_3"),
         ("GND",             "U2", "11",  "P_IN", "2"),
 
         ("CAB_BTN_SHIELD",  "J2", "6",   "U2", "7"),
         ("GND",             "U2", "8",   "P_IN", "2"),
-        ("BTN_SHIELD",      "U2", "10",  "JP1", "4"),
+        ("BTN_SHIELD",      "U2", "10",  "U_FPGA", "J9_4"),
         ("GND",             "U2", "9",   "P_IN", "2"),
 
         # R2R Video DAC - Input from FPGA Header to Pad 1 of Resistors
-        ("FPGA_R0",         "JP1", "9",   "R1", "1"),
-        ("FPGA_R1",         "JP1", "10",  "R2", "1"),
-        ("FPGA_R2",         "JP1", "11",  "R3", "1"),
+        ("FPGA_R0",         "U_FPGA", "J9_9",   "R1", "1"),
+        ("FPGA_R1",         "U_FPGA", "J9_10",  "R2", "1"),
+        ("FPGA_R2",         "U_FPGA", "J9_11",  "R3", "1"),
 
-        ("FPGA_G0",         "JP1", "12",  "R4", "1"),
-        ("FPGA_G1",         "JP1", "13",  "R5", "1"),
-        ("FPGA_G2",         "JP1", "14",  "R6", "1"),
+        ("FPGA_G0",         "U_FPGA", "J9_12",  "R4", "1"),
+        ("FPGA_G1",         "U_FPGA", "J9_13",  "R5", "1"),
+        ("FPGA_G2",         "U_FPGA", "J9_14",  "R6", "1"),
 
-        ("FPGA_B0",         "JP1", "15",  "R7", "1"),
-        ("FPGA_B1",         "JP1", "16",  "R8", "1"),
-        ("FPGA_B2",         "JP1", "17",  "R9", "1"),
+        ("FPGA_B0",         "U_FPGA", "J9_15",  "R7", "1"),
+        ("FPGA_B1",         "U_FPGA", "J9_16",  "R8", "1"),
+        ("FPGA_B2",         "U_FPGA", "J9_17",  "R9", "1"),
 
         # R2R Video DAC - Output from Pad 2 of Resistors combined into Analog color outputs to J_VID
         ("CAB_RED",         "R1", "2",    "J_VID", "1"),
@@ -188,35 +168,35 @@ def generate_board():
         ("CAB_BLUE",        "R9", "2",    "J_VID", "5"),
 
         # Video sync buffer connections (74HCT244)
-        ("FPGA_HSYNC",      "JP1", "18", "U4", "2"),
+        ("FPGA_HSYNC",      "U_FPGA", "J9_18", "U4", "2"),
         ("CAB_HSYNC",       "U4", "18",  "J_VID", "8"),
-        ("FPGA_VSYNC",      "JP1", "19", "U4", "4"),
+        ("FPGA_VSYNC",      "U_FPGA", "J9_19", "U4", "4"),
         ("CAB_VSYNC",       "U4", "16",  "J_VID", "9"),
 
         # Power lines
         ("12V_POWER",       "P_IN", "1",  "U1", "1"),
-        ("5V_REGULATED",    "U1", "3",   "JP1", "40"),
+        ("5V_REGULATED",    "U1", "3",   "U_FPGA", "J9_40"),
         ("GND",             "U1", "2",   "P_IN", "2"),
 
         # SW1 Game Selector DIPs
-        ("GAME_SEL0",   "JP1", "23", "SW1", "1"),
-        ("GAME_SEL1",   "JP1", "24", "SW1", "2"),
-        ("GAME_SEL2",   "JP1", "25", "SW1", "3"),
-        ("GAME_SEL3",   "JP1", "26", "SW1", "4"),
-        ("GAME_SEL4",   "JP1", "27", "SW1", "5"),
-        ("GAME_SEL5",   "JP1", "28", "SW1", "6"),
-        ("GAME_SEL6",   "JP1", "29", "SW1", "7"),
-        ("GAME_SEL7",   "JP1", "30", "SW1", "8"),
+        ("GAME_SEL0",   "U_FPGA", "J9_23", "SW1", "1"),
+        ("GAME_SEL1",   "U_FPGA", "J9_24", "SW1", "2"),
+        ("GAME_SEL2",   "U_FPGA", "J9_25", "SW1", "3"),
+        ("GAME_SEL3",   "U_FPGA", "J9_26", "SW1", "4"),
+        ("GAME_SEL4",   "U_FPGA", "J9_27", "SW1", "5"),
+        ("GAME_SEL5",   "U_FPGA", "J9_28", "SW1", "6"),
+        ("GAME_SEL6",   "U_FPGA", "J9_29", "SW1", "7"),
+        ("GAME_SEL7",   "U_FPGA", "J9_30", "SW1", "8"),
 
         # SW2 Game Options DIPs
-        ("GAME_OPT0",   "JP1", "31", "SW2", "1"),
-        ("GAME_OPT1",   "JP1", "32", "SW2", "2"),
-        ("GAME_OPT2",   "JP1", "33", "SW2", "3"),
-        ("GAME_OPT3",   "JP1", "34", "SW2", "4"),
-        ("GAME_OPT4",   "JP1", "35", "SW2", "5"),
-        ("GAME_OPT5",   "JP1", "36", "SW2", "6"),
-        ("GAME_OPT6",   "JP1", "37", "SW2", "7"),
-        ("GAME_OPT7",   "JP1", "38", "SW2", "8"),
+        ("GAME_OPT0",   "U_FPGA", "J9_31", "SW2", "1"),
+        ("GAME_OPT1",   "U_FPGA", "J9_32", "SW2", "2"),
+        ("GAME_OPT2",   "U_FPGA", "J9_33", "SW2", "3"),
+        ("GAME_OPT3",   "U_FPGA", "J9_34", "SW2", "4"),
+        ("GAME_OPT4",   "U_FPGA", "J9_35", "SW2", "5"),
+        ("GAME_OPT5",   "U_FPGA", "J9_36", "SW2", "6"),
+        ("GAME_OPT6",   "U_FPGA", "J9_37", "SW2", "7"),
+        ("GAME_OPT7",   "U_FPGA", "J9_38", "SW2", "8"),
         
         # Ground signals
         ("GND",         "J2", "13",  "P_IN", "2"),
