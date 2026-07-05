@@ -3,12 +3,12 @@ import sys
 import os
 
 def generate_board():
-    print("Initializing KiCad board generation with resistor ladders and net connections...")
+    print("Initializing KiCad board generation (Compact 95mm x 85mm)...")
     board = pcbnew.BOARD()
 
-    # Define board dimensions: 120mm x 100mm (values in micrometers -> nanometers)
-    width = 120.0
-    height = 100.0
+    # Define board dimensions: 95mm x 85mm
+    width = 95.0
+    height = 85.0
     margin = 5.0
 
     # Draw PCB Edge Outline on the Edge.Cuts layer
@@ -64,45 +64,45 @@ def generate_board():
         placed_footprints[reference] = fp
         print(f"Placed {reference} ({value}) at X={x_mm}mm, Y={y_mm}mm")
 
-    # --- Place Components ---
-    # 1. Tang Console Host Sockets (2x20 Pin Headers spaced 50mm apart)
-    place_component("JP1", "Tang_2x20_H1", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 65.0, 45.0)
-    place_component("JP2", "Tang_2x20_H2", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 65.0, 65.0)
+    # --- Place Components (Compact Layout) ---
+    # 1. Tang Console Host Sockets (2x20 Pin Headers spaced 20mm apart)
+    place_component("JP1", "Tang_2x20_H1", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 50.0, 40.0)
+    place_component("JP2", "Tang_2x20_H2", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 50.0, 60.0)
 
     # 2. MCR Top Connectors (Controls, Coin, Video, Power)
-    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 20.0, 12.0)
-    place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 55.0, 12.0)
-    place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 85.0, 12.0)
-    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 115.0, 12.0)
+    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 25.0, 12.0)
+    place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 52.0, 12.0)
+    place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 75.0, 12.0)
+    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 93.0, 12.0)
 
-    # 3. MCR Bottom Connectors (P2 Controls, Spinners, DIP Switches)
-    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 25.0, 93.0)
-    place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 75.0, 93.0)
+    # 3. MCR Bottom Connectors (P2 Controls, Spinners)
+    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 30.0, 83.0)
+    place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 70.0, 83.0)
     
-    # 4. DIP Switch Blocks
-    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 100.0, 93.0)
-    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 115.0, 93.0)
+    # 4. DIP Switch Blocks (Rotated 90 degrees to be vertical)
+    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 89.0, 55.0, 90)
+    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 95.0, 55.0, 90)
 
-    # 5. Safety and Power Hardware
-    place_component("U1", "Buck_Regulator", "Package_TO_SOT_THT", "TO-220-3_Vertical", 115.0, 30.0)
-    place_component("U2", "Optocoupler_P1", "Package_DIP", "DIP-16_W7.62mm", 15.0, 45.0)
-    place_component("U3", "Optocoupler_Sys", "Package_DIP", "DIP-16_W7.62mm", 15.0, 65.0)
-    place_component("U4", "Sync_Buffer", "Package_DIP", "DIP-20_W7.62mm", 85.0, 30.0)
-    place_component("U5", "Audio_Amplifier", "Package_DIP", "DIP-8_W7.62mm", 115.0, 65.0)
+    # 5. Added Safety and Logic Hardware
+    place_component("U1", "Buck_Regulator", "Package_TO_SOT_THT", "TO-220-3_Vertical", 93.0, 30.0)
+    place_component("U2", "Optocoupler_P1", "Package_DIP", "DIP-16_W7.62mm", 12.0, 40.0)
+    place_component("U3", "Optocoupler_Sys", "Package_DIP", "DIP-16_W7.62mm", 12.0, 60.0)
+    place_component("U4", "Sync_Buffer", "Package_DIP", "DIP-20_W7.62mm", 78.0, 30.0)
+    place_component("U5", "Audio_Amplifier", "Package_DIP", "DIP-8_W7.62mm", 93.0, 70.0)
 
-    # 6. R2R Video DAC Resistors (Discrete 1/4W Axial Resistors, Horizontal Mount)
+    # 6. R2R Video DAC Resistors
     # Red DAC
-    place_component("R1", "3.9k_Red_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 40.0, 30.0)
-    place_component("R2", "2.0k_Red_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 40.0, 33.0)
-    place_component("R3", "1.0k_Red_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 40.0, 36.0)
+    place_component("R1", "3.9k_Red_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 38.0, 26.0)
+    place_component("R2", "2.0k_Red_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 38.0, 29.0)
+    place_component("R3", "1.0k_Red_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 38.0, 32.0)
     # Green DAC
-    place_component("R4", "3.9k_Green_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 50.0, 30.0)
-    place_component("R5", "2.0k_Green_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 50.0, 33.0)
-    place_component("R6", "1.0k_Green_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 50.0, 36.0)
+    place_component("R4", "3.9k_Green_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 48.0, 26.0)
+    place_component("R5", "2.0k_Green_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 48.0, 29.0)
+    place_component("R6", "1.0k_Green_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 48.0, 32.0)
     # Blue DAC
-    place_component("R7", "3.9k_Blue_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 60.0, 30.0)
-    place_component("R8", "2.0k_Blue_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 60.0, 33.0)
-    place_component("R9", "1.0k_Blue_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 60.0, 36.0)
+    place_component("R7", "3.9k_Blue_LSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 58.0, 26.0)
+    place_component("R8", "2.0k_Blue_Mid", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 58.0, 29.0)
+    place_component("R9", "1.0k_Blue_MSB", "Resistor_THT", "R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal", 58.0, 32.0)
 
     # --- Draw Electrical Wires (Ratsnest Connectivity) ---
     print("Defining and routing electrical nets...")
@@ -131,17 +131,17 @@ def generate_board():
         ("GND",             "U2", "9",   "P_IN", "2"),
 
         # R2R Video DAC - Input from FPGA Header to Pad 1 of Resistors
-        ("FPGA_R0",         "JP1", "9",   "R1", "1"),  # Red LSB -> R1 Pin 1
-        ("FPGA_R1",         "JP1", "10",  "R2", "1"),  # Red Mid -> R2 Pin 1
-        ("FPGA_R2",         "JP1", "11",  "R3", "1"),  # Red MSB -> R3 Pin 1
+        ("FPGA_R0",         "JP1", "9",   "R1", "1"),
+        ("FPGA_R1",         "JP1", "10",  "R2", "1"),
+        ("FPGA_R2",         "JP1", "11",  "R3", "1"),
 
-        ("FPGA_G0",         "JP1", "12",  "R4", "1"),  # Green LSB -> R4 Pin 1
-        ("FPGA_G1",         "JP1", "13",  "R5", "1"),  # Green Mid -> R5 Pin 1
-        ("FPGA_G2",         "JP1", "14",  "R6", "1"),  # Green MSB -> R6 Pin 1
+        ("FPGA_G0",         "JP1", "12",  "R4", "1"),
+        ("FPGA_G1",         "JP1", "13",  "R5", "1"),
+        ("FPGA_G2",         "JP1", "14",  "R6", "1"),
 
-        ("FPGA_B0",         "JP1", "15",  "R7", "1"),  # Blue LSB -> R7 Pin 1
-        ("FPGA_B1",         "JP1", "16",  "R8", "1"),  # Blue Mid -> R8 Pin 1
-        ("FPGA_B2",         "JP1", "17",  "R9", "1"),  # Blue MSB -> R9 Pin 1
+        ("FPGA_B0",         "JP1", "15",  "R7", "1"),
+        ("FPGA_B1",         "JP1", "16",  "R8", "1"),
+        ("FPGA_B2",         "JP1", "17",  "R9", "1"),
 
         # R2R Video DAC - Output from Pad 2 of Resistors combined into Analog color outputs to J_VID
         ("CAB_RED",         "R1", "2",    "J_VID", "1"),
