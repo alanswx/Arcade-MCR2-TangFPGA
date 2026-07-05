@@ -6,7 +6,9 @@ This document details the physical layout, component placement, and schematic ne
 
 ## 1. PCB Floorplan (ASCII Layout Sketch)
 
-The PCB is designed as a carrier shield (approx. **120mm x 100mm**) that sits directly underneath the Tang Console board, exposing the original cabinet connectors along the top and bottom edges.
+The PCB is designed as a compact carrier shield (approx. **95mm x 85mm**) that sits directly underneath the Tang Console board, exposing the original cabinet connectors along the top and bottom edges.
+
+![KiCad Layout Render](/Users/alans/.gemini/antigravity/brain/20b49b60-7808-4192-a474-5a5b1ce4d262/mcr_shield.png)
 
 ```text
 +-----------------------------------------------------------------------------------+
