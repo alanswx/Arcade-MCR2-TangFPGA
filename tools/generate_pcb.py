@@ -3,7 +3,7 @@ import sys
 import os
 
 def generate_board():
-    print("Initializing KiCad board generation (110mm x 90mm)...")
+    print("Initializing KiCad board generation (110mm x 90mm with horizontal connectors)...")
     board = pcbnew.BOARD()
 
     # Define board dimensions: 110mm x 90mm
@@ -39,7 +39,32 @@ def generate_board():
             seg.SetWidth(int(0.5 * 1000000)) # 0.5mm thick line
             board.Add(seg)
 
-    print("PCB Edge Outline drawn successfully on Edge.Cuts and F.Silkscreen!")
+    print("PCB Edge Outline drawn successfully!")
+
+    # Draw FPGA keepout outline box on the F.Silkscreen layer
+    # Represents the Tang Console board: 80mm x 55mm centered at (55.0, 50.0)
+    fpga_x_min, fpga_x_max = int(15.0 * 1000000), int(95.0 * 1000000)
+    fpga_y_min, fpga_y_max = int(22.5 * 1000000), int(77.5 * 1000000)
+    
+    fpga_corners = [
+        pcbnew.VECTOR2I(fpga_x_min, fpga_y_min),
+        pcbnew.VECTOR2I(fpga_x_max, fpga_y_min),
+        pcbnew.VECTOR2I(fpga_x_max, fpga_y_max),
+        pcbnew.VECTOR2I(fpga_x_min, fpga_y_max)
+    ]
+    
+    for i in range(4):
+        p1 = fpga_corners[i]
+        p2 = fpga_corners[(i + 1) % 4]
+        seg = pcbnew.PCB_SHAPE(board)
+        seg.SetShape(pcbnew.SHAPE_T_SEGMENT)
+        seg.SetStart(p1)
+        seg.SetEnd(p2)
+        seg.SetLayer(silk_layer)
+        seg.SetWidth(int(0.2 * 1000000)) # Thin line to distinguish from board outline
+        board.Add(seg)
+        
+    print("FPGA keepout silkscreen box drawn successfully!")
 
     # Dict to keep track of placed footprints for net connection
     placed_footprints = {}
@@ -74,23 +99,25 @@ def generate_board():
     place_component("JP2", "Tang_2x20_H2", "Connector_PinHeader_2.54mm", "PinHeader_2x20_P2.54mm_Vertical", 55.0, 60.0)
 
     # 2. MCR Top Connectors (Controls, Coin, Video, Power)
-    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 25.0, 12.0)
-    place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 55.0, 12.0)
-    place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 80.0, 12.0)
-    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 105.0, 12.0)
+    # Rotated 90 degrees to align horizontally with the top edge
+    place_component("J2", "MCR_P1_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x15_P2.54mm_Vertical", 25.0, 12.0, 90)
+    place_component("J3", "MCR_System_Coin", "Connector_PinHeader_2.54mm", "PinHeader_1x05_P2.54mm_Vertical", 55.0, 12.0, 90)
+    place_component("J_VID", "MCR_Video_Out", "Connector_PinHeader_2.54mm", "PinHeader_1x09_P2.54mm_Vertical", 80.0, 12.0, 90)
+    place_component("P_IN", "Power_+12V_GND", "Connector_PinHeader_2.54mm", "PinHeader_1x02_P2.54mm_Vertical", 105.0, 12.0, 90)
 
     # 3. MCR Bottom Connectors (P2 Controls, Spinners)
-    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 30.0, 88.0)
-    place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 75.0, 88.0)
+    # Rotated 90 degrees to align horizontally with the bottom edge
+    place_component("J5", "MCR_P2_Controls", "Connector_PinHeader_2.54mm", "PinHeader_1x19_P2.54mm_Vertical", 30.0, 88.0, 90)
+    place_component("J4", "MCR_Opt_X_Dial", "Connector_PinHeader_2.54mm", "PinHeader_1x10_P2.54mm_Vertical", 75.0, 88.0, 90)
     
     # 4. DIP Switch Blocks (Vertical orientation = 0 deg, stacked North/South)
-    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 100.0, 42.0)
-    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 100.0, 68.0)
+    place_component("SW1", "Game_Selector", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 102.0, 42.0)
+    place_component("SW2", "Cabinet_Options", "Button_Switch_THT", "SW_DIP_SPSTx08_Slide_9.78x22.5mm_W7.62mm_P2.54mm", 102.0, 68.0)
 
-    # 5. Added Safety and Logic Hardware
+    # 5. Safety and Power Hardware
     place_component("U1", "Buck_Regulator", "Package_TO_SOT_THT", "TO-220-3_Vertical", 108.0, 28.0)
-    place_component("U2", "Optocoupler_P1", "Package_DIP", "DIP-16_W7.62mm", 12.0, 40.0)
-    place_component("U3", "Optocoupler_Sys", "Package_DIP", "DIP-16_W7.62mm", 12.0, 65.0)
+    place_component("U2", "Optocoupler_P1", "Package_DIP", "DIP-16_W7.62mm", 12.0, 40.0, 90) # Rotated 90 to sit vertically
+    place_component("U3", "Optocoupler_Sys", "Package_DIP", "DIP-16_W7.62mm", 12.0, 65.0, 90) # Rotated 90 to sit vertically
     place_component("U4", "Sync_Buffer", "Package_DIP", "DIP-20_W7.62mm", 82.0, 32.0)
     place_component("U5", "Audio_Amplifier", "Package_DIP", "DIP-8_W7.62mm", 108.0, 83.0)
 
