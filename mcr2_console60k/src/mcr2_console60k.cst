@@ -1,0 +1,72 @@
+// Physical pin constraints for MCR2 Core on Tang Console 60K (GW5A-LV60)
+// Clock and Buttons
+IO_LOC "sys_clk" P16; // On-board 50 MHz oscillator
+IO_PORT "sys_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+
+IO_LOC "s1" K6; // On-board button S1
+IO_PORT "s1" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+IO_LOC "reset2" L6; // On-board button S2
+IO_PORT "reset2" IO_TYPE=LVCMOS33 PULL_MODE=DOWN;
+
+// DVI/HDMI Output differential signals
+// Set locations based on your specific SOM model board's HDMI routing.
+// Typical mappings on Tang Console SOM:
+IO_LOC "tmds_clk_p" Y18;
+IO_PORT "tmds_clk_p" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[0]" V18;
+IO_PORT "tmds_d_p[0]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[1]" R18;
+IO_PORT "tmds_d_p[1]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+IO_LOC "tmds_d_p[2]" P18;
+IO_PORT "tmds_d_p[2]" PULL_MODE=NONE IO_TYPE=LVCMOS33D;
+
+// Cabinet Interface (2x20 GPIO Header Pins)
+// TODO: Reassign the pin locations below to match your Shield PCB layout!
+IO_LOC "btn_left" A10;
+IO_PORT "btn_left" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_right" A11;
+IO_PORT "btn_right" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_fire" B10;
+IO_PORT "btn_fire" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_shield" B11;
+IO_PORT "btn_shield" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_start" C10;
+IO_PORT "btn_start" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_coin" C11;
+IO_PORT "btn_coin" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_service" D10;
+IO_PORT "btn_service" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "btn_tilt" D11;
+IO_PORT "btn_tilt" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+
+// Cabinet Video Outputs (mapped to 2x20 header pins)
+IO_LOC "cab_r[0]" F10;
+IO_PORT "cab_r[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_r[1]" F11;
+IO_PORT "cab_r[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_r[2]" G10;
+IO_PORT "cab_r[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[0]" H10;
+IO_PORT "cab_g[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[1]" H11;
+IO_PORT "cab_g[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_g[2]" J10;
+IO_PORT "cab_g[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[0]" K10;
+IO_PORT "cab_b[0]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[1]" K11;
+IO_PORT "cab_b[1]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_b[2]" L10;
+IO_PORT "cab_b[2]" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_hs" M10;
+IO_PORT "cab_hs" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_vs" M11;
+IO_PORT "cab_vs" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "cab_csync" N10;
+IO_PORT "cab_csync" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+
+// Audio Outputs
+IO_LOC "audio_l" P10;
+IO_PORT "audio_l" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
+IO_LOC "audio_r" P11;
+IO_PORT "audio_r" IO_TYPE=LVCMOS33 PULL_MODE=NONE;

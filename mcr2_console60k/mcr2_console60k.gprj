@@ -1,12 +1,12 @@
-<?xml version="1" encoding="UTF-8"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE gowin-fpga-project>
 <Project>
     <Template>FPGA</Template>
     <Version>5</Version>
-    <Device name="GW5A-25A" pn="GW5A-LV25MG121NC1/I0">gw5a25a-002</Device>
+    <Device name="GW5AT-60B" pn="GW5AT-LV60PG484AC1/I0">gw5at60b-002</Device>
     <FileList>
         <!-- Gowin Project Top-Level Wrapper -->
-        <File path="src/mcr2_primer25k_top.sv" type="file.verilog" enable="1"/>
+        <File path="src/mcr2_console60k_top.sv" type="file.verilog" enable="1"/>
 
         <!-- Custom optimized/initialized RAM wrappers -->
         <File path="../src/rtl/dpram.sv" type="file.verilog" enable="1"/>
@@ -40,7 +40,7 @@
         <File path="../src/rtl/Z80CTC/z80ctc_top.vhd" type="file.vhdl" enable="1"/>
 
         <!-- Physical and Timing Constraints -->
-        <File path="src/mcr2_primer25k.cst" type="file.cst" enable="1"/>
-        <File path="src/mcr2_primer25k.sdc" type="file.sdc" enable="1"/>
+        <File path="src/mcr2_console60k.cst" type="file.cst" enable="1"/>
+        <File path="src/mcr2_console60k.sdc" type="file.sdc" enable="1"/>
     </FileList>
 </Project>
