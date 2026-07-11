@@ -224,14 +224,14 @@ always @(posedge clk_pixel) begin
     hdmi_vs_reg <= vs;
 end
 
-// --- Diagnostic Test Pattern Generator (Native MCR2 VGA timing: 634x524 @ 60Hz) ---
+// --- Diagnostic Test Pattern Generator (Standard 640x480 @ 60Hz timing) ---
 reg [9:0] test_hcnt = 0;
 reg [9:0] test_vcnt = 0;
 
 always @(posedge clk_pixel) begin
-    if (test_hcnt == 633) begin
+    if (test_hcnt == 799) begin
         test_hcnt <= 0;
-        if (test_vcnt == 523) begin
+        if (test_vcnt == 524) begin
             test_vcnt <= 0;
         end else begin
             test_vcnt <= test_vcnt + 1;
@@ -241,10 +241,10 @@ always @(posedge clk_pixel) begin
     end
 end
 
-// Active-low syncs matching native game core video timing
-wire test_hsync = ~((test_hcnt >= 512 + 13) && (test_hcnt < 512 + 13 + 77));
-wire test_vsync = ~((test_vcnt >= 480 + 9) && (test_vcnt < 480 + 9 + 2));
-wire test_de    = (test_hcnt < 512) && (test_vcnt < 480);
+// Active-low syncs for standard VGA timing
+wire test_hsync = ~((test_hcnt >= 640 + 16) && (test_hcnt < 640 + 16 + 96));
+wire test_vsync = ~((test_vcnt >= 480 + 10) && (test_vcnt < 480 + 10 + 2));
+wire test_de    = (test_hcnt < 640) && (test_vcnt < 480);
 
 // Simple color bars / test pattern
 wire [7:0] test_r = test_de ? {test_hcnt[8:6], 5'b00000} : 8'd0;

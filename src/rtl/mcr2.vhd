@@ -331,7 +331,7 @@ begin
 		if pix_ena = '1' then
 
 			hcnt <= hcnt + 1;
-			if hcnt = 633 then
+			if hcnt = 799 then
 				hcnt <= (others=>'0');
 				vcnt <= vcnt + 1;
 				if (vcnt = 524 and tv15Khz_mode = '0') or (vcnt = 263 and tv15Khz_mode = '1') then
@@ -341,23 +341,22 @@ begin
 			end if;
 
 			if tv15Khz_mode = '0' then 
-				--	progessive mode
+				--	progressive mode
 
-				if vcnt = 490-1 then video_vs <= '0'; end if; -- front porch 10
-				if vcnt = 492-1 then video_vs <= '1'; end if; -- sync pulse   2
-				                                              -- back porch  33 
+				if vcnt = 490 then video_vs <= '0'; end if; -- front porch 10
+				if vcnt = 492 then video_vs <= '1'; end if; -- sync pulse   2
+				                                            -- back porch  33 
 																		 
-				if hcnt = 512+13+9 then video_hs <= '0'; end if;  -- front porch 16/25*20 = 13
-				if hcnt = 512+90+9 then video_hs <= '1'; end if;  -- sync pulse  96/25*20 = 77
-                                                                  -- back porch  48/25*20 = 38
-				--video_blankn <= '0';
+				if hcnt = 512+16 then video_hs <= '0'; end if;     -- front porch 16
+				if hcnt = 512+16+96 then video_hs <= '1'; end if;  -- sync pulse  96
+                                                                   -- back porch  176
 				video_hblank <= '1';
-				if hcnt >= 2+16 and  hcnt < 514+16 and
-					vcnt >= 2 and  vcnt < 481 then video_hblank <= '0';
+				if hcnt >= 16 and hcnt < 512+16 then
+					video_hblank <= '0';
 				end if;
 				
 				video_vblank <= '1';
-				if vcnt >= 2 and vcnt < 480 then
+				if vcnt >= 10 and vcnt < 480+10 then
 					video_vblank <= '0';
 				end if;
 
