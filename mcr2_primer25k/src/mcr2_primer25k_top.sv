@@ -224,16 +224,52 @@ always @(posedge clk_pixel) begin
     hdmi_vs_reg <= vs;
 end
 
+// --- Diagnostic Test Pattern Generator (Standard 640x480 @ 60Hz timing) ---
+reg [9:0] test_hcnt = 0;
+reg [9:0] test_vcnt = 0;
+
+always @(posedge clk_pixel) begin
+    if (test_hcnt == 799) begin
+        test_hcnt <= 0;
+        if (test_vcnt == 524) begin
+            test_vcnt <= 0;
+        end else begin
+            test_vcnt <= test_vcnt + 1;
+        end
+    end else begin
+        test_hcnt <= test_hcnt + 1;
+    end
+end
+
+wire test_hsync = ~((test_hcnt >= 640 + 16) && (test_hcnt < 640 + 16 + 96));
+wire test_vsync = ~((test_vcnt >= 480 + 10) && (test_vcnt < 480 + 10 + 2));
+wire test_de    = (test_hcnt < 640) && (test_vcnt < 480);
+
+// Simple color bars / test pattern
+wire [7:0] test_r = test_de ? {test_hcnt[8:6], 5'b00000} : 8'd0;
+wire [7:0] test_g = test_de ? {test_hcnt[5:3], 5'b00000} : 8'd0;
+wire [7:0] test_b = test_de ? {test_vcnt[5:3], 5'b00000} : 8'd0;
+
+// Multiplex output based on reset2 button (H10) being pressed
+wire use_test_pattern = reset2;
+
+wire [7:0] final_r = use_test_pattern ? test_r : hdmi_r_reg;
+wire [7:0] final_g = use_test_pattern ? test_g : hdmi_g_reg;
+wire [7:0] final_b = use_test_pattern ? test_b : hdmi_b_reg;
+wire       final_de = use_test_pattern ? test_de : hdmi_de_reg;
+wire       final_hs = use_test_pattern ? test_hsync : hdmi_hs_reg;
+wire       final_vs = use_test_pattern ? test_vsync : hdmi_vs_reg;
+
 hdmi_tx hdmi_tx_inst (
     .clk_pixel(clk_pixel),
     .clk_5x_pixel(clk_p5),
     .resetn(~core_reset),
-    .rgb_r(hdmi_r_reg),
-    .rgb_g(hdmi_g_reg),
-    .rgb_b(hdmi_b_reg),
-    .de(hdmi_de_reg),
-    .hsync(hdmi_hs_reg),
-    .vsync(hdmi_vs_reg),
+    .rgb_r(final_r),
+    .rgb_g(final_g),
+    .rgb_b(final_b),
+    .de(final_de),
+    .hsync(final_hs),
+    .vsync(final_vs),
     .tmds_clk_p(tmds_clk_p),
     .tmds_clk_n(tmds_clk_n),
     .tmds_d_p(tmds_d_p),
