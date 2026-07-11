@@ -32,7 +32,10 @@ module mcr2_primer25k_top (
 
     // PWM Audio output (headphone/speaker jack pins or PMOD)
     output       audio_l,
-    output       audio_r
+    output       audio_r,
+
+    // Debug LEDs
+    output [1:0] led
 );
 
 // --- Clock Generation ---
@@ -234,5 +237,9 @@ ds_dac dac_r (
     .din(audio_r_val),
     .dout(audio_r)
 );
+
+// --- Debug LEDs (Active Low) ---
+assign led[0] = ~pll_locked; // LED 0 (Ready) turns ON when PLL locks
+assign led[1] = ~core_reset; // LED 1 (Done) turns ON when core exits reset
 
 endmodule

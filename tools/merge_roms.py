@@ -1,10 +1,13 @@
 import os
 import zipfile
+import shutil
 
 def merge_shollow():
     zip_path = "roms/shollow.zip"
-    out_dir = "mcr2_primer25k/src/roms"
-    os.makedirs(out_dir, exist_ok=True)
+    
+    # Target directories where Gowin compiler expects files based on instantiation paths
+    top_src_dir = "mcr2_primer25k/src"
+    rtl_src_dir = "src/rtl"
     
     print(f"Reading ROMs from {zip_path}...")
     if not os.path.exists(zip_path):
@@ -26,7 +29,6 @@ def merge_shollow():
         assert len(main_data) == 48 * 1024
         
         # 2. Sound ROM: 16KB (0xC000 - 0xFFFF)
-        # 3 files of 4KB + 4KB padding
         snd_data = bytearray()
         for fn in snd_files:
             snd_data.extend(z.read(fn))
@@ -46,13 +48,15 @@ def merge_shollow():
             gfx2_data.extend(z.read(fn))
         assert len(gfx2_data) == 32 * 1024
 
-    # Write out hex files
+    # Helper function to write hex files to both target directories
     def write_hex(filename, data):
-        path = os.path.join(out_dir, filename)
-        with open(path, "w") as f:
-            for b in data:
-                f.write(f"{b:02x}\n")
-        print(f"Wrote {path} ({len(data)} bytes)")
+        for out_dir in [top_src_dir, rtl_src_dir]:
+            os.makedirs(out_dir, exist_ok=True)
+            path = os.path.join(out_dir, filename)
+            with open(path, "w") as f:
+                for b in data:
+                    f.write(f"{b:02x}\n")
+            print(f"Wrote {path} ({len(data)} bytes)")
 
     write_hex("rom_main.hex", main_data)
     write_hex("rom_snd.hex", snd_data)
@@ -60,7 +64,7 @@ def merge_shollow():
     write_hex("rom_gfx1_1.hex", gfx1_1_data)
     write_hex("rom_gfx1_2.hex", gfx1_2_data)
     write_hex("rom_gfx2.hex", gfx2_data)
-    print("ROM generation complete!")
+    print("ROM generation and copying complete!")
 
 if __name__ == "__main__":
     merge_shollow()
