@@ -36,14 +36,14 @@ reg [8:0] q_m;
 always @(posedge clk) begin
     if (!resetn) begin
         cnt   <= 0;
-        q_out <= 0;
+        dout  <= 0;
     end else if (!de) begin
         cnt   <= 0;
         case (ctrl)
-            2'b00: q_out <= 10'b1101010100;
-            2'b01: q_out <= 10'b0010101011;
-            2'b10: q_out <= 10'b0101010100;
-            2'b11: q_out <= 10'b1010101011;
+            2'b00: dout <= 10'b1101010100;
+            2'b01: dout <= 10'b0010101011;
+            2'b10: dout <= 10'b0101010100;
+            2'b11: dout <= 10'b1010101011;
         endcase
     end else begin
         if ((N1(D) > 4) || ((N1(D) == 4) && (D[0] == 0))) begin
