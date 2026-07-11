@@ -207,16 +207,33 @@ wire [7:0] hdmi_g = {g, 5'b00000};
 wire [7:0] hdmi_b = {b, 5'b00000};
 wire       hdmi_de = ~(hblank | vblank);
 
+// Register video signals in clk_pixel domain to cross clock domains safely
+reg [7:0] hdmi_r_reg;
+reg [7:0] hdmi_g_reg;
+reg [7:0] hdmi_b_reg;
+reg       hdmi_de_reg;
+reg       hdmi_hs_reg;
+reg       hdmi_vs_reg;
+
+always @(posedge clk_pixel) begin
+    hdmi_r_reg  <= hdmi_r;
+    hdmi_g_reg  <= hdmi_g;
+    hdmi_b_reg  <= hdmi_b;
+    hdmi_de_reg <= hdmi_de;
+    hdmi_hs_reg <= hs;
+    hdmi_vs_reg <= vs;
+end
+
 hdmi_tx hdmi_tx_inst (
     .clk_pixel(clk_pixel),
     .clk_5x_pixel(clk_p5),
     .resetn(~core_reset),
-    .rgb_r(hdmi_r),
-    .rgb_g(hdmi_g),
-    .rgb_b(hdmi_b),
-    .de(hdmi_de),
-    .hsync(hs),
-    .vsync(vs),
+    .rgb_r(hdmi_r_reg),
+    .rgb_g(hdmi_g_reg),
+    .rgb_b(hdmi_b_reg),
+    .de(hdmi_de_reg),
+    .hsync(hdmi_hs_reg),
+    .vsync(hdmi_vs_reg),
     .tmds_clk_p(tmds_clk_p),
     .tmds_clk_n(tmds_clk_n),
     .tmds_d_p(tmds_d_p),
