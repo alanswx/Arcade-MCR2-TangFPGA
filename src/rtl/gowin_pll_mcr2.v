@@ -50,7 +50,7 @@ PLLA PLLA_inst (
 );
 
 defparam PLLA_inst.FCLKIN = "50";
-defparam PLLA_inst.IDIV_SEL = 1;
+defparam PLLA_inst.IDIV_SEL = 2;
 defparam PLLA_inst.FBDIV_SEL = 1;
 defparam PLLA_inst.CLKFB_SEL = "INTERNAL";
 defparam PLLA_inst.ODIV0_SEL = 8;
@@ -61,7 +61,7 @@ defparam PLLA_inst.ODIV3_SEL = 8;
 defparam PLLA_inst.ODIV4_SEL = 8;
 defparam PLLA_inst.ODIV5_SEL = 8;
 defparam PLLA_inst.ODIV6_SEL = 8;
-defparam PLLA_inst.MDIV_SEL = 16;
+defparam PLLA_inst.MDIV_SEL = 40;
 defparam PLLA_inst.MDIV_FRAC_SEL = 0;
 defparam PLLA_inst.CLKOUT0_EN = "TRUE";
 defparam PLLA_inst.CLKOUT1_EN = "TRUE";
