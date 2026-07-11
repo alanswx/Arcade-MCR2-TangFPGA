@@ -251,8 +251,8 @@ wire [7:0] test_r = test_de ? {test_hcnt[9:7], 5'b00000} : 8'd0;
 wire [7:0] test_g = test_de ? {test_hcnt[6:4], 5'b00000} : 8'd0;
 wire [7:0] test_b = test_de ? {test_vcnt[6:4], 5'b00000} : 8'd0;
 
-// Multiplex output based on reset2 button (H10) being pressed (defaulted to test pattern)
-wire use_test_pattern = 1'b1;
+// Multiplex output based on reset2 button (H10) being pressed (default to game core, S2 toggles test pattern)
+wire use_test_pattern = reset2;
 
 wire [7:0] final_r = use_test_pattern ? test_r : hdmi_r_reg;
 wire [7:0] final_g = use_test_pattern ? test_g : hdmi_g_reg;
