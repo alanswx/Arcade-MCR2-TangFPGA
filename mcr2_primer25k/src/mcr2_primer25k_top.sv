@@ -224,14 +224,14 @@ always @(posedge clk_pixel) begin
     hdmi_vs_reg <= vs;
 end
 
-// --- Diagnostic Test Pattern Generator (Standard 640x480 @ 60Hz timing) ---
-reg [9:0] test_hcnt = 0;
-reg [9:0] test_vcnt = 0;
+// --- Diagnostic Test Pattern Generator (Standard 1280x720 @ 30Hz timing) ---
+reg [10:0] test_hcnt = 0;
+reg [9:0]  test_vcnt = 0;
 
 always @(posedge clk_pixel) begin
-    if (test_hcnt == 799) begin
+    if (test_hcnt == 1649) begin
         test_hcnt <= 0;
-        if (test_vcnt == 524) begin
+        if (test_vcnt == 749) begin
             test_vcnt <= 0;
         end else begin
             test_vcnt <= test_vcnt + 1;
@@ -241,14 +241,15 @@ always @(posedge clk_pixel) begin
     end
 end
 
-wire test_hsync = ~((test_hcnt >= 640 + 16) && (test_hcnt < 640 + 16 + 96));
-wire test_vsync = ~((test_vcnt >= 480 + 10) && (test_vcnt < 480 + 10 + 2));
-wire test_de    = (test_hcnt < 640) && (test_vcnt < 480);
+// Active-high syncs for 720p standard timing
+wire test_hsync = (test_hcnt >= 1280 + 110) && (test_hcnt < 1280 + 110 + 40);
+wire test_vsync = (test_vcnt >= 720 + 5) && (test_vcnt < 720 + 5 + 5);
+wire test_de    = (test_hcnt < 1280) && (test_vcnt < 720);
 
 // Simple color bars / test pattern
-wire [7:0] test_r = test_de ? {test_hcnt[8:6], 5'b00000} : 8'd0;
-wire [7:0] test_g = test_de ? {test_hcnt[5:3], 5'b00000} : 8'd0;
-wire [7:0] test_b = test_de ? {test_vcnt[5:3], 5'b00000} : 8'd0;
+wire [7:0] test_r = test_de ? {test_hcnt[9:7], 5'b00000} : 8'd0;
+wire [7:0] test_g = test_de ? {test_hcnt[6:4], 5'b00000} : 8'd0;
+wire [7:0] test_b = test_de ? {test_vcnt[6:4], 5'b00000} : 8'd0;
 
 // Multiplex output based on reset2 button (H10) being pressed (defaulted to test pattern)
 wire use_test_pattern = 1'b1;
