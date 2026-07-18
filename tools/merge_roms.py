@@ -29,7 +29,8 @@ def build(zip_path, main_files, snd_files, gfx1_1_file, gfx1_2_file, gfx2_files,
     print(f"Reading ROMs from {zip_path}...")
     if not os.path.exists(zip_path):
         print(f"Error: {zip_path} not found!")
-        return
+        print("      (roms/ is gitignored - copy the MAME zip there by hand)")
+        return False
 
     with zipfile.ZipFile(zip_path, 'r') as z:
         # 1. Main CPU ROM (loaded at 0x0000, contiguous)
@@ -63,11 +64,12 @@ def build(zip_path, main_files, snd_files, gfx1_1_file, gfx1_2_file, gfx2_files,
     write_hex("rom_gfx1_2.hex", gfx1_2_data)
     write_hex("rom_gfx2.hex", gfx2_data)
     print("ROM generation and copying complete!")
+    return True
 
 
 def merge_shollow():
     # Satan's Hollow (MCR2): 48KB CPU, 12KB->16KB sound, 16KB bg, 32KB sprites
-    build(
+    return build(
         zip_path="roms/shollow.zip",
         main_files=["sh-pro.00", "sh-pro.01", "sh-pro.02",
                     "sh-pro.03", "sh-pro.04", "sh-pro.05"],
@@ -83,7 +85,7 @@ def merge_tron():
     # Tron (MCR2, "8/9" parent set, old-MAME names): 48KB CPU, 12KB->16KB
     # sound, 16KB bg, 32KB sprites. Sprite order per MAME gfx2 region:
     # vga(e1), vgb(dc1), vgc(cb1), vgd(a1 - named vga.a1 in old sets).
-    build(
+    return build(
         zip_path="roms/tron.zip",
         main_files=["pro0.d2", "scpu_pgb.d3", "scpu_pgc.d4",
                     "scpu_pgd.d5", "scpu_pge.d6", "scpu_pgf.d7"],
@@ -98,7 +100,7 @@ def merge_tron():
 def merge_domino():
     # Domino Man (MCR2): 32KB CPU, 16KB sound, 16KB bg, 32KB sprites.
     # The smaller CPU frees the BSRAM needed to enable the background tiles.
-    build(
+    return build(
         zip_path="roms/domino.zip",
         main_files=["dmanpg0.bin", "dmanpg1.bin", "dmanpg2.bin", "dmanpg3.bin"],
         snd_files=["dm-a7.snd", "dm-a8.snd", "dm-a9.snd", "dm-a10.snd"],
@@ -138,5 +140,10 @@ if __name__ == "__main__":
         sys.exit(1)
     print(f"=== Building ROMs for: {game} ===")
     merge_fn, define = GAMES[game]
-    merge_fn()
+    if not merge_fn():
+        # Do NOT write game_config.vh: leaving it pointing at a game whose
+        # ROM hex files were not generated produces a build that silently
+        # mixes one game's code with another's input map.
+        print(f"ROM generation FAILED - game_config.vh left unchanged.")
+        sys.exit(1)
     write_game_config(game, define)

@@ -57,8 +57,10 @@ Bitstream lands at `<board>/impl/pnr/<board>.fs`. Flash with Gowin Programmer
 
 ## ROMs
 
-MAME ROM zips live in `roms/` (not committed). Generate the hex tables from
-the **repo root**:
+MAME ROM zips live in `roms/` — **gitignored, so a fresh clone has none**;
+copy them in by hand on each machine (the script now aborts with exit 1 and
+leaves `game_config.vh` alone if the zip is missing, rather than producing a
+half-switched build). Generate the hex tables from the **repo root**:
 
 ```sh
 python3 tools/merge_roms.py domino    # default
