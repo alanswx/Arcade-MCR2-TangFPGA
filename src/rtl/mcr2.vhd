@@ -763,11 +763,41 @@ port map(
  q    => sp_buffer_ram2_do
 );
 
--- background graphics ROMs disabled for V1 to free up BSRAM blocks
-bg_graphx1_do <= x"00";
-bg_graphx2_do <= x"00";
+-- background tile graphics ROMs (gfx1): two 8KB planes, addressed by bg_code_line.
+-- Re-enabled for Domino Man, whose 32KB CPU ROM frees the BSRAM these need.
+-- Read on port A via INIT_FILE (port B is inert in the dpram ROM mode).
 bg_graphics_1_we <= '0';
 bg_graphics_2_we <= '0';
+
+bg_graphics_1 : entity work.dpram
+generic map( dWidth => 8, aWidth => 13, INIT_FILE => "rom_gfx1_1.hex")
+port map(
+ clk_a  => clock_vidn,
+ we_a   => '0',
+ addr_a => bg_code_line,
+ d_a    => x"00",
+ q_a    => bg_graphx1_do,
+ clk_b  => clock_vid,
+ we_b   => bg_graphics_1_we,
+ addr_b => dl_addr(12 downto 0),
+ d_b    => dl_data,
+ q_b    => open
+);
+
+bg_graphics_2 : entity work.dpram
+generic map( dWidth => 8, aWidth => 13, INIT_FILE => "rom_gfx1_2.hex")
+port map(
+ clk_a  => clock_vidn,
+ we_a   => '0',
+ addr_a => bg_code_line,
+ d_a    => x"00",
+ q_a    => bg_graphx2_do,
+ clk_b  => clock_vid,
+ we_b   => bg_graphics_2_we,
+ addr_b => dl_addr(12 downto 0),
+ d_b    => dl_data,
+ q_b    => open
+);
 
 -- sprite graphics ROM 1E/1D/1B/1A
 sprite_graphics : entity work.dpram

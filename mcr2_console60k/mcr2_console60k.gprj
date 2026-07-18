@@ -12,11 +12,33 @@
         <File path="../src/rtl/dpram.sv" type="file.verilog" enable="1"/>
         <File path="../src/rtl/gen_ram.sv" type="file.verilog" enable="1"/>
 
-        <!-- Clocks, Video, Audio cores -->
+        <!-- Clocks, Audio cores -->
         <File path="../src/rtl/gowin_pll_mcr2.v" type="file.verilog" enable="1"/>
-        <File path="../src/dvi_tx/tmds_encoder.sv" type="file.verilog" enable="1"/>
-        <File path="../src/dvi_tx/hdmi_tx.sv" type="file.verilog" enable="1"/>
+
+        <!-- USB HID host (gamepad input on USB-A port) -->
+        <File path="../src/usb/gowin_pll_usb.v" type="file.verilog" enable="1"/>
+        <File path="../src/usb/usb_hid_host.v" type="file.verilog" enable="1"/>
+        <File path="../src/usb/usb_hid_host_rom.v" type="file.verilog" enable="1"/>
         <File path="../src/audio/ds_dac.sv" type="file.verilog" enable="1"/>
+        <File path="../src/rtl/uart_beacon.sv" type="file.verilog" enable="1"/>
+
+        <!-- DDR3 framebuffer + 720p HDMI w/ audio (nand2mario/gbatang) -->
+        <File path="../src/ddr3fb/ddr3_framebuffer.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/ddr3_memory_interface.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/pll_27.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/pll_ddr3.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/pll_hdmi.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/pll_mDRP_intf.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/audio_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/audio_sample_packet.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/hdmi.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/packet_assembler.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/packet_picker.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/serializer.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/source_product_description_info_frame.sv" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/hdmi/tmds_channel.sv" type="file.verilog" enable="1"/>
 
         <!-- MCR2 Arcade Core files (VHDL/SystemVerilog) -->
         <File path="../src/rtl/mcr2.vhd" type="file.vhdl" enable="1"/>

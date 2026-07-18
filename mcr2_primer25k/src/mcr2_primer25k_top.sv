@@ -39,8 +39,8 @@ module mcr2_primer25k_top (
 );
 
 // --- Clock Generation ---
-wire clk_sys;  // 40 MHz (Core system clock)
-wire clk_p5;   // 100 MHz (HDMI 5x pixel clock)
+wire clk_sys;  // 40 MHz  (Core system clock, generates 20 MHz pixel enable)
+wire clk_p5;   // 125 MHz (HDMI 5x pixel clock)
 wire pll_locked;
 
 gowin_pll_mcr2 pll_inst (
@@ -50,7 +50,7 @@ gowin_pll_mcr2 pll_inst (
     .lock(pll_locked)
 );
 
-// Gowin Clock Divider to generate clk_pixel (20 MHz) from clk_p5 (100 MHz)
+// Gowin Clock Divider to generate clk_pixel (25 MHz) from clk_p5 (125 MHz)
 wire clk_pixel;
 CLKDIV clk_div_inst (
     .CLKOUT(clk_pixel),
@@ -205,23 +205,35 @@ assign cab_hs    = hs;
 assign cab_vs    = vs;
 assign cab_csync = cs;
 
-// --- HDMI Output Wrapper with 720p30 Scan Doubler & Padder ---
-// Since the monitor requires 720p30 (37.5 MHz pixel clock) to lock successfully,
-// we buffer the 512-pixel active lines from the game core in a dual-port BRAM
-// line buffer, then read them out twice as fast (pixel doubled) and centered
-// inside a standard compliant 1280x720 @ 30Hz frame.
+// --- HDMI Output Wrapper: native MCR video -> standard 640x480@60 (VGA) ---
+// The MCR2 core in 31kHz progressive mode already emits a 512x480 active image
+// at a 31.5kHz line rate / 60Hz frame rate (634x525 total @ 20MHz). That maps
+// cleanly onto DMT 640x480@60 (800x525 total @ 25MHz, negative H/V sync) - a
+// mode every HDMI display supports. We just conform the horizontal blanking to
+// the 800-pixel standard and center the 512-wide game inside the 640 active
+// pixels. A two-line ping-pong buffer crosses the 20MHz->25MHz clock domains.
 
-// Dual-port line buffer: 1024 words of 9 bits
+// Dual-port line buffer: 2 lines x 512 pixels of 9-bit RGB
 reg [8:0] line_buffer [1023:0];
 
-// Write side: game core writes active pixels at clk_sys (37.5 MHz)
+// The core's RGB output lags its hcnt by a fixed pipeline delay (tile fetch ->
+// gfx ROM -> palette -> output registers). Indexing the buffer by raw hcnt makes
+// the first CAP_DELAY entries capture the PREVIOUS line still draining through
+// the pipeline -> the garbled strip on the left edge. Compensate by shifting the
+// write index back by CAP_DELAY, and let the capture run a few pixels into hblank
+// so the last CAP_DELAY real pixels (which emerge during early hblank) are kept.
+// Tune CAP_DELAY by +/-1 if a thin sliver remains on the left/right edge.
+localparam [9:0] CAP_DELAY = 10'd13;
+wire [9:0] cap_idx = core_hcnt - CAP_DELAY;
+
+// Write side: game core writes active pixels at clk_sys (40 MHz / 20 MHz pixel)
 always @(posedge clk_sys) begin
-    if (!vblank && !hblank && (core_hcnt < 512)) begin
-        line_buffer[{core_vcnt[0], core_hcnt[8:0]}] <= {r, g, b};
+    if (!vblank && (core_hcnt >= CAP_DELAY) && (core_hcnt < CAP_DELAY + 10'd512)) begin
+        line_buffer[{core_vcnt[0], cap_idx[8:0]}] <= {r, g, b};
     end
 end
 
-// Synchronize the write buffer index to clk_pixel (37.5 MHz) domain
+// Synchronize the write-line select into the clk_pixel (25 MHz) domain
 reg core_vcnt0_sync1 = 0;
 reg core_vcnt0_sync2 = 0;
 always @(posedge clk_pixel) begin
@@ -229,17 +241,56 @@ always @(posedge clk_pixel) begin
     core_vcnt0_sync2 <= core_vcnt0_sync1;
 end
 
-// Read side: we read from the line buffer that is NOT currently being written to
+// Read side: read the line NOT currently being written
 wire read_buffer_idx = ~core_vcnt0_sync2;
 
-// --- 720p30 Compliant Sync & Scan Coordinates Generator (37.5 MHz) ---
-reg [10:0] test_hcnt = 0;
-reg [9:0]  test_vcnt = 0;
+// --- 640x480@~60 (VGA-like) sync/scan coordinate generator @ 25 MHz ---
+// Horizontal: 640 active + 16 FP + 96 sync + 41 BP = 793 total
+// Vertical:   480 active + 10 FP +  2 sync + 33 BP = 525 total
+// Both H and V sync are ACTIVE LOW per the DMT 640x480@60 standard.
+//
+// H total is 793 (not the standard 800) on purpose: the game core emits one
+// line every 634 core-pixels @ 20MHz = 31.55kHz, and 634*(25/20) = 792.5, so
+// 793 output pixels @ 25MHz makes the output line rate track the core to within
+// 0.06% (vs 0.94% at 800). That near-lock stops the ping-pong line buffer from
+// switching buffers mid-visible-line, which is what caused the wobble / left-edge
+// echo. 793 (rounding up) keeps the output slightly slower than the core, so the
+// line being read is always already complete. Monitors still lock (640 active,
+// ~31.5kHz/~60Hz, just slightly tighter blanking than DMT).
+localparam H_TOTAL = 793;
+reg [9:0] test_hcnt = 0;
+reg [9:0] test_vcnt = 0;
+
+// --- Vertical genlock ---------------------------------------------------------
+// The core frame rate (20MHz/(634*525) = 60.09Hz) does not exactly equal the
+// free-running 640x480 output rate (25MHz/(800*525) = 59.52Hz), so a free-running
+// output would slip ~0.56 lines-of-phase per frame and slowly roll vertically.
+// Lock the output frame to the core: restart the output vertical counter at the
+// start of every core frame (falling edge of core vblank = first active line).
+// The horizontal counter is never disturbed, so HSync/refresh stay clean; only
+// the vertical phase is corrected, and only on a line boundary. This is bypassed
+// in test-pattern mode (S2) so the color bars are a standalone 640x480 signal.
+reg core_vbl_s1 = 1, core_vbl_s2 = 1, core_vbl_s3 = 1;
+always @(posedge clk_pixel) begin
+    core_vbl_s1 <= vblank;
+    core_vbl_s2 <= core_vbl_s1;
+    core_vbl_s3 <= core_vbl_s2;
+end
+wire core_frame_start = core_vbl_s3 & ~core_vbl_s2; // core vblank 1->0 : new frame
+
+reg frame_start_pending = 0;
+always @(posedge clk_pixel) begin
+    if (core_frame_start)              frame_start_pending <= 1'b1;
+    else if (test_hcnt == H_TOTAL - 1) frame_start_pending <= 1'b0;
+end
 
 always @(posedge clk_pixel) begin
-    if (test_hcnt == 1649) begin
+    if (test_hcnt == H_TOTAL - 1) begin
         test_hcnt <= 0;
-        if (test_vcnt == 749) begin
+        // ~reset2 == game mode: genlock vertical restart to the core frame.
+        if (frame_start_pending && !reset2) begin
+            test_vcnt <= 0;
+        end else if (test_vcnt == 524) begin
             test_vcnt <= 0;
         end else begin
             test_vcnt <= test_vcnt + 1;
@@ -249,29 +300,28 @@ always @(posedge clk_pixel) begin
     end
 end
 
-// Active-high syncs for compliant 720p30 timing
-wire test_hsync = (test_hcnt >= 1280 + 110) && (test_hcnt < 1280 + 110 + 40);
-wire test_vsync = (test_vcnt >= 720 + 5) && (test_vcnt < 720 + 5 + 5);
-wire test_de    = (test_hcnt < 1280) && (test_vcnt < 720);
+wire test_de    = (test_hcnt < 640) && (test_vcnt < 480);
+wire test_hsync = ~((test_hcnt >= 640 + 16) && (test_hcnt < 640 + 16 + 96)); // active low
+wire test_vsync = ~((test_vcnt >= 480 + 10) && (test_vcnt < 480 + 10 + 2));  // active low
 
-// Simple color bars diagnostic pattern (fills full 720p active area)
-wire [7:0] bar_r = test_de ? {test_hcnt[9:7], 5'b00000} : 8'd0;
-wire [7:0] bar_g = test_de ? {test_hcnt[6:4], 5'b00000} : 8'd0;
+// Simple color-bars diagnostic pattern (fills the full 640x480 active area)
+wire [7:0] bar_r = test_de ? {test_hcnt[8:6], 5'b00000} : 8'd0;
+wire [7:0] bar_g = test_de ? {test_hcnt[5:3], 5'b00000} : 8'd0;
 wire [7:0] bar_b = test_de ? {test_vcnt[6:4], 5'b00000} : 8'd0;
 
-// Game video centering inside 720p30 frame:
-// Horizontally: 512 * 2 = 1024 active pixels (from 128 to 1151).
-// Vertically: 480 active lines (from 120 to 599).
-wire game_active_h = (test_hcnt >= 128) && (test_hcnt < 1152);
-wire game_active_v = (test_vcnt >= 120) && (test_vcnt < 600);
+// Game centering: 512-wide game inside 640 active -> 64px left margin.
+// 480 game lines fill the 480 active lines exactly.
+wire game_active_h = (test_hcnt >= 64) && (test_hcnt < 64 + 512); // 64..575
+wire game_active_v = (test_vcnt < 480);
 wire game_active   = game_active_h && game_active_v;
 
-wire [9:0] test_hcnt_offset = test_hcnt - 10'd128;
-wire [8:0] test_hcnt_core   = test_hcnt_offset[9:1]; // divide by 2 (pixel doubling)
+// Read address leads the display window by one pixel to absorb the registered
+// BRAM read latency, so column 0 lands exactly at test_hcnt == 64.
+wire [9:0] test_hcnt_core = test_hcnt - 10'd63; // pixel (test_hcnt-64) is presented next cycle
 
 reg [8:0] buffer_out;
 always @(posedge clk_pixel) begin
-    buffer_out <= line_buffer[{read_buffer_idx, test_hcnt_core}];
+    buffer_out <= line_buffer[{read_buffer_idx, test_hcnt_core[8:0]}];
 end
 
 wire [7:0] game_r = game_active ? {buffer_out[8:6], 5'b00000} : 8'd0;

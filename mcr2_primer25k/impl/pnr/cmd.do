@@ -1,9 +1,9 @@
--d /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/impl/gwsynthesis/mcr2_primer25k.vg
+-d /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/impl/gwsynthesis/mcr2_primer25k.vg
 -p GW5A-25A-MBGA121N-1
 -pn GW5A-LV25MG121NC1/I0
--cst /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/src/mcr2_primer25k.cst
--cfg /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/impl/pnr/device.cfg
--sdc /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/src/mcr2_primer25k.sdc
+-cst /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/src/mcr2_primer25k.cst
+-cfg /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/impl/pnr/device.cfg
+-sdc /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/src/mcr2_primer25k.sdc
 -bit
 -tr
 -ph

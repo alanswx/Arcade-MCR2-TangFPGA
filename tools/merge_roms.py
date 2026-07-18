@@ -1,62 +1,60 @@
 import os
+import sys
 import zipfile
-import shutil
 
-def merge_shollow():
-    zip_path = "roms/shollow.zip"
-    
-    # Target directories where Gowin compiler expects files based on instantiation paths
-    top_src_dir = "mcr2_primer25k/src"
-    rtl_src_dir = "src/rtl"
-    
+# Target directories where the Gowin compiler expects the hex files
+# (INIT_FILE paths resolve relative to the instantiating source file's
+# directory: the per-board tops use bare names next to themselves, and
+# mcr2.vhd's gfx ROMs resolve against src/rtl/).
+OUT_DIRS = [
+    "mcr2_primer25k/src",
+    "mcr2_console60k/src",
+    "mcr2_console138k/src",
+    "src/rtl",
+]
+
+
+def write_hex(filename, data):
+    for out_dir in OUT_DIRS:
+        os.makedirs(out_dir, exist_ok=True)
+        path = os.path.join(out_dir, filename)
+        with open(path, "w") as f:
+            for b in data:
+                f.write(f"{b:02x}\n")
+        print(f"Wrote {path} ({len(data)} bytes)")
+
+
+def build(zip_path, main_files, snd_files, gfx1_1_file, gfx1_2_file, gfx2_files,
+          snd_pad_to=None):
     print(f"Reading ROMs from {zip_path}...")
     if not os.path.exists(zip_path):
         print(f"Error: {zip_path} not found!")
         return
 
-    # Satan's Hollow Part Map
-    main_files = ["sh-pro.00", "sh-pro.01", "sh-pro.02", "sh-pro.03", "sh-pro.04", "sh-pro.05"]
-    snd_files = ["sh-snd.01", "sh-snd.02", "sh-snd.03"]
-    gfx1_1_file = "sh-bg.00"
-    gfx1_2_file = "sh-bg.01"
-    gfx2_files = ["sh-fg.00", "sh-fg.01", "sh-fg.02", "sh-fg.03"]
-
     with zipfile.ZipFile(zip_path, 'r') as z:
-        # 1. Main ROM: 48KB (0x0000 - 0xBFFF)
+        # 1. Main CPU ROM (loaded at 0x0000, contiguous)
         main_data = bytearray()
         for fn in main_files:
             main_data.extend(z.read(fn))
-        assert len(main_data) == 48 * 1024
-        
-        # 2. Sound ROM: 16KB (0xC000 - 0xFFFF)
+
+        # 2. Sound ROM (SSIO Z80), optionally zero-padded to a power-of-two size
         snd_data = bytearray()
         for fn in snd_files:
             snd_data.extend(z.read(fn))
-        assert len(snd_data) == 12 * 1024
-        snd_data.extend(b'\x00' * (4 * 1024))
-        assert len(snd_data) == 16 * 1024
+        if snd_pad_to:
+            snd_data.extend(b'\x00' * (snd_pad_to - len(snd_data)))
 
-        # 3. GFX1_1 (8KB) and GFX1_2 (8KB)
+        # 3. Background tile graphics (gfx1): two 8KB planes
         gfx1_1_data = z.read(gfx1_1_file)
         gfx1_2_data = z.read(gfx1_2_file)
-        assert len(gfx1_1_data) == 8 * 1024
-        assert len(gfx1_2_data) == 8 * 1024
 
-        # 4. GFX2 (32KB)
+        # 4. Sprite graphics (gfx2): 32KB
         gfx2_data = bytearray()
         for fn in gfx2_files:
             gfx2_data.extend(z.read(fn))
-        assert len(gfx2_data) == 32 * 1024
 
-    # Helper function to write hex files to both target directories
-    def write_hex(filename, data):
-        for out_dir in [top_src_dir, rtl_src_dir]:
-            os.makedirs(out_dir, exist_ok=True)
-            path = os.path.join(out_dir, filename)
-            with open(path, "w") as f:
-                for b in data:
-                    f.write(f"{b:02x}\n")
-            print(f"Wrote {path} ({len(data)} bytes)")
+    print(f"  main(cpu)={len(main_data)}  snd={len(snd_data)}  "
+          f"gfx1_1={len(gfx1_1_data)}  gfx1_2={len(gfx1_2_data)}  gfx2={len(gfx2_data)}")
 
     write_hex("rom_main.hex", main_data)
     write_hex("rom_snd.hex", snd_data)
@@ -66,5 +64,79 @@ def merge_shollow():
     write_hex("rom_gfx2.hex", gfx2_data)
     print("ROM generation and copying complete!")
 
+
+def merge_shollow():
+    # Satan's Hollow (MCR2): 48KB CPU, 12KB->16KB sound, 16KB bg, 32KB sprites
+    build(
+        zip_path="roms/shollow.zip",
+        main_files=["sh-pro.00", "sh-pro.01", "sh-pro.02",
+                    "sh-pro.03", "sh-pro.04", "sh-pro.05"],
+        snd_files=["sh-snd.01", "sh-snd.02", "sh-snd.03"],
+        gfx1_1_file="sh-bg.00",
+        gfx1_2_file="sh-bg.01",
+        gfx2_files=["sh-fg.00", "sh-fg.01", "sh-fg.02", "sh-fg.03"],
+        snd_pad_to=16 * 1024,
+    )
+
+
+def merge_tron():
+    # Tron (MCR2, "8/9" parent set, old-MAME names): 48KB CPU, 12KB->16KB
+    # sound, 16KB bg, 32KB sprites. Sprite order per MAME gfx2 region:
+    # vga(e1), vgb(dc1), vgc(cb1), vgd(a1 - named vga.a1 in old sets).
+    build(
+        zip_path="roms/tron.zip",
+        main_files=["pro0.d2", "scpu_pgb.d3", "scpu_pgc.d4",
+                    "scpu_pgd.d5", "scpu_pge.d6", "scpu_pgf.d7"],
+        snd_files=["ssi_0a.a7", "ssi_0b.a8", "ssi_0c.a9"],
+        gfx1_1_file="scpu_bgg.g3",
+        gfx1_2_file="scpu_bgh.g4",
+        gfx2_files=["vga.e1", "vgb.dc1", "vgc.cb1", "vga.a1"],
+        snd_pad_to=16 * 1024,
+    )
+
+
+def merge_domino():
+    # Domino Man (MCR2): 32KB CPU, 16KB sound, 16KB bg, 32KB sprites.
+    # The smaller CPU frees the BSRAM needed to enable the background tiles.
+    build(
+        zip_path="roms/domino.zip",
+        main_files=["dmanpg0.bin", "dmanpg1.bin", "dmanpg2.bin", "dmanpg3.bin"],
+        snd_files=["dm-a7.snd", "dm-a8.snd", "dm-a9.snd", "dm-a10.snd"],
+        gfx1_1_file="dmanbg0.bin",
+        gfx1_2_file="dmanbg1.bin",
+        gfx2_files=["dmanfg0.bin", "dmanfg1.bin", "dmanfg2.bin", "dmanfg3.bin"],
+    )
+
+
+GAMES = {
+    "shollow": (merge_shollow, "GAME_SHOLLOW"),
+    "domino": (merge_domino, "GAME_DOMINO"),
+    "tron": (merge_tron, "GAME_TRON"),
+}
+
+# Board src dirs whose tops `include the generated game_config.vh
+CONFIG_DIRS = [
+    "mcr2_console60k/src",
+    "mcr2_console138k/src",
+]
+
+
+def write_game_config(game, define):
+    for out_dir in CONFIG_DIRS:
+        path = os.path.join(out_dir, "game_config.vh")
+        with open(path, "w") as f:
+            f.write("// Auto-generated by tools/merge_roms.py -- do not edit.\n")
+            f.write(f"// Selects the per-game input/DIP mapping for: {game}\n")
+            f.write(f"`define {define}\n")
+        print(f"Wrote {path} ({define})")
+
+
 if __name__ == "__main__":
-    merge_shollow()
+    game = sys.argv[1] if len(sys.argv) > 1 else "domino"
+    if game not in GAMES:
+        print(f"Unknown game '{game}'. Choices: {', '.join(GAMES)}")
+        sys.exit(1)
+    print(f"=== Building ROMs for: {game} ===")
+    merge_fn, define = GAMES[game]
+    merge_fn()
+    write_game_config(game, define)

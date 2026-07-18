@@ -1,0 +1,209 @@
+# CLAUDE.md
+
+Bally Midway MCR2 arcade core (MiSTer/Cyclone V origin) ported to Sipeed Tang
+Gowin FPGA boards as standalone, hardcoded builds (no HPS/ARM download bus —
+ROMs are baked into BSRAM via `INIT_FILE` hex tables).
+
+Current game: **Domino Man** (default). Satan's Hollow also supported (no
+background tiles on the 25K — ROM budget). The 60K top carries the
+MAME-verified Domino Man input map (Button 1 = IP0 bit 4, 4-way stick =
+IP1[3:0], DIP IP3 = 0x3E for upright — 0xFF means cocktail!); the 25K top
+still has the Satan's Hollow map.
+
+## Board projects
+
+| Dir | Board | FPGA | Status |
+|---|---|---|---|
+| `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract mode over HDMI, 56/56 BSRAM, timing met |
+| `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; per-game configs (Domino/Tron/Shollow); DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap |
+| `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K |
+
+Shared, platform-independent code lives in `src/`:
+- `src/rtl/` — MCR2 core (`mcr2.vhd`), T80 Z80, Z80CTC, PLL (`gowin_pll_mcr2.v`), RAM wrappers (`dpram.sv`)
+- `src/dvi_tx/` — TMDS encoder + OSER10-based HDMI serializer
+- `src/audio/` — delta-sigma PWM DAC
+- `src/usb/` — nand2mario `usb_hid_host` (MIT, vendored 2026-07) + 12 MHz
+  PLLA (`gowin_pll_usb.v`). Keep `usb_hid_host_rom.hex` next to its `.v` —
+  `$readmemh`/`INIT_FILE` resolve relative to the source file's directory.
+- `src/ddr3fb/` — nand2mario/gbatang DDR3 framebuffer (vendored 2026-07,
+  GPLv3 — see LICENSE.gbatang): `ddr3_framebuffer.v` + Gowin DDR3 IP +
+  27 MHz/DDR3/HDMI PLLAs + hdl-util HDMI stack with audio. Used by the 60K
+  only (`dvi_tx/` remains the 25K's HDMI path).
+- Each board dir has only: `.gprj`, `build.tcl`, `src/<board>_top.sv`, `.cst`, `.sdc`
+
+Because the PLL and `mcr2.vhd` are shared, fixes there apply to every board
+automatically; the per-board top/SDC/CST must be kept in sync by hand (the 25K
+top is the reference implementation).
+
+## Build (headless, macOS)
+
+GowinIDE bundles Tcl; the CLI needs dylib/framework paths set (`$ORIGIN`
+doesn't resolve on macOS):
+
+```sh
+GWLIB=/Applications/GowinIDE.app/Contents/Resources/Gowin_EDA/IDE/lib
+GW=/Applications/GowinIDE.app/Contents/Resources/Gowin_EDA/IDE/bin/gw_sh
+cd mcr2_primer25k        # or mcr2_console60k
+DYLD_LIBRARY_PATH="$GWLIB" DYLD_FRAMEWORK_PATH="$GWLIB" "$GW" build.tcl
+```
+
+Bitstream lands at `<board>/impl/pnr/<board>.fs`. Flash with Gowin Programmer
+(GUI) or `openFPGALoader` if installed.
+
+### Post-build sanity checks (do these every build)
+1. **No `PA1019`** (PLL VCO out of range) warning in the log.
+2. 25K only: `BSRAM ... 56/56` in `impl/pnr/*.rpt.txt` — must not exceed 56.
+3. Positive SETUP and HOLD slack in `impl/pnr/*.timing_paths`.
+
+## ROMs
+
+MAME ROM zips live in `roms/` (not committed). Generate the hex tables from
+the **repo root**:
+
+```sh
+python3 tools/merge_roms.py domino    # default
+python3 tools/merge_roms.py tron
+python3 tools/merge_roms.py shollow
+```
+
+Writes `rom_*.hex` into every board's `src/` and into `src/rtl/`, **and**
+generates `game_config.vh` in the console board dirs, which the 60K top
+`include`s to select the matching per-game input/DIP mapping (`GAME_TRON`
+etc.). ROMs and input map therefore always switch together — run the script,
+then rebuild. Gowin resolves `INIT_FILE`/`include` relative to the
+**instantiating source file's directory**: the board tops (`rom_main.hex`,
+`rom_snd.hex`, `game_config.vh`) resolve next to themselves; the gfx ROMs
+instantiated inside `mcr2.vhd` (`rom_gfx1_*.hex`, `rom_gfx2.hex`) resolve
+against `src/rtl/`. That's why the script writes to multiple dirs.
+(`src/roms/*.hex` is a stale Satan's Hollow set from the initial port — do
+not point new code at it.)
+
+Prebuilt flashable images are kept in `bitstreams/` (e.g.
+`console60k_tron.fs`, `console60k_domino.fs`) so switching games on the
+board is just a reflash, no rebuild. Regenerate them after RTL changes.
+
+Per-game notes (bit maps verified against MAME `mcr.cpp`):
+- **Domino Man** — 4-way stick (IP1), Button 1 = IP0 bit 4, DIPs 0x3E.
+- **Tron** — 8-way stick on **IP2**, aim dial (absolute 8-bit spinner) on
+  IP1 via `spinner.sv` (pad X/Y rotate; `spin_in` reserved for a USB mouse),
+  trigger = IP0 bit 4, DIPs 0x80. MAME marks the dial PORT_REVERSE — if aim
+  feels inverted, swap the spinner's minus/plus hookup.
+- **Satan's Hollow** — fire/shield/right/left on IP1 low nibble, DIPs 0xFF.
+
+## Hard-won constraints — do not regress these
+
+### PLL (`src/rtl/gowin_pll_mcr2.v`)
+GW5A PLLA VCO **must stay within 700–1400 MHz**. Current config: 50 MHz in,
+MDIV 20 → VCO 1000 MHz; ODIV0 8 → `clk_p5` 125 MHz (TMDS 5× bit clock);
+ODIV1 25 → `clk_sys` 40 MHz (core). `clk_pixel` = 25 MHz via `CLKDIV`
+DIV_MODE=5. A 1500 MHz VCO was the root cause of the original "rolling screen"
+(every derived clock silently wrong, core at ~75 MHz).
+
+### SDC (per board)
+The `create_generated_clock` lines for `clk_sys`/`clk_pixel` and the
+`set_clock_groups -asynchronous` between them are **required**. Without them
+the pixel domain falls back to a 100 MHz default and reports false setup
+violations. Do not remove; instance names (`pll_inst/PLLA_inst/CLKOUT1`,
+`clk_div_inst/CLKOUT`) must match the top.
+
+### HDMI video — 60K: DDR3 framebuffer (current)
+The 60K top streams the core's native pixels (512×480, RGB444, one `fb_we`
+per 20 MHz pixel, `CAP_DELAY=13` capture-window shift) into
+`ddr3_framebuffer` (gbatang), which upscales to 1280×720@60 HDMI with audio
+— fully decoupled from core timing: no shimmer, no genlock, and HDMI stays
+alive in 15 kHz mode (capture height switches to 240). `disp_width=960`
+gives 4:3. The framebuffer generates its own 297 MHz DDR3 + 74.25/371.25 MHz
+HDMI clocks from a 27 MHz PLLA; the SDC declares `clk4x`/`clk1x` on
+`fb_inst/` nets and cuts them from `clk_sys` (the internal async FIFO is the
+crossing). Costs ~15 BSRAM + ~3.5k LUT; 5/8 PLLAs used.
+
+### HDMI video pipeline — 25K only (legacy line-buffer approach)
+The core natively emits 634×525 @ 20 MHz (512×480 active, 31.5 kHz/60.09 Hz)
+in `tv15Khz_mode=0`. The 25K conforms it to 640×480@~60 via a 2-line
+ping-pong buffer (clk_sys → clk_pixel). Three deliberate oddities:
+- **`H_TOTAL = 793`** (not 800): matches output line rate to the core within
+  0.06%, minimizing mid-line buffer switches (shimmer). Don't "fix" to 800.
+- **Vertical genlock**: output vcnt restarts on core vblank falling edge —
+  prevents slow vertical roll from the residual rate mismatch.
+- **`CAP_DELAY = 13`**: compensates the core's RGB-vs-hcnt pipeline lag.
+  Tuning: sliver on left edge → increase; on right edge → decrease.
+
+Residual faint shimmer is a known limit of the line-buffer approach on the
+25K (no room for a frame buffer there).
+
+### BSRAM budget (25K)
+56 blocks total. Domino Man fits exactly (CPU 16 + sound 8 + bg 2×4 + sprites
+16 + core RAM/line buffer ~8). Satan's Hollow's 48 KB CPU ROM forces dropping
+the bg tile ROMs. `dpram` in ROM mode reads only port A; the `dl_*` download
+bus is inert in these standalone builds.
+
+### Buttons / diagnostics
+S1 = reset. S2 (`reset2`) = free-running 640×480 color-bar test pattern
+(genlock bypassed) and also pulses Coin 1.
+
+### Analog video (60K): PmodVGA on J10
+`vga_r/g/b[3:0]` (3:3:3 core color MSB-replicated to 4:4:4) + `vga_hs/vs`,
+jumper-wired per the recipe in `mcr2_console60k.cst`. `mode15_n` strap
+(J10-37): open = 31 kHz progressive; GND = native 15 kHz (HS pin carries
+csync, HDMI intentionally falls back to color bars because the line-buffer
+scaler can't track 15 kHz timing). The J10/SDRAM1 balls overlap CPU/SSPI
+config pins → `build.tcl` needs the `-use_*_as_gpio` option block (already
+there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
+
+## Docs map
+
+- `handoff_v3_video_and_domino.md` — **most current**: video pipeline
+  deep-dive, Domino POC, ROM-fit table for all MCR games, paths forward.
+- `handoff_v2_design.md` — SDRAM/V2 plan, shield electrical spec, MCR
+  J2/J3/J4/J5 connector pinouts.
+- `board_comparison_and_bom.md` — board comparison + shield BOM.
+- `pcb_design.md` — Universal MCR shield PCB spec; generator at
+  `tools/generate_pcb.py` (run with KiCad's bundled python) →
+  `mcr_shield.kicad_pcb`.
+- `docs/universal_mcr_shield_spec.md` — **consolidated shield spec** (net
+  table, electrical, pin budget); supersedes the electrical sections of the
+  two docs above for new work.
+- `docs/mcr_game_input_matrix.md` — machine-readable transcription of the
+  pinout matrix PDF + MAME-verified SSIO bit maps; use it when porting a
+  new game.
+- `docs/MCR_Master_Pinouts.pdf` — master MCR cabinet pinout matrix (the
+  original source for the two docs above). Confirms per-game J2/J3/
+  J4/J5 usage; e.g. Domino Man = 4-way joystick + 1 button ("Place/Strike").
+- `docs/pinrefs/` — known-good Tang Console 60K / Mega 60K constraint files
+  fetched from nand2mario's nestang/snestang/gbatang and Sipeed's NEO_DOCK
+  examples; the authority for 60K pin questions (USB, SD, SDRAM, DDR3,
+  PMODs, UART).
+- `docs/Tang_Mega_60K_Console_32001{A,C}__Schematics.pdf` — official dock
+  schematics (rev A and C). Sheet 4/6 = SOM connector ball maps, sheet 8 =
+  the two 2×20 headers (J9 "SDRAM0" near PCIe, J10 "SDRAM1"/GBA near
+  PMODs). J10's full pin↔ball table is transcribed in
+  `universal_mcr_shield_spec.md` §4a.
+- `README.md` / `walkthrough.md` — overview + GUI build steps (partly stale:
+  written before the 60K/138K backlog was known).
+
+## Gotchas
+
+- **IDE builds need `impl/<project>_process_config.json` with `"TopModule"`
+  set** (the `.gprj` does not store it). Without it, GowinSynthesis auto-picks
+  an uninstantiated library module (e.g. `T80pa`) as top and PnR fails with
+  PA2024 "ports exceed the resource limit". The headless `build.tcl` flow is
+  immune (passes `-top_module` explicitly).
+- **Bank 9 is a 1.5 V bank on the 60K once DDR3 is used** (the DDR3 data
+  group lives there). Anything on Bank 9 balls (user keys AA13/AB13, Y12,
+  Y13, Y14, W11…) must be `IO_TYPE=LVCMOS15 BANK_VCCIO=1.5` — LVCMOS33
+  there fails PnR with CT1136 bank conflicts.
+- Tang Console 60K quirks: user keys are **active low** (the 60K top inverts
+  them; the 25K's are active high), clock is 50 MHz on V22, and
+  `-device_version B` is required. The USB-A D+/D− lines land on FPGA pins
+  (usb1: H13/G13, usb2: M15/M16) with the 15 kΩ host pulldowns already on the
+  board — ready for nand2mario's `usb_hid_host`. Tang SDRAM module chip
+  select is F21 on the Console (F19 on the Mega 60K dock), and F19/F20 are
+  currently used as PMOD1 button inputs — reassign if the SDRAM module goes in.
+- Cabinet video/audio pins in the 60K CST are marked PROVISIONAL — re-verify
+  header positions against the Sipeed schematic before wiring a shield.
+- The 138K project top/SDC are still the pre-fix architecture (direct
+  core→HDMI, no line buffer). Port from the 60K top when needed.
+- `impl/` outputs are committed in this repo; expect large binary diffs after
+  builds.
+- Working-tree changes are often intentionally uncommitted during bring-up;
+  check `git status` before assuming HEAD reflects the working design.

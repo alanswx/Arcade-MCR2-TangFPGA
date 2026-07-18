@@ -10,3 +10,22 @@ mcr2_primer25k/impl/temp/
 roms/
 mcr2_primer25k/src/*.hex
 mcr2_primer25k/src/roms/*.hex
+
+# Console 60K/138K: same conventions as the 25K project
+mcr2_console60k/impl/gwsynthesis/
+mcr2_console60k/impl/temp/
+mcr2_console60k/impl/pnr/
+mcr2_console60k/src/*.hex
+mcr2_console138k/impl/
+mcr2_console138k/src/*.hex
+src/rtl/rom_*.hex
+
+# Third-party reference bitstreams (fetched, not ours)
+bitstreams/reference/
+
+# Editor/tool clutter and local backups
+.history/
+scratch/
+test-backups/
+mcr_shield-backups/
+*.kicad_prl

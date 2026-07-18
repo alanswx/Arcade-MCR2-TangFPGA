@@ -5,34 +5,34 @@
 1. PnR Messages
 
   <Report Title>: PnR Report
-  <Design File>: /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/impl/gwsynthesis/mcr2_primer25k.vg
-  <Physical Constraints File>: /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/src/mcr2_primer25k.cst
-  <Timing Constraints File>: /Users/alans/Documents/development/TangPrimer-25K-example/mcr2_primer25k/src/mcr2_primer25k.sdc
+  <Design File>: /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/impl/gwsynthesis/mcr2_primer25k.vg
+  <Physical Constraints File>: /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/src/mcr2_primer25k.cst
+  <Timing Constraints File>: /Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/src/mcr2_primer25k.sdc
   <Tool Version>: V1.9.11.03 Education
   <Part Number>: GW5A-LV25MG121NC1/I0
   <Device>: GW5A-25
   <Device Version>: A
-  <Created Time>:Sat Jul  4 23:25:31 2026
+  <Created Time>:Mon Jul 13 08:25:02 2026
 
 
 2. PnR Details
 
   Running placement:
-    Placement Phase 0: CPU time = 0h 0m 0.454s, Elapsed time = 0h 0m 0.442s
-    Placement Phase 1: CPU time = 0h 0m 0.09s, Elapsed time = 0h 0m 0.087s
-    Placement Phase 2: CPU time = 0h 0m 0.972s, Elapsed time = 0h 0m 0.948s
-    Placement Phase 3: CPU time = 0h 0m 0.569s, Elapsed time = 0h 0m 0.555s
-    Total Placement: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Placement Phase 0: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
+    Placement Phase 1: CPU time = 0h 0m 0.147s, Elapsed time = 0h 0m 0.144s
+    Placement Phase 2: CPU time = 0h 0m 5s, Elapsed time = 0h 0m 5s
+    Placement Phase 3: CPU time = 0h 0m 11s, Elapsed time = 0h 0m 11s
+    Total Placement: CPU time = 0h 0m 18s, Elapsed time = 0h 0m 18s
  Running routing:
-    Routing Phase 0: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0.001s
-    Routing Phase 1: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
-    Routing Phase 2: CPU time = 0h 0m 0.038s, Elapsed time = 0h 0m 0.037s
+    Routing Phase 0: CPU time = 0h 0m 0.002s, Elapsed time = 0h 0m 0.002s
+    Routing Phase 1: CPU time = 0h 0m 12s, Elapsed time = 0h 0m 12s
+    Routing Phase 2: CPU time = 0h 0m 0.103s, Elapsed time = 0h 0m 0.101s
     Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-    Total Routing: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Total Routing: CPU time = 0h 0m 12s, Elapsed time = 0h 0m 12s
  Generate output files:
-    CPU time = 0h 0m 0.858s, Elapsed time = 0h 0m 0.83s
+    CPU time = 0h 0m 0.908s, Elapsed time = 0h 0m 0.901s
 
- Total Time and Memory Usage: CPU time = 0h 0m 5s, Elapsed time = 0h 0m 5s, Peak memory usage = 964MB
+ Total Time and Memory Usage: CPU time = 0h 0m 30s, Elapsed time = 0h 0m 30s, Peak memory usage = 1171MB
 
 
 3. Resource Usage Summary
@@ -40,19 +40,19 @@
   --------------------------------------------------------------------------------
   Resources                   | Usage                               | Utilization
   --------------------------------------------------------------------------------
-  Logic                       | 6820/23040                          |  30%
-    --LUT,ALU,ROM16           | 6820(6323 LUT, 497 ALU, 0 ROM16)    | -
+  Logic                       | 12730/23040                         |  56%
+    --LUT,ALU,ROM16           | 12730(12215 LUT, 515 ALU, 0 ROM16)  | -
     --SSRAM(RAM16)            | 0                                   | -
-  Register                    | 2290/23280                          |  10%
+  Register                    | 11566/23280                         |  50%
     --Logic Register as Latch | 0/23040                             |  0%
-    --Logic Register as FF    | 2286/23040                          |  10%
+    --Logic Register as FF    | 11562/23040                         |  51%
     --I/O Register as Latch   | 0/240                               |  0%
     --I/O Register as FF      | 4/240                               |  2%
-  CLS                         | 4559/11520                          |  40%
-  I/O Port                    | 33/86                               |  39%
-  I/O Buf                     | 29                                  | -
+  CLS                         | 11171/11520                         |  97%
+  I/O Port                    | 34/86                               |  40%
+  I/O Buf                     | 30                                  | -
     --Input Buf               | 11                                  | -
-    --Output Buf              | 18                                  | -
+    --Output Buf              | 19                                  | -
     --Inout Buf               | 0                                   | -
   IOLOGIC                     | 6/80                                | 8%
     --OSER10                  | 3
@@ -78,7 +78,7 @@
   bank 4   | 0/11        | 0%          
   bank 5   | 7/13        | 54%         
   bank 6   | 4/10        | 40%         
-  bank 7   | 4/16        | 25%         
+  bank 7   | 5/16        | 32%         
   bank 10  | 0/4         | 0%          
   ======================================
 
@@ -101,12 +101,12 @@
   -------------------------------------------
   Signal         | Global Clock   | Location
   -------------------------------------------
-  clk_pixel      | PRIMARY        |  TR
+  clk_pixel      | PRIMARY        |  TR TL BR
   clk_p5         | PRIMARY        |  TR
   clk_sys        | PRIMARY        |  TR TL BR BL
   core_reset     | LW             |  -
+  core_hcnt[0]   | LW             |  -
   mcr2_core/cpu_ena| LW             |  -
-  mcr2_core/hcnt[0]| LW             |  -
   mcr2_core/cpu/IR[4]| LW             |  -
   mcr2_core/sound_board/cnt_div_0_28| LW             |  -
   mcr2_core/sound_board/cpu/IR[4]| LW             |  -
@@ -149,6 +149,7 @@ cab_vs       | -         | F2/5          | Y          | out   | IOB26[A] | GCLKT
 cab_csync    | -         | F1/5          | Y          | out   | IOB26[B] | GCLKC_9B        | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 audio_l      | -         | B2/5          | Y          | out   | IOB4[A]  | D08/SDA         | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 audio_r      | -         | C2/5          | Y          | out   | IOB4[B]  | D09/SCL/LPLL1_C_FB0 | LVCMOS33   | 8     | NONE      | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
+led          | -         | L6/7          | Y          | out   | IOT23[A] | -               | LVCMOS33   | 8     | UP        | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3        | MEDIUM        | NONE         
 ====================================================================================================================================================================================================================
 
 
@@ -173,7 +174,7 @@ L7/7     | -            | in    | IOT19[A] | -               | LVCMOS33 | 8     
 L8/7     | -            | in    | IOT19[B] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 K7/7     | -            | in    | IOT21[A] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 J7/7     | -            | in    | IOT21[B] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
-L6/7     | -            | in    | IOT23[A] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
+L6/7     | led          | out   | IOT23[A] | -               | LVCMOS33 | 8     | UP        | OFF       | OFF        | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 K6/7     | -            | in    | IOT23[B] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 L9/0     | -            | in    | IOT31[A] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         
 K9/0     | -            | in    | IOT31[B] | -               | LVCMOS33 | 8     | UP        | OFF       | ON         | OFF        | OFF        | OFF             | OFF           | 3.3   | MEDIUM        | NONE         

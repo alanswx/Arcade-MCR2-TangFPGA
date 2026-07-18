@@ -1,0 +1,107 @@
+# MCR Game Input Matrix (machine-readable)
+
+Transcribed from `docs/MCR_Master_Pinouts.pdf` ("Ultimate MCR Master Pinout
+Matrix"). This is the source of truth for what each cabinet connector pin
+does per game. The physical wiring is identical across MCR-1/2/3 — only the
+in-game meaning changes, so all game-specific mapping is done in the FPGA
+top-level, never on the shield PCB.
+
+Legend: `-` = N/C for that game. "No J5" (MCR-1 and most MCR-2 cabinets have
+no J5 harness) is also shown as `-`.
+
+Games: SF=Solar Fox (MCR-1), KK=Kick/Kickman (MCR-1), TR=Tron (MCR-2),
+SH=Satan's Hollow (MCR-2), KZ=Kozmik Krooz'r (MCR-2), WA=Wacko (MCR-2),
+DM=Domino Man (MCR-2), TA=Tapper (MCR-3), JO=Journey (MCR-3), TI=Timber
+(MCR-3), DT=Discs of Tron (MCR-3), SY=Spy Hunter (MCR-3), CR=Crater Raider
+(MCR-3).
+
+## J2 — Player 1 controls
+
+| Pin | Std function | SF | KK | TR | SH | KZ | WA | DM | TA | JO | TI | DT | SY | CR |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| J2-1 | P1 Up | P1 Up | - | P1 Up | **P1 Left** | - | P1 Up | P1 Up | P1 Up | P1 Up | P1 Up | P1 Up | Machine Gun | - |
+| J2-2 | P1 Down | P1 Down | - | P1 Down | **P1 Right** | - | P1 Down | P1 Down | P1 Down | P1 Down | P1 Down | P1 Down | Missiles | - |
+| J2-3 | P1 Left | P1 Left | - | P1 Left | - | - | P1 Left | P1 Left | P1 Left | P1 Left | P1 Left | P1 Left | Oil Slick | P1 Left |
+| J2-4 | P1 Right | P1 Right | - | P1 Right | - | - | P1 Right | P1 Right | P1 Right | P1 Right | P1 Right | P1 Right | Smoke Screen | P1 Right |
+| J2-5 | P1 Button 1 | Fire/Turbo | Kick | Fire (Trigger) | Fire (Trigger) | Fire | - | Place/Strike | Pour/Serve | Fire | - | Fire (Trigger) | Weapons Van | Fire |
+| J2-6 | P1 Button 2 | - | Catch | - | Shield | - | - | - | - | - | - | Deflect | - | Shield |
+| J2-13 | Ground | GND | GND | GND | GND | GND | GND | GND | GND | GND | GND | GND | GND | GND |
+
+## J3 — System & coins (identical across all games)
+
+| Pin | Function | Notes |
+|---|---|---|
+| J3-1 | Coin 1 | all games |
+| J3-2 | Coin 2 | all games |
+| J3-3 | Start 1 | all games |
+| J3-4 | Start 2 | all games except Spy Hunter (N/C — 1-player game) |
+| J3-5 | Tilt | all games |
+
+## J4 — Opt X / 8-bit parallel dial data
+
+Wiring is identical for every game: J4-1..J4-7 = data bits 0–6, J4-8 = key,
+J4-9 = data bit 7, J4-10 = ground. Per-game meaning of the 8-bit bus:
+
+| Game | J4 bus meaning |
+|---|---|
+| Solar Fox, Satan's Hollow, Domino Man, Tapper, Journey, Timber, Crater Raider | Data Bit 0–7 (standard/unused bus) |
+| Kick/Kickman | Spinner X (D0–D7) |
+| Tron | Opt/Main spinner (D0–D7) |
+| Kozmik Krooz'r | Spinner X (D0–D7) |
+| Wacko | Trackball X-Axis (D0–D7) |
+| Discs of Tron | Rotary aim (D0–D7) |
+| Spy Hunter | Steering/Gas (D0–D7) |
+
+## J5 — Opt Y / trackball / Player 2 controls
+
+| Pin | Std function | WA | TA | TI | DT | others |
+|---|---|---|---|---|---|---|
+| J5-1..J5-6 | P2 Mux / Data Bit 0–5 (Opt Y) | Trackball Y (D0–D5) | - | - | - | - |
+| J5-15 | P2 Up / Data Bit 6 | Trackball Y (D6) | P2 Up | P2 Up | Aim Up | - |
+| J5-16 | P2 Down / Data Bit 7 | Trackball Y (D7) | P2 Down | P2 Down | Aim Down | - |
+| J5-17 | P2 Left | - | P2 Left | P2 Left | - | - |
+| J5-18 | P2 Right | - | P2 Right | P2 Right | - | - |
+| J5-19 | P2 Button 1 | - | P2 Pour | - | - | - |
+
+## Video connector (identical across all games)
+
+| Pin | Function |
+|---|---|
+| Video-1 | Red |
+| Video-2 | Video GND |
+| Video-3 | Green |
+| Video-4 | Video GND |
+| Video-5 | Blue |
+| Video-6 | Video GND |
+| Video-7 | Key |
+| Video-8 | H-Sync (−) |
+| Video-9 | V-Sync (−) |
+
+## From connector pins to SSIO input ports (FPGA-internal)
+
+The connector matrix above is cabinet wiring. The mapping of those switches
+into the SSIO's `input_0..input_4` byte ports is per-game and must be taken
+from MAME (`src/mame/midway/mcr.cpp`, `INPUT_PORTS_START(<game>)`); the
+matrix cannot tell you bit positions. Verified examples:
+
+- **Domino Man** — IP0 = {test, service1, tilt, **Button1**, start2, start1,
+  coin2, coin1}; IP1 = {4'unused, down, up, right, left} (4-way);
+  IP3 DIP upright default = `0x3E` (0xFF selects cocktail!).
+- **Satan's Hollow** — IP0 = {service, x, tilt, x, start2, start1, coin2,
+  coin1}; IP1 = {P2 fire, P2 shield, P2 right, P2 left, fire, shield,
+  right, left}.
+- **Tron** — IP0 = standard {test, service1, tilt, TRIGGER, start2, start1,
+  coin2, coin1}; IP1 = 8-bit absolute aim dial (PORT_REVERSE); IP2 = P1
+  8-way joystick [3:0] (+P2 cocktail [7:4]); IP3 DIP upright default =
+  `0x80` (bit7 is the cocktail trigger input, idle high); IP4 = cocktail
+  dial.
+
+Method for new games: `awk '/INPUT_PORTS_START\( <game> \)/,/INPUT_PORTS_END/'
+mcr.cpp` and read the `PORT_BIT` masks. All inputs are active low.
+
+## Known gaps (not covered by the matrix PDF)
+
+- **J6** — MAME lists `ssio:IP4` as "J6 1-8" (auxiliary inputs); the matrix
+  has no J6 sheet. Unused by the games above.
+- **Outputs** — coin meters / lamps driven by SSIO output ports are not in
+  the matrix; original cabinets wire them via J3-area harness. Deferred.
