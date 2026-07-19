@@ -34,3 +34,4 @@ bitstreams/ab-test/
 # Verilator build output and generated SD images
 sim/obj_dir/
 *.img
+__pycache__/
