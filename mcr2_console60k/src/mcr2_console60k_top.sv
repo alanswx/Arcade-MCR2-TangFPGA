@@ -62,6 +62,12 @@ module mcr2_console60k_top (
     inout        usb1_dp,
     inout        usb1_dn,
 
+    // MicroSD card (SPI mode) - optional ROM source, see rom_loader.sv
+    output       sd_clk,
+    output       sd_cmd,      // MOSI
+    input        sd_dat0,     // MISO
+    output       sd_dat3,     // CS
+
     // DDR3/HDMI bring-up debug (J10 pins 21-24; see comment at the logic)
     output [3:0] debug_o,
 
@@ -127,7 +133,14 @@ wire tv15khz = mode15_s2;
 // lines per field and the upscaler adapts.)
 
 reg [7:0] reset_cnt = 255;
-wire core_reset = (reset_cnt != 0);
+wire      rom_ready;                          // ROM image settled
+wire core_reset_raw = (reset_cnt != 0);       // resets the SD loader itself
+wire core_reset     = core_reset_raw || !rom_ready;   // resets the game core
+
+// Which slot of the SD pack to load. Fixed for now; this is what the
+// SW1-3..5 game-select DIPs will drive once the 74HC165 chain exists
+// (docs/universal_mcr_shield_spec.md section 7).
+wire [3:0] game_slot = 4'd0;
 
 always @(posedge clk_sys) begin
     if (key_s1 || !pll_locked) begin
@@ -137,10 +150,47 @@ always @(posedge clk_sys) begin
     end
 end
 
-// The main Z80 ROM and Sound Z80 ROM are instantiated as separate ROMs
-// to ensure clean Gowin BSRAM block inference with hex initialization.
-// INIT_FILE paths resolve relative to this source file's directory;
-// run `python3 tools/merge_roms.py <game>` from the repo root to (re)generate.
+// --- ROM source ---------------------------------------------------------
+// The INIT_FILE contents are the power-on default (whatever game
+// `merge_roms.py` last generated - Tron by default), so the board always
+// boots something even with no SD card. When a card holding a valid pack is
+// present, rom_loader overwrites these memories before the core leaves
+// reset and the DIP-selected game runs instead.
+wire        sd_ready, sd_err, sd_rd_start, sd_rd_done, sd_dv;
+wire [7:0]  sd_dout;
+wire [31:0] sd_sector;
+wire [16:0] dl_addr;
+wire [7:0]  dl_data;
+wire        dl_wr;
+wire        ldr_done, ldr_error;
+
+// Core runs once the loader has finished, or as soon as it gives up on a
+// missing/unreadable card (then the baked-in ROMs stand).
+assign rom_ready = ldr_done | ldr_error;
+
+sd_reader #(.CLK_HZ(40_000_000)) sd (
+    .clk(clk_sys), .rst(core_reset_raw),
+    .ready(sd_ready), .err(sd_err),
+    .rd_start(sd_rd_start), .rd_sector(sd_sector),
+    .dout(sd_dout), .dout_valid(sd_dv), .rd_done(sd_rd_done),
+    .sclk(sd_clk), .mosi(sd_cmd), .miso(sd_dat0), .cs_n(sd_dat3)
+);
+
+rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
+    .clk(clk_sys), .rst(core_reset_raw),
+    .slot(game_slot),
+    .sd_ready(sd_ready), .sd_err(sd_err),
+    .sd_rd_start(sd_rd_start), .sd_sector(sd_sector),
+    .sd_dout(sd_dout), .sd_dout_valid(sd_dv), .sd_rd_done(sd_rd_done),
+    .dl_addr(dl_addr), .dl_data(dl_data), .dl_wr(dl_wr),
+    .done(ldr_done), .error(ldr_error)
+);
+
+// Download decode for the two ROMs that live here (the gfx ROMs decode
+// inside mcr2.vhd): CPU 0x00000-0x0FFFF, sound 0x10000-0x13FFF.
+wire cpu_rom_we = dl_wr && !dl_addr[16];
+wire snd_rom_we = dl_wr && (dl_addr[16:14] == 3'b100);
+
 wire [15:0] rom_addr;
 wire [7:0]  rom_do;
 wire [13:0] snd_addr;
@@ -158,10 +208,10 @@ dpram #(
     .q_a(rom_do),
 
     .clk_b(clk_sys),
-    .we_b(1'b0),
-    .addr_b(16'h0000),
-    .d_b(8'h00),
-    .q_b() // Port B is unused
+    .we_b(cpu_rom_we),
+    .addr_b(dl_addr[15:0]),
+    .d_b(dl_data),
+    .q_b() // port B is the ROM download port
 );
 
 dpram #(
@@ -176,10 +226,10 @@ dpram #(
     .q_a(snd_do),
 
     .clk_b(clk_sys),
-    .we_b(1'b0),
-    .addr_b(14'h0000),
-    .d_b(8'h00),
-    .q_b() // Port B is unused
+    .we_b(snd_rom_we),
+    .addr_b(dl_addr[13:0]),
+    .d_b(dl_data),
+    .q_b() // port B is the ROM download port
 );
 
 // --- USB HID host (gamepad on USB-A port 1) -----------------------------------
@@ -352,9 +402,9 @@ mcr2 mcr2_core (
     .snd_rom_do(snd_do),
 
     // Disable HPS download interface
-    .dl_addr(17'd0),
-    .dl_wr(1'b0),
-    .dl_data(8'd0),
+    .dl_addr(dl_addr),
+    .dl_wr(dl_wr),
+    .dl_data(dl_data),
     .dl_nvram_wr(1'b0),
     .dl_din(),
     .dl_nvram(1'b0)
@@ -467,6 +517,7 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     .cnt_x(hb_x1[25:10]),
     .cnt_q(hb_27[24:17]),
     .aux({3'b000, cap_delay}),
+    .aux2({4'b0000, sd_ready, sd_err, ldr_done, ldr_error}),
     .txd(uart_tx)
 );
 

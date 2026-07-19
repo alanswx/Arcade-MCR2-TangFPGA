@@ -21,16 +21,26 @@ module dpram #(
 
 generate
     if (INIT_FILE != "") begin: rom_mode
-        // Single-Port ROM mode (Only Port A is read to guarantee BSRAM inference on Gowin)
+        // Initialised dual-port RAM: port A is the core's read port, port B
+        // takes ROM downloads (SD loader). The INIT_FILE contents act as the
+        // power-on default, so a bitstream still boots a baked-in game when
+        // no card is present and the loader simply overwrites it when there
+        // is one. Leaving we_b tied low reproduces the old ROM behaviour
+        // exactly.
         initial begin
             $readmemh(INIT_FILE, ram);
         end
         always @(posedge clk_a) begin
+            if (we_a) begin
+                ram[addr_a] <= d_a;
+            end
             q_a <= ram[addr_a];
         end
-        // Port B is completely unused, return 0 to prevent warnings or synthesis floating wires
-        always @(*) begin
-            q_b = {dWidth{1'b0}};
+        always @(posedge clk_b) begin
+            if (we_b) begin
+                ram[addr_b] <= d_b;
+            end
+            q_b <= ram[addr_b];
         end
     end else begin: ram_mode
         // Simple Dual-Port RAM mode (Writes only on Port A to ensure clean BSRAM inference)

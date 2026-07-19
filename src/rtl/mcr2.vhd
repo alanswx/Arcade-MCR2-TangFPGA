@@ -766,8 +766,14 @@ port map(
 -- background tile graphics ROMs (gfx1): two 8KB planes, addressed by bg_code_line.
 -- Re-enabled for Domino Man, whose 32KB CPU ROM frees the BSRAM these need.
 -- Read on port A via INIT_FILE (port B is inert in the dpram ROM mode).
-bg_graphics_1_we <= '0';
-bg_graphics_2_we <= '0';
+-- ROM download decode. Map (shared with rom_loader.sv / make_rompack.py):
+--   0x00000-0x0FFFF  CPU program   (written by the board top)
+--   0x10000-0x13FFF  sound CPU     (written by the board top)
+--   0x14000-0x1BFFF  sprites gfx2
+--   0x1C000-0x1DFFF  background plane 1
+--   0x1E000-0x1FFFF  background plane 2
+bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(16 downto 13) = "1110" else '0';
+bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(16 downto 13) = "1111" else '0';
 
 bg_graphics_1 : entity work.dpram
 generic map( dWidth => 8, aWidth => 13, INIT_FILE => "rom_gfx1_1.hex")
@@ -814,7 +820,11 @@ port map(
  d_b    => dl_data,
  q_b    => open
 );
-sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16) = '1' else '0'; -- 14000-1BFFF
+-- sprites are 0x14000-0x1BFFF: exclude the sound region below (15:14="00")
+-- and the two background planes above (15:14="11")
+sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16) = '1'
+                               and dl_addr(15 downto 14) /= "00"
+                               and dl_addr(15 downto 14) /= "11" else '0';
 
 sound_board : entity work.mcr_sound_board
 port map(

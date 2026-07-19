@@ -149,10 +149,19 @@ IO_PORT "usb1_dp" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
 IO_LOC "usb1_dn" G13;
 IO_PORT "usb1_dn" IO_TYPE=LVCMOS33 PULL_MODE=NONE;
 
+// MicroSD card in SPI mode (dat0 = MISO needs its pull-up; dat1/dat2 unused)
+IO_LOC "sd_clk" V15;
+IO_PORT "sd_clk" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+IO_LOC "sd_cmd" Y16;
+IO_PORT "sd_cmd" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+IO_LOC "sd_dat0" AA15;
+IO_PORT "sd_dat0" IO_TYPE=LVCMOS33 PULL_MODE=UP;
+IO_LOC "sd_dat3" W15;
+IO_PORT "sd_dat3" IO_TYPE=LVCMOS33 PULL_MODE=NONE DRIVE=8;
+
 // --- Future use (verified balls, not yet in the design) --------------------
 // USB-A host port 2 (right): usb2_dp M15, usb2_dn M16
-// SD card: sd_clk V15, sd_cmd Y16, sd_dat0 AA15 (PULL_MODE=UP), sd_dat1 AB15,
-//   sd_dat2 W14, sd_dat3 W15
+// SD 4-bit mode would add: sd_dat1 AB15, sd_dat2 W14
 // Tang SDRAM module in dock slot: see docs/pinrefs/console.cst. NOTE cs_n is
 //   F21 on the Tang Console (was F19 on the Mega 60K dock) - and F19/F20 are
 //   used as PMOD1 buttons above, so drop those buttons if the SDRAM goes in.

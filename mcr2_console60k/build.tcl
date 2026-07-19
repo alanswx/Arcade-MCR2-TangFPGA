@@ -40,6 +40,9 @@ add_file ../src/usb/usb_hid_host.v
 add_file ../src/usb/usb_hid_host_rom.v
 add_file ../src/audio/ds_dac.sv
 add_file ../src/rtl/uart_beacon.sv
+add_file ../src/rtl/sd_spi_phy.sv
+add_file ../src/rtl/sd_reader.sv
+add_file ../src/rtl/rom_loader.sv
 
 # DDR3 framebuffer + 720p HDMI w/ audio (vendored from nand2mario/gbatang)
 add_file ../src/ddr3fb/ddr3_framebuffer.v
