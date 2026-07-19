@@ -323,6 +323,102 @@ always @(*) begin
     input_4 = 8'h00;
 end
 
+`elsif GAME_WACKO
+// WACKO: trackball game. IP1 = trackball X, IP2 = trackball Y (both are
+// free-running 8-bit counters, exactly what spinner.sv produces), IP4 =
+// 4-way "left" joystick that aims. The SSIO input mux (output port 4 bit 0)
+// only swaps in the *cocktail* player's trackball, so upright play needs no
+// mux support. Pad: dpad = trackball, X/Y+A/B = aim stick.
+wire m_start2 = 1'b0;   // no spare buttons: A/B/X/Y are the aim joystick
+wire m_coin2  = 1'b0;
+
+wire [7:0] tb_x, tb_y;
+spinner #(.INC_NORMAL(12), .INC_FAST(24), .INC_SPINNER(12)) trackball_x (
+    .clk(clk_sys), .reset(core_reset),
+    .minus(m_left), .plus(m_right), .fast(1'b0), .strobe(vblank),
+    .spin_in(9'd0), .spin_out(tb_x)
+);
+spinner #(.INC_NORMAL(12), .INC_FAST(24), .INC_SPINNER(12)) trackball_y (
+    .clk(clk_sys), .reset(core_reset),
+    .minus(m_up), .plus(m_down), .fast(1'b0), .strobe(vblank),
+    .spin_in(9'd0), .spin_out(tb_y)
+);
+
+always @(*) begin
+    input_0 = ~{ 1'b0, m_service, 1'b0, 1'b0, m_start2, m_start1, m_coin2, m_coin1 };
+    input_1 = tb_x;
+    input_2 = tb_y;
+    input_3 = 8'hFF;
+    // IP4 aim joystick, 4-way active low: bit3 up, bit2 down, bit1 left, bit0 right
+    input_4 = ~{ 4'b0000, u_btn_a, u_btn_b, u_btn_x, u_btn_y };
+end
+
+`elsif GAME_KROOZR
+// KOZMIK KROOZR: IP1 packs the rotating-cockpit spinner oddly - the SSIO
+// custom read returns ((dial & 0x80) >> 1) | ((dial & 0x70) >> 4), i.e.
+// bit 6 = dial[7] and bits 2:0 = dial[6:4], both ACTIVE HIGH; bit 7 is
+// Button 2 (active low) and bits 5:3 are cockpit sensors. IP2/IP4 are an
+// analogue stick (0x30..0x98, centre 0x64) synthesised here from the d-pad.
+wire m_start2 = u_btn_x;
+wire m_coin2  = u_btn_y;
+
+wire [7:0] dial;
+spinner #(.INC_NORMAL(16), .INC_FAST(32), .INC_SPINNER(16)) cockpit_dial (
+    .clk(clk_sys), .reset(core_reset),
+    .minus(u_btn_x), .plus(u_btn_y), .fast(1'b0), .strobe(vblank),
+    .spin_in(9'd0), .spin_out(dial)
+);
+
+// analogue stick: ramp toward the limit while held, recentre on release
+reg vbl_r = 1'b1;
+wire vbl_edge = vblank & ~vbl_r;
+always @(posedge clk_sys) vbl_r <= vblank;
+
+reg [7:0] stick_x = 8'h64, stick_y = 8'h64;
+always @(posedge clk_sys) begin
+    if (vbl_edge) begin
+        if      (m_left  && stick_x > 8'h30) stick_x <= stick_x - 8'd4;
+        else if (m_right && stick_x < 8'h98) stick_x <= stick_x + 8'd4;
+        else if (!m_left && !m_right)        stick_x <= 8'h64;
+
+        if      (m_up    && stick_y > 8'h30) stick_y <= stick_y - 8'd4;
+        else if (m_down  && stick_y < 8'h98) stick_y <= stick_y + 8'd4;
+        else if (!m_up && !m_down)           stick_y <= 8'h64;
+    end
+end
+
+always @(*) begin
+    input_0 = ~{ 1'b0, m_service, 1'b0, u_btn_a, m_start2, m_start1, m_coin2, m_coin1 };
+    // bit 7 Button 2 (active low), bits 5:3 sensors (idle low), spinner bits high-active
+    input_1 = { ~u_btn_b, dial[7], 3'b000, dial[6:4] };
+    input_2 = stick_x;
+    input_3 = 8'hFF;
+    input_4 = stick_y;
+end
+
+`elsif GAME_TWOTIGER
+// TWO TIGERS (Tron-conversion set): twin spinners. IP1 = player 1 dial,
+// IP4 = player 2 dial, IP2 low nibble = the four fire buttons, and IP0
+// bit 4 is "Dogfight Start". Pad: X/Y spin, A/B fire.
+wire m_start2 = 1'b0;
+wire m_coin2  = 1'b0;
+
+wire [7:0] dial1;
+spinner #(.INC_NORMAL(20), .INC_FAST(40), .INC_SPINNER(20)) tt_dial (
+    .clk(clk_sys), .reset(core_reset),
+    .minus(u_btn_x), .plus(u_btn_y), .fast(1'b0), .strobe(vblank),
+    .spin_in(9'd0), .spin_out(dial1)
+);
+
+always @(*) begin
+    // bit 4 = Dogfight Start (start 3)
+    input_0 = ~{ 1'b0, m_service, 1'b0, u_sel & u_sta, 1'b0, m_start1, m_coin2, m_coin1 };
+    input_1 = dial1;
+    input_2 = ~{ 4'b0000, 2'b00, u_btn_b, u_btn_a };
+    input_3 = 8'hFF;
+    input_4 = 8'h00;   // player 2 dial
+end
+
 `elsif GAME_SHOLLOW
 // SATAN'S HOLLOW: IP0 = standard (no button bit), IP1 = {..., fire,
 // shield, right, left}. Pad: A = fire, B = shield, X = Start2, Y = Coin2.

@@ -91,6 +91,16 @@ Per-game notes (bit maps verified against MAME `mcr.cpp`):
   trigger = IP0 bit 4, DIPs 0x80. MAME marks the dial PORT_REVERSE — if aim
   feels inverted, swap the spinner's minus/plus hookup.
 - **Satan's Hollow** — fire/shield/right/left on IP1 low nibble, DIPs 0xFF.
+- **Wacko** — trackball X/Y on IP1/IP2 (two `spinner.sv` instances driven by
+  the d-pad); aim joystick on the face buttons via IP4.
+- **Kozmik Kroozr** — spinner bits packed into IP1 (bit6=dial[7],
+  bits2:0=dial[6:4], active **high**); analogue stick synthesised on
+  IP2/IP4 (ramps toward 0x30/0x98, recentres to 0x64 on release).
+- **Two Tigers** — the `twotigerc` conversion set; dial on IP1, fire
+  buttons on IP2[3:0]. The dedicated set needs a videoram remap we lack.
+
+All six MCR-2 games fit the same core: `merge_roms.py` has ROM specs for
+each and `make_rompack.py` packs them into one card image.
 
 ## Hard-won constraints — do not regress these
 

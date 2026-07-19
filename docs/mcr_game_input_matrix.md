@@ -95,6 +95,20 @@ matrix cannot tell you bit positions. Verified examples:
   8-way joystick [3:0] (+P2 cocktail [7:4]); IP3 DIP upright default =
   `0x80` (bit7 is the cocktail trigger input, idle high); IP4 = cocktail
   dial.
+- **Wacko** — IP1 = trackball X, IP2 = trackball Y (free-running counters);
+  IP4 = 4-way aim joystick {bit3 up, bit2 down, bit1 left, bit0 right};
+  IP0 standard but with no Button 1. The SSIO output port 4 bit 0 muxes
+  IP1/IP2 to the *cocktail* player's trackball only, so upright play needs
+  no mux support — which is why this runs without exposing SSIO outputs.
+- **Kozmik Kroozr** — IP1 packs the cockpit spinner unusually: the SSIO
+  custom read returns `((dial & 0x80) >> 1) | ((dial & 0x70) >> 4)`, i.e.
+  **bit 6 = dial[7], bits 2:0 = dial[6:4], both ACTIVE HIGH**; bit 7 is
+  Button 2 (active low) and bits 5:3 are cockpit sensors. IP2 = analogue
+  stick X, IP4 = analogue stick Y, both `0x30..0x98` centred on `0x64`.
+- **Two Tigers** — use the **Tron-conversion set (`twotigerc`)**: IP1 = P1
+  dial, IP4 = P2 dial, IP2[3:0] = the four fire buttons, IP0 bit 4 =
+  "Dogfight Start". The *dedicated* set (`twotiger`) also needs a video-RAM
+  address remap at 0xE800 that this core does not implement.
 
 Method for new games: `awk '/INPUT_PORTS_START\( <game> \)/,/INPUT_PORTS_END/'
 mcr.cpp` and read the `PORT_BIT` masks. All inputs are active low.

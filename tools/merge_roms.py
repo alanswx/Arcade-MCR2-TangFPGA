@@ -59,6 +59,46 @@ GAME_SPECS = {
         gfx2_files=["vga.e1", "vgb.dc1", "vgc.cb1", "vga.a1"],
         snd_pad_to=16 * 1024,
     ),
+    # Wacko (MCR2): 32KB CPU, 12->16KB sound, 16KB bg, 32KB sprites.
+    # Trackball game; the SSIO input mux only selects the cocktail player's
+    # trackball, so upright play needs no mux support.
+    "wacko": dict(
+        define="GAME_WACKO",
+        zip_path="roms/wacko.zip",
+        main_files=["wackocpu.2d", "wackocpu.3d", "wackocpu.4d", "wackocpu.5d"],
+        snd_files=["wackosnd.7a", "wackosnd.8a", "wackosnd.9a"],
+        gfx1_1_file="wackocpu.3g",
+        gfx1_2_file="wackocpu.4g",
+        gfx2_files=["wackovid.1e", "wackovid.1d", "wackovid.1b", "wackovid.1a"],
+        snd_pad_to=16 * 1024,
+    ),
+    # Kozmik Kroozr (MCR2): 40KB CPU, 12->16KB sound, 16KB bg, 32KB sprites.
+    # Spinner (rotating cockpit) plus an analogue stick.
+    "kroozr": dict(
+        define="GAME_KROOZR",
+        zip_path="roms/kroozr.zip",
+        main_files=["kozmkcpu.2d", "kozmkcpu.3d", "kozmkcpu.4d",
+                    "kozmkcpu.5d", "kozmkcpu.6d"],
+        snd_files=["kozmksnd.7a", "kozmksnd.8a", "kozmksnd.9a"],
+        gfx1_1_file="kozmkcpu.3g",
+        gfx1_2_file="kozmkcpu.4g",
+        gfx2_files=["kozmkvid.1e", "kozmkvid.1d", "kozmkvid.1b", "kozmkvid.1a"],
+        snd_pad_to=16 * 1024,
+    ),
+    # Two Tigers (MCR2, Tron-conversion set): 32KB CPU, 12->16KB sound,
+    # 16KB bg, 32KB sprites. The *dedicated* set (twotiger) additionally
+    # needs a video-RAM address remap at 0xE800 that this core does not
+    # implement, so the conversion set is the one we support.
+    "twotiger": dict(
+        define="GAME_TWOTIGER",
+        zip_path="roms/twotigerc.zip",
+        main_files=["2tgrpg0.bin", "2tgrpg1.bin", "2tgrpg2.bin", "2tgrpg3.bin"],
+        snd_files=["2tgra7.bin", "2tgra8.bin", "2tgra9.bin"],
+        gfx1_1_file="2tgrbg0.bin",
+        gfx1_2_file="2tgrbg1.bin",
+        gfx2_files=["2tgrfg0.bin", "2tgrfg1.bin", "2tgrfg2.bin", "2tgrfg3.bin"],
+        snd_pad_to=16 * 1024,
+    ),
     # Domino Man (MCR2): 32KB CPU, 16KB sound, 16KB bg, 32KB sprites.
     # The smaller CPU frees the BSRAM needed to enable the background tiles.
     "domino": dict(
