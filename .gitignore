@@ -30,3 +30,7 @@ test-backups/
 mcr_shield-backups/
 *.kicad_prl
 bitstreams/ab-test/
+
+# Verilator build output and generated SD images
+sim/obj_dir/
+*.img
