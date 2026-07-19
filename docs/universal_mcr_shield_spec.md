@@ -7,17 +7,33 @@ content spread across `handoff_v2_design.md` (§2–3, written for the Primer
 25K dock) and `pcb_design.md` (floorplan/KiCad, still authoritative for
 layout). Game-function reference: `docs/mcr_game_input_matrix.md`.
 
+## 0. Product decisions (2026-07, settled)
+
+- **Dual-use, not cabinet-only.** Keep the HDMI path alongside the analog
+  cabinet output: it is the primary debug surface, and retrofit-LCD cabinets
+  are a real installed base. Consequence: the DDR3 framebuffer stays, so
+  **DDR3 is committed to video** and cannot also serve as the ROM store.
+- **ROM storage split (as nand2mario/gbatang does on this exact board):**
+  DDR3 → framebuffer; **SDRAM module in the J9 slot → game ROMs** for sets
+  too big for BRAM; SD card → ROM files and firmware.
+- **Configuration by DIP switches, read through a 74HC165 chain** (3 pins
+  for 16 switches). Parallel DIPs do not fit: the shield needs 44 of the 54
+  I/O available on J10+PMODs, and spending J9 on switches would forfeit the
+  SDRAM slot. See §7.
+- **Cabinet default is menu-off**: power on straight into the DIP-selected
+  game, no OSD reachable by a customer.
+
 ## 1. Design principles
 
 1. **Expose the original MCR connectors** (J2, J3, J4, J5, Video, power,
    audio) so the cabinet harness plugs straight in — no JAMMA adaptation.
-2. **No DIP switches, no jumpers.** Connector wiring is identical across all
-   MCR games (see the matrix doc); every game-specific interpretation lives
-   in the FPGA top. One shield serves every core.
-3. **Passive/parallel shield.** Every cabinet input gets its own
-   opto-isolated FPGA pin; the Console 60K/138K has the pin budget, so no
-   shift registers (those were only needed for the pin-starved 25K+SDRAM,
-   see handoff_v2 Option A.2).
+2. **No game-specific wiring.** Connector wiring is identical across all
+   MCR games (see the matrix doc); every game-specific *interpretation*
+   lives in the FPGA top. One shield serves every core. (DIP switches
+   select which game/core runs — they do not rewire anything.)
+3. **Parallel, opto-isolated cabinet I/O.** Every cabinet input gets its own
+   opto-isolated FPGA pin. Only the DIP switches are read serially, to keep
+   the J9 expansion slot free.
 
 ## 2. FPGA signal budget
 
@@ -30,10 +46,18 @@ layout). Game-function reference: `docs/mcr_game_input_matrix.md`.
 | Video RGB | 9 (3:3:3) | out | R2R DAC → 1 Vp-p |
 | Video sync | 2–3 (HS, VS, opt. CSYNC) | out | NPN/74HCT buffer → 5V TTL |
 | Audio | 1–2 (PWM) | out | RC filter → LM386 |
-| **Total** | **~44** | | |
+| DIP config (16 switches) | 3 | in | 74HC165 chain (§7) |
+| **Total** | **~47** | | |
 
-Fits the Console's 2×20 headers ("up to 2×38 IOs" per Sipeed wiki) without
-touching PMOD0/PMOD1 or the USB/SD/SDRAM pins.
+Available to the shield: **54 I/O** = J10's 38 signal pins (40 less +5V/GND
+at 11/12) + PMOD0 (8) + PMOD1 (8). That leaves ~7 spare for coin meters and
+lamps, and keeps **J9 (38 pins) entirely free for the SDRAM module**.
+HDMI costs zero shield pins (TMDS is on dedicated SOM balls); likewise the
+USB-A ports, SD card, and DDR3 are all on SOM/dock pins.
+
+Note this is why the DIPs are serial: 16 parallel DIP pins would need 60
+I/O, forcing the design into J9 and forfeiting the SDRAM slot — i.e. giving
+up the big MCR-3 titles to save a 15-cent shift register.
 
 ## 3. Electrical interface (consolidated)
 
@@ -162,3 +186,65 @@ and the USB pad, so PMOD desk buttons retire.
 5. **138K variant** — same dock; header nets are dock-level, but the
    net→ball map on sheets 4–6 is SOM-specific. Re-extract from the 138K
    SOM schematic before targeting it.
+
+---
+
+## 7. Configuration & game selection (DIP switches)
+
+Two 8-position DIP banks, matching the SW1/SW2 placement already in
+`pcb_design.md` — and matching what MCR operators expect, since the original
+boards were configured the same way.
+
+### 7a. Switch map
+
+| Bank | Positions | Function |
+|---|---|---|
+| SW1 | 1–2 | **Family** → selects which bitstream multiboot loads: MCR-1 / MCR-2 / MCR-3 / (reserved) |
+| SW1 | 3–5 | **Game within family** (8 slots; no family has more) |
+| SW1 | 6–8 | Reserved (ROM revision, region, future families) |
+| SW2 | 1 | **Menu enable** (see 7c) |
+| SW2 | 2 | Video: 15 kHz cabinet CRT / 31 kHz |
+| SW2 | 3 | Cabinet: upright / cocktail |
+| SW2 | 4 | Free play |
+| SW2 | 5 | Service / test |
+| SW2 | 6–8 | Reserved |
+
+SW2-2 supersedes the `mode15_n` bench strap; SW2-3 feeds the per-game
+cocktail DIP bit (e.g. Domino IP3 bit 6 — see the game input matrix).
+
+### 7b. Reading them (74HC165)
+
+Two 74HC165s daisy-chained (SW1 → SW2), read with 3 FPGA pins. Suggested
+J10 assignment, taken from the pins §4b reserves for outputs:
+
+| Signal | J10 pin | Ball | Note |
+|---|---|---|---|
+| `dip_clk` | 20 | U20 | GCLK-capable |
+| `dip_load` (SH/LD̄) | 31 | Y19 | |
+| `dip_data` (QH of last device) | 32 | Y18 | |
+
+Switch to GND with pull-ups to +3V3; a closed switch reads 0. Sampled once
+after reset — **silkscreen "power-cycle after changing DIPs"** next to the
+banks. No debounce needed.
+
+### 7c. Menu semantics
+
+- **Menu off (cabinet default):** boot straight into the DIP-selected game.
+  No OSD exists at runtime; nothing a customer can reach.
+- **Menu on:** the DIPs still choose the boot default, but the OSD can
+  override at runtime (bench/home/multicade use).
+
+### 7d. Multiboot layout
+
+Per-core bitstream payload is **2.5 MB** (`impl/pnr/*.bin`; the 20 MB `.fs`
+is ASCII, not the flash footprint), so all three family cores fit in <8 MB.
+A small selector image boots first, samples the DIPs, and reconfigures to
+the chosen image's flash address. `-multi_boot 1` is already set in
+`build.tcl`.
+
+### 7e. Fallback behaviour (required for shipping)
+
+If the selected family/game has no ROMs available (missing SD card, missing
+file, bad checksum): **do not sit on a black screen.** Flash a status code
+on an LED and fall back to the menu (or to a built-in test pattern when the
+menu is disabled), so a field failure is diagnosable without a laptop.

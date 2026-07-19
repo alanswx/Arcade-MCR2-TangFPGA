@@ -38,6 +38,12 @@ Below is the estimated Bill of Materials to manufacture and assemble the custom 
 ### Option A.1: Parallel Shield (For Tang Primer 25K V1, or Tang Console 60K/138K)
 This PCB is a passive shield that routes video, audio, and inputs in parallel. It is simple, highly reliable, and uses no active serial ICs.
 
+> **Update (2026-07):** the shipping Console 60K design adds **two 74HC165
+> shift registers** (~$0.30) for the 16 configuration DIP switches. Cabinet
+> I/O stays parallel/opto-isolated; only the DIPs are serial, which keeps the
+> J9 SDRAM slot free for the large MCR-3 ROM sets. See
+> `docs/universal_mcr_shield_spec.md` §7.
+
 | Item | Component Description | Designator | Qty | Unit Cost | Total Cost | Source Example |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | 1 | **Custom PCB (2-Layer)** | Board | 1 | $2.00 | $2.00 | JLCPCB / PCBWay (qty 5 minimum) |
