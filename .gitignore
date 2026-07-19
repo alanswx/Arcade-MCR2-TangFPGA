@@ -29,3 +29,4 @@ scratch/
 test-backups/
 mcr_shield-backups/
 *.kicad_prl
+bitstreams/ab-test/
