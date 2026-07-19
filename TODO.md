@@ -78,10 +78,22 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
   watchdog. **Rule: nothing on the video path may depend on ROM loading.**) Verified only in simulation
   against a card model (`make -C sim`). The card image is built but not yet
   burned. Beacon field `L<hex>` = {sd_ready, sd_err, done, error}.
-- **Left-edge pixel overlap** on HDMI is still unresolved. Select + D-pad
-  Right/Left tunes `cap_delay` live; one step is <2 screen pixels, so it
-  takes 10–15 taps to see. Read the value from the beacon's `d<hex>` field,
-  then hardcode it as `CAP_DELAY_DEFAULT`.
+- **Left-edge pixel overlap.** Root cause is the core's ~13-pixel RGB-vs-hcnt
+  pipeline lag. HDMI compensates in the capture window; the analog path did
+  not compensate at all until 2026-07 (the previous line's tail leaked into
+  the first ~13 visible pixels). Both paths now share the live-tunable
+  `cap_delay` — Select + D-pad Right/Left, value in the beacon as `d<hex>`.
+  **Still to do: confirm on hardware and hardcode the winning value as
+  `CAP_DELAY_DEFAULT`.** One step is <2 screen pixels on HDMI, so it takes
+  10–15 taps to see there; it should be far more obvious on analog.
+- **Analog framing on a desk LCD is imperfect and expected.** The core emits
+  634 pixels/line at 20 MHz; an LCD locks to it (31.55 kHz ≈ VGA's 31.47 kHz)
+  but then samples ~800 pixels at 25.175 MHz across our line, stretching
+  ~1.26× and mis-positioning active video. Use the monitor's Auto Adjust.
+  A real 15 kHz arcade monitor has no sampling window and does not care, so
+  this does not affect cabinet use — and fixing it for LCDs would mean
+  putting a line buffer/scaler back into the analog path, which is exactly
+  what keeps that path shimmer-free. Not worth it.
 - **PmodVGA in the PMOD sockets is unproven.** Four strap combinations on
   J10-39/40 resolve row/socket orientation; also note the module is *not*
   passive — its SN74ALVC245 buffers need **3.3 V on VCC** (never 5 V).

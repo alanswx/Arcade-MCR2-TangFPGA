@@ -506,10 +506,57 @@ mcr2 mcr2_core (
     .dl_nvram(1'b0)
 );
 
+// --- Pixel timing shared by the analog and HDMI paths ----------------------
+// One strobe per core pixel: hcnt advances at the 20 MHz pixel rate (every
+// other clk_sys cycle).
+reg [9:0] hcnt_r;
+always @(posedge clk_sys) hcnt_r <= core_hcnt;
+wire pixel_tick = (hcnt_r != core_hcnt);
+
+// Compensation for the core's RGB-vs-hcnt pipeline lag, used by BOTH video
+// paths (analog sync alignment below, HDMI capture window further down).
+// LIVE TUNING: hold Select and tap D-pad Right (+1) / Left (-1) while
+// watching the left edge - garbage/overlap on the LEFT means increase.
+// Reported in the UART beacon as "dXX"; hardcode the winner below.
+localparam [4:0] CAP_DELAY_DEFAULT = 5'd13;
+reg [4:0] cap_delay = CAP_DELAY_DEFAULT;
+reg tune_l_r = 0, tune_r_r = 0;
+always @(posedge clk_sys) begin
+    tune_l_r <= u_sel & u_left;
+    tune_r_r <= u_sel & u_right;
+    if (u_sel & u_left  & ~tune_l_r & (cap_delay != 5'd0))  cap_delay <= cap_delay - 1'b1;
+    if (u_sel & u_right & ~tune_r_r & (cap_delay != 5'd31)) cap_delay <= cap_delay + 1'b1;
+end
+
 // --- PmodVGA Analog Output (native core timing, zero buffering) ---
+// The core's RGB lags its hcnt-derived sync/blank by a fixed pipeline delay
+// (tile fetch -> gfx ROM -> palette -> output regs) - the same lag the HDMI
+// capture compensates for with cap_delay. Taking hblank/hs raw here let the
+// PREVIOUS line's tail leak into the first ~13 visible pixels (a garbled
+// strip down the left edge) while blanking swallowed the last 13 real ones.
+// Delay the sync/blank signals by the same amount so they line up with the
+// pixels they describe. Shares the live-tunable cap_delay: Select + D-pad
+// Right/Left adjusts both paths, value shown in the beacon as "dXX".
+reg [31:0] hs_sr, vs_sr, cs_sr, hb_sr, vb_sr;
+always @(posedge clk_sys) begin
+    if (pixel_tick) begin
+        hs_sr <= {hs_sr[30:0], hs};
+        vs_sr <= {vs_sr[30:0], vs};
+        cs_sr <= {cs_sr[30:0], cs};
+        hb_sr <= {hb_sr[30:0], hblank};
+        vb_sr <= {vb_sr[30:0], vblank};
+    end
+end
+wire [4:0] vga_tap = (cap_delay == 5'd0) ? 5'd0 : cap_delay - 5'd1;
+wire hs_d     = (cap_delay == 5'd0) ? hs     : hs_sr[vga_tap];
+wire vs_d     = (cap_delay == 5'd0) ? vs     : vs_sr[vga_tap];
+wire cs_d     = (cap_delay == 5'd0) ? cs     : cs_sr[vga_tap];
+wire hblank_d = (cap_delay == 5'd0) ? hblank : hb_sr[vga_tap];
+wire vblank_d = (cap_delay == 5'd0) ? vblank : vb_sr[vga_tap];
+
 // 3:3:3 -> 4:4:4 by MSB replication so full intensity maps to full scale.
 // Blank the DAC outside active video so the monitor sees black porches.
-wire cab_blank = hblank | vblank;
+wire cab_blank = hblank_d | vblank_d;
 assign vga_r = cab_blank ? 4'h0 : {r, r[2]};
 assign vga_g = cab_blank ? 4'h0 : {g, g[2]};
 assign vga_b = cab_blank ? 4'h0 : {b, b[2]};
@@ -517,8 +564,8 @@ assign vga_b = cab_blank ? 4'h0 : {b, b[2]};
 // 31 kHz: separate negative H/V syncs (standard VGA-style RGBHV).
 // 15 kHz: composite sync on the HS pin (RGBS convention used by arcade
 // monitors and OSSC/RetroTink over a VGA cable); VS still carried, harmless.
-assign vga_hs = tv15khz ? cs : hs;
-assign vga_vs = vs;
+assign vga_hs = tv15khz ? cs_d : hs_d;
+assign vga_vs = vs_d;
 
 // --- PmodVGA plugged directly into the PMOD sockets --------------------------
 // Sipeed socket columns (anchored at the power end, which mates with the
@@ -565,21 +612,7 @@ assign pmod1_io = sock_swap ? j1_bus : j2_bus;
 // sweet spot is found, hardcode it as the reset value below.
 // (The D-pad is masked from the game while Select is held; note Select
 // itself still inserts a coin - harmless during tuning.)
-localparam [4:0] CAP_DELAY_DEFAULT = 5'd13;
-reg [4:0] cap_delay = CAP_DELAY_DEFAULT;
-reg tune_l_r = 0, tune_r_r = 0;
-always @(posedge clk_sys) begin
-    tune_l_r <= u_sel & u_left;
-    tune_r_r <= u_sel & u_right;
-    if (u_sel & u_left  & ~tune_l_r & (cap_delay != 5'd0))  cap_delay <= cap_delay - 1'b1;
-    if (u_sel & u_right & ~tune_r_r & (cap_delay != 5'd31)) cap_delay <= cap_delay + 1'b1;
-end
 
-// One strobe per core pixel: hcnt advances at the 20 MHz pixel rate (every
-// other clk_sys cycle)
-reg [9:0] hcnt_r;
-always @(posedge clk_sys) hcnt_r <= core_hcnt;
-wire pixel_tick = (hcnt_r != core_hcnt);
 
 wire cap_active = !vblank && (core_hcnt >= {5'b0, cap_delay}) && (core_hcnt < {5'b0, cap_delay} + 10'd512);
 wire fb_we = pixel_tick && cap_active;
