@@ -206,13 +206,22 @@ boards were configured the same way.
 | SW1 | 6–8 | Reserved (ROM revision, region, future families) |
 | SW2 | 1 | **Menu enable** (see 7c) |
 | SW2 | 2 | Video: 15 kHz cabinet CRT / 31 kHz |
-| SW2 | 3 | Cabinet: upright / cocktail |
+| SW2 | 3 | Cabinet: upright / cocktail (costs no extra pins — see note) |
 | SW2 | 4 | Free play |
 | SW2 | 5 | Service / test |
 | SW2 | 6–8 | Reserved |
 
 SW2-2 supersedes the `mode15_n` bench strap; SW2-3 feeds the per-game
 cocktail DIP bit (e.g. Domino IP3 bit 6 — see the game input matrix).
+
+**Cocktail pin impact:** none for the switch itself (the 74HC165 chain is a
+fixed 3 pins for up to 16 switches), and cocktail player-2 controls for
+Tron/Domino arrive on SSIO IP2 = J5 1-8, already allocated in §4b. The
+outstanding item is **IP4 / J6**, which §4b does not pin: it carries Wacko's
+cocktail joystick, Two Tigers' P2 dial, and Kroozr's analogue-stick Y axis
+(the last needed even upright). Allocate from the 8 reserved pins once J6's
+cabinet wiring is established. Note also that IP3 is not purely DIPs — Tron
+puts the cocktail fire button on its bit 7.
 
 ### 7b. Reading them (74HC165)
 

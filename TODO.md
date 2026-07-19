@@ -33,6 +33,17 @@ it touches four separate things, and each game does it differently:
 Also needed for real two-player use: a **second USB pad** on port 2
 (usb2_dp M15 / usb2_dn M16 — pins verified, unused).
 
+**Pin impact (checked 2026-07):** the cocktail *DIP* costs nothing — SW2-3
+is already allocated and the 74HC165 chain makes any count up to 16 switches
+cost the same 3 pins. Cocktail P2 controls for Tron/Domino arrive on SSIO
+IP2 = J5 1-8, and §4b already pins all 11 J5 lines. **The one gap is IP4 /
+J6, which is not pinned at all** — see below.
+
+**`input_3` is not purely DIP switches.** Tron puts the cocktail fire button
+on IP3 bit 7 (`PORT_BIT(0x80, ..., IPT_BUTTON1) PORT_COCKTAIL`), so for some
+games that port mixes DIP bits with a live input. The current hardcoded
+`input_3` constants can't stay constants once cocktail is real.
+
 ---
 
 ## Hardware bring-up (untested on the board)
@@ -75,8 +86,14 @@ Also needed for real two-player use: a **second USB pad** on port 2
 - **5 V delivery route unverified** — J10 pin 11 exposes +5 V but sits behind
   the dock's OR-ing/OVP chain; do not back-feed it until traced. USB-C is the
   known-good path.
-- **J6 / SSIO IP4 aux inputs** and **lamp / coin-meter outputs** unsurveyed
-  (8 J10 pins reserved). Outputs need drivers, not optos.
+- **J6 / SSIO IP4 is not pinned, and it is not just a cocktail concern.**
+  IP4 carries: Wacko's cocktail aim joystick, Two Tigers' player-2 dial, and
+  **Kozmik Kroozr's analogue stick Y axis — which is needed in upright play
+  too**. The 8 reserved J10 pins can cover it, but the allocation has not
+  been made and the master pinout PDF has no J6 sheet, so J6's cabinet
+  wiring must be established before routing rev A.
+- **Lamp / coin-meter outputs** unsurveyed (share those 8 reserved pins).
+  Outputs need driver transistors, not optos.
 - **`tools/generate_pcb.py` is not synced** to the §4b net table, and still
   assumes generic 2×20 headers; J9 must stay clear for the SDRAM module.
 - **138K variant**: header nets are dock-level but the net→ball map is
