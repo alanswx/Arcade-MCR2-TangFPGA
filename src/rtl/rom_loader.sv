@@ -53,6 +53,7 @@ localparam [2:0]
 localparam [63:0] MAGIC = 64'h4D_43_52_50_41_43_4B_31;
 
 reg [2:0]  st;
+reg [26:0] watchdog;     // hard upper bound on the whole load (~1.7s @40MHz)
 reg [63:0] hdr;
 reg [8:0]  hdr_cnt;
 reg [8:0]  sect_left_hi;   // sectors remaining in this slot (0..256)
@@ -64,13 +65,21 @@ always @(posedge clk) begin
     dl_wr       <= 1'b0;
 
     if (rst) begin
-        st      <= L_WAIT;
-        done    <= 1'b0;
-        error   <= 1'b0;
-        addr    <= 17'd0;
-        hdr_cnt <= 9'd0;
-        hdr     <= 64'd0;
+        st       <= L_WAIT;
+        done     <= 1'b0;
+        error    <= 1'b0;
+        addr     <= 17'd0;
+        hdr_cnt  <= 9'd0;
+        hdr      <= 64'd0;
+        watchdog <= 27'd0;
     end else begin
+        // Nothing here may hang: a card that answers but then stops mid
+        // transfer would otherwise leave the game core in reset forever.
+        if (st != L_DONE && st != L_ERR) begin
+            watchdog <= watchdog + 27'd1;
+            if (watchdog == 27'h7FF_FFFF) st <= L_ERR;
+        end
+
         case (st)
 
         L_WAIT: begin

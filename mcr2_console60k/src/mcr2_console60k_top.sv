@@ -627,7 +627,10 @@ ddr3_framebuffer #(
     .pll_lock_27(1'b1),
     .clk_g(clk50_pll),        // PLL-buffered 50 MHz (global clock net)
     .clk_out(fb_clk_x1),
-    .rst_n(~core_reset),
+    // Reset from the power-on counter ONLY - never from rom_ready. Video must
+    // come up independently of ROM loading, otherwise a stalled/slow SD load
+    // takes HDMI sync down with it and there is nothing to diagnose from.
+    .rst_n(~core_reset_raw),
     .ddr_rst(fb_ddr_rst),
     .init_calib_complete(fb_calib),
     .ddr_prefetch_delay(6'd44),

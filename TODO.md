@@ -71,7 +71,11 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
 
 ## Hardware bring-up (untested on the board)
 
-- **SD ROM loader has never run on hardware.** Verified only in simulation
+- **SD ROM loader has never run on hardware.** (Bug already found and fixed
+  this way: the DDR3 framebuffer was reset from `core_reset`, which now waits
+  on the loader — so a stalled SD load took HDMI sync down with it. Video now
+  resets only from the power-on counter, and the loader has a ~1.7 s
+  watchdog. **Rule: nothing on the video path may depend on ROM loading.**) Verified only in simulation
   against a card model (`make -C sim`). The card image is built but not yet
   burned. Beacon field `L<hex>` = {sd_ready, sd_err, done, error}.
 - **Left-edge pixel overlap** on HDMI is still unresolved. Select + D-pad
