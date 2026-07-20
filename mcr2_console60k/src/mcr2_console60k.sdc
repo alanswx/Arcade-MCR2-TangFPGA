@@ -23,3 +23,25 @@ set_clock_groups -asynchronous -group [get_clocks {clk_sys}] -group [get_clocks 
 // are 2FF-synchronized into clk_sys, so the domains are asynchronous.
 create_generated_clock -name clk_usb -source [get_ports {sys_clk}] -multiply_by 6 -divide_by 25 [get_pins {pll_usb_inst/PLLA_inst/CLKOUT0}]
 set_clock_groups -asynchronous -group [get_clocks {clk_usb}] -group [get_clocks {clk_sys}]
+
+// --- HDMI clocks from the framebuffer's internal PLL -----------------------
+// gbatang ships these commented out and we inherited that. It cost a long
+// debug session: with hclk5 unconstrained the tool never knew the OSER10
+// TMDS serializers run at 371.25 MHz, so it placed and routed those paths
+// with no timing requirement at all. HDMI produced nothing, while a simple
+// 25 MHz encoder driving the same pins worked perfectly - and every clock
+// measured correct, because the clocks were never the problem.
+//
+// gbatang gets away with it because their design is nearly empty; ours adds
+// the MCR core, USB host, SD loader, analog video and the beacon on top of
+// the same framebuffer, so unconstrained paths end up wherever there is room.
+create_clock -name hclk5 -period 2.694  -waveform {0 1.347} [get_nets {fb_inst/hclk5}]
+// (hclk is visible at the top level as fb_hclk - the hclk_dbg output - since
+// synthesis merges the internal net with it.)
+create_clock -name hclk  -period 13.468 -waveform {0 6.734} [get_nets {fb_hclk}]
+
+// The HDMI domain only meets the rest of the design inside the framebuffer's
+// own synchronisers, so cut it from the core and DDR3 clocks (hclk/hclk5 are
+// left related to each other - they come from one PLL).
+set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk_sys}]
+set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk4x}]
