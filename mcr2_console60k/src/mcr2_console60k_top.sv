@@ -562,24 +562,23 @@ assign vga_g = cab_blank ? 4'h0 : {g, g[2]};
 assign vga_b = cab_blank ? 4'h0 : {b, b[2]};
 
 // Sync format. 31 kHz always uses separate negative H/V (standard RGBHV).
-// For 15 kHz, displays disagree about what they want, so the format is
-// strap-selectable at the bench instead of costing a rebuild each time
-// (the two straps are the retired PmodVGA socket-orientation pins):
 //
-//   J10-39  J10-40   15 kHz output
-//   -------------------------------------------------------------------
-//   open    open     composite sync on HS, VS also driven   (default)
-//   open    GND      composite sync on HS, VS held inactive (pure RGBS)
-//   GND     open     separate H and V sync                  (RGBHV @ 15kHz)
-//   GND     GND      separate H sync, VS held inactive
+// 15 kHz also defaults to SEPARATE H and V sync, for two reasons: it is what
+// a real MCR cabinet expects (the Video connector has discrete H-Sync on
+// pin 8 and V-Sync on pin 9), and modern 15 kHz-capable displays detect it
+// reliably. Composite sync was the old default and cost a long debug session
+// - one LCD silently dropped its entire green channel, apparently deciding a
+// csync source must carry sync-on-green and clamping that input. Note such
+// displays latch their format detection, so a wrong guess persists until
+// sync is disturbed; changing format while running may not re-trigger it.
 //
-// Worth trying if a display mis-detects the format - e.g. deciding a
-// 15 kHz source must carry sync-on-green and then clamping the green
-// channel, which looks like the green channel going missing.
-wire sync_separate = ~map_rows_n;   // J10-39 to GND
-wire vsync_off     = ~map_sock_n;   // J10-40 to GND
+// Strap J10-39 to GND for composite sync on HS instead (RGBS - what an
+// OSSC/RetroTink or an SOG-wired monitor may prefer).
+// Strap J10-40 to GND to hold VS inactive (pure single-sync RGBS).
+wire want_csync = ~map_rows_n;   // J10-39 to GND
+wire vsync_off  = ~map_sock_n;   // J10-40 to GND
 
-assign vga_hs = (tv15khz && !sync_separate) ? cs_d : hs_d;
+assign vga_hs = (tv15khz && want_csync) ? cs_d : hs_d;
 assign vga_vs = vsync_off ? 1'b1 : vs_d;
 
 // --- PmodVGA plugged directly into the PMOD sockets --------------------------

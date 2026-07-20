@@ -36,8 +36,8 @@ sixth pair. Count from there. Pin 12 is your ground for everything below.
 | 35 | `audio_l` | PWM, needs an RC filter before an amp |
 | 36 | `audio_r` | PWM |
 | 37 | `mode15_n` | **open = 31 kHz**, jumper to GND = 15 kHz |
-| 39 | sync format | 15 kHz: open = composite sync on HS, GND = separate H/V |
-| 40 | VSync enable | 15 kHz: open = VS driven, GND = VS held inactive (pure RGBS) |
+| 39 | sync format | 15 kHz: open = separate H/V (default), GND = composite sync on HS |
+| 40 | VSync enable | 15 kHz: open = VS driven, GND = VS held inactive |
 
 Everything else on J10 is unassigned in the current bitstream.
 
@@ -103,19 +103,22 @@ is strap-selectable rather than baked in:
 
 | J10-39 | J10-40 | Output at 15 kHz |
 |---|---|---|
-| open | open | composite sync on HS + VS driven (default) |
-| open | GND | composite sync on HS only — **pure RGBS** |
-| GND | open | separate H and V sync — **what a real MCR cabinet uses** (Video pins 8 and 9) |
-| GND | GND | separate H sync, VS inactive |
+| open | open | **separate H and V sync — default**, and what a real MCR cabinet uses (Video pins 8 and 9) |
+| GND | open | composite sync on HS (RGBS) — for an OSSC/RetroTink or SOG-wired monitor |
+| GND | GND | composite sync on HS, VS inactive — single-sync RGBS |
+| open | GND | separate H sync, VS inactive |
 
 31 kHz always uses separate H/V regardless of these straps.
 
-If a display drops a colour channel at 15 kHz (green going missing is the
-classic symptom), it is likely deciding the source must carry sync-on-green
-and clamping that input. Try the other sync formats, then look for a
-sync-on-green or input-format setting in the display's menu — the FPGA
-drives all three colour channels through identical logic, so it cannot lose
-one on its own.
+**If a display drops a whole colour channel at 15 kHz** (green vanishing is
+the classic symptom — greys turn magenta, olive turns purple, red and blue
+stay correct), it has mis-detected the sync format, not lost a wire: the
+FPGA drives all three channels through identical logic and cannot lose one
+on its own. Composite sync used to be the default here and provoked exactly
+that on a 15 kHz-capable LCD. **Displays latch their format detection**, so
+switching format while the signal is live often will *not* re-trigger it —
+disturb sync or power-cycle the display between attempts, or the test looks
+like it failed when it did not.
 
 HDMI keeps working in both modes (the framebuffer captures whatever the core
 emits), so you always have a reference picture.

@@ -99,22 +99,15 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
   passive — its SN74ALVC245 buffers need **3.3 V on VCC** (never 5 V).
   The J10 jumper route (or a DE-15 breakout + 9 resistors) avoids the
   ambiguity entirely.
-- **Green channel lost at 15 kHz on a modern 15 kHz-capable LCD** (31 kHz on
-  the same wiring is correct). Grey renders magenta, olive purple, tan pink;
-  red and blue are untouched — i.e. green removed. Investigated 2026-07:
-  the FPGA drives R/G/B through identical logic and cannot lose one channel,
-  and **all four 15 kHz sync formats behave the same** (csync+VS, pure RGBS,
-  separate H/V, separate H with VS off), so the sync format is not the
-  trigger. Conclusion: the display reinterprets the input when it detects
-  15 kHz — most likely sync-on-green detection clamping that input.
-  **Probably not worth fixing**: a real arcade monitor is a dumb analogue
-  amplifier with no format detection, so the target hardware should be
-  unaffected, and both combinations that matter (31 kHz VGA on the bench,
-  HDMI for retrofit-LCD cabinets) work. Next test if revisited: feed the
-  same monitor 15 kHz from MiSTer as a known-good reference — if that is
-  correct, our signal differs in some findable way; if it is also wrong,
-  it is a monitor setting. **Verify against a real arcade monitor before
-  spending more time here.**
+- ~~Green channel lost at 15 kHz on a 15 kHz-capable LCD~~ **RESOLVED
+  2026-07**: the display had mis-detected the sync format. 15 kHz now
+  defaults to **separate H and V sync** (also what a real MCR cabinet wants,
+  Video pins 8/9); composite sync remains available on the J10-39 strap.
+  Two lessons worth keeping: a mis-detected sync format can look exactly
+  like a dead colour channel, and **displays latch their format detection**
+  — switching format on a live signal may not re-trigger it, which made an
+  earlier four-way test look like a total failure when one combination
+  actually worked.
 - **New games' controls are derived, not played.** Trackball/analogue-stick
   sensitivity on a d-pad is guesswork — Kroozr's stick ramp rate especially.
   Tron's aim direction may need reversing (MAME marks the dial PORT_REVERSE).
