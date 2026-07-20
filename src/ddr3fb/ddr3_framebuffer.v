@@ -120,11 +120,22 @@ pll_ddr3 pll_ddr3_inst(
     .mdrdo(mdrp_rdata)      // data read from register
 );
 
-// 74.25 -> 371.25 TMDS clock
-pll_hdmi pll_hdmi_inst(
-    .clkout0(hclk5),
-    .clkout1(hclk),
-    .clkin(clk_x1)
+// LOCAL MODIFICATION: HDMI clocks are now a single chain, NESTang-style:
+// 27MHz -> gowin_pll_hdmi -> hclk5 (371.25) -> CLKDIV/5 -> hclk (74.25).
+// The upstream arrangement (pixel clock = clk_x1 from the DDR3 controller,
+// serial clock = a second PLL fed from clk_x1) leaves the OSER10 PCLK/FCLK
+// phase relationship to routing luck; it produced no usable TMDS on our
+// board even in a minimal design, while this chain displays (see
+// diag/nes_video_selftest). The scanout still runs on clk_x1; pixels cross
+// into hclk through a shadow-raster + async FIFO below - safe because both
+// clocks descend from the same 27MHz reference and cannot drift.
+gowin_pll_hdmi pll_hdmi27_inst(
+    .clkin(clk_27),
+    .clkout(hclk5),
+    .lock()
+);
+CLKDIV #(.DIV_MODE(5)) hclk_div (
+    .CLKOUT(hclk), .HCLKIN(hclk5), .RESETN(rst_n), .CALIB(1'b0)
 );
 
 reg mdrp_wr;
@@ -230,7 +241,7 @@ localparam AUDIO_CLK_DELAY = 74250 * 1000 / AUDIO_RATE / 2;
 logic [$clog2(AUDIO_CLK_DELAY)-1:0] audio_divider;
 logic clk_audio;
 
-always_ff@(posedge clk_x1) 
+always_ff@(posedge hclk) 
 begin
     if (audio_divider != AUDIO_CLK_DELAY - 1) 
         audio_divider++;
@@ -241,7 +252,7 @@ begin
 end
 
 reg [15:0] audio_sample_word [1:0], audio_sample_word0 [1:0];
-always @(posedge clk_x1) begin       // crossing clock domain
+always @(posedge hclk) begin         // crossing clock domain
     audio_sample_word0[0] <= sound_left;
     audio_sample_word[0] <= audio_sample_word0[0];
     audio_sample_word0[1] <= sound_right;
@@ -253,7 +264,6 @@ end
 
 wire [10:0] cx;
 wire [9:0] cy;
-reg [23:0] rgb;
 
 // HDMI output.
 wire [2:0] tmds;
@@ -272,10 +282,10 @@ hdmi #( .VIDEO_ID_CODE(VIDEOID),
         .START_Y(0) )
 
 hdmi(   .clk_pixel_x5(hclk5), 
-        .clk_pixel(clk_x1), 
+        .clk_pixel(hclk), 
         .clk_audio(clk_audio),
-        .rgb(rgb), 
-        .reset( ddr_rst ),
+        .rgb(rgb_out), 
+        .reset( 1'b0 ),
         .audio_sample_word(audio_sample_word),
         .tmds(tmds), 
         .tmds_clock(), 
@@ -376,6 +386,56 @@ always @(posedge clk_x1) begin
     end
 end
 
+/////////////////////////////////////////////////////////////////////
+// Shadow raster (clk_x1) and the pixel FIFO into hclk.
+//
+// The hdmi module's cx/cy now live in the hclk domain, but the scanout and
+// DDR3 prefetch must stay on clk_x1 (the controller's app interface is
+// synchronous to it). Both clocks are exactly 74.25MHz from one 27MHz
+// source, so a shadow copy of the raster, re-aligned once per frame and
+// running LEAD pixels early, produces pixels just ahead of consumption; a
+// small async FIFO carries them across. Occupancy stays ~LEAD entries and
+// cannot drift.
+localparam SHADOW_LEAD = 32;
+localparam FRAME_W = 1650, FRAME_H = 750;   // 720p60 totals
+
+reg sraster_toggle = 0;
+always @(posedge hclk)
+    if (cy == FRAME_H-1 && cx == FRAME_W-1-SHADOW_LEAD)
+        sraster_toggle <= ~sraster_toggle;
+
+reg st_s1 = 0, st_s2 = 0, st_s3 = 0;
+reg [10:0] scx = 0;
+reg [9:0]  scy = 0;
+always @(posedge clk_x1) begin
+    st_s1 <= sraster_toggle; st_s2 <= st_s1; st_s3 <= st_s2;
+    if (st_s3 != st_s2) begin
+        scx <= 0; scy <= 0;
+    end else if (scx == FRAME_W-1) begin
+        scx <= 0;
+        scy <= (scy == FRAME_H-1) ? 10'd0 : scy + 10'd1;
+    end else
+        scx <= scx + 11'd1;
+end
+
+// pixel handoff clk_x1 -> hclk
+wire        pfifo_can_read;
+wire [23:0] pfifo_data;
+reg         pfifo_wr;
+reg  [23:0] pfifo_wdata;
+asyncfifo #(.BUFFER_ADDR_WIDTH(6), .DATA_WIDTH(24)) pixel_fifo (
+    .reset(ddr_rst),
+    .write_clk(clk_x1), .write(pfifo_wr), .write_data(pfifo_wdata), .can_write(),
+    .read_clk(hclk), .read(pfifo_can_read && hdmi_active),
+    .read_data(pfifo_data), .can_read(pfifo_can_read)
+);
+
+wire hdmi_active = (cx < 11'd1280) && (cy < 10'd720);
+reg [23:0] rgb_out;
+always @(posedge hclk)
+    rgb_out <= !hdmi_active ? 24'h000000 :
+               pfifo_can_read ? pfifo_data : 24'h202020;
+
 // upscaling and output RGB
 reg [$clog2(WIDTH)-1:0] ox_r;
 reg [10:0] x_start, x_end;      // determined by fb_width
@@ -383,13 +443,14 @@ reg [10:0] diff_720_height, diff_disp_width_width;
 reg [10:0] x_prefetch_start;
 
 always @(posedge clk_x1) begin
+    pfifo_wr <= 1'b0;
     if (ddr_rst) begin
         ox <= 0; oy <= 0; xcnt <= 0; ycnt <= 0;
     end else begin
-        // keep original pixel coordinates
-        if (cx == x_end) begin
+        // keep original pixel coordinates (shadow raster coordinates)
+        if (scx == x_end) begin
             ox <= 0; xcnt <= 0;
-            if (cy == 0) begin
+            if (scy == 0) begin
                 oy <= 0;
                 ycnt <= fb_height;
             end else begin
@@ -400,18 +461,18 @@ always @(posedge clk_x1) begin
                 end
             end
         end 
-        if (cx >= x_start && cx < x_end) begin
-            xcnt <= xcnt + fb_width;
-            if (xcnt >= diff_disp_width_width) begin
-                xcnt <= xcnt - diff_disp_width_width;
-                ox <= ox + 1;
-            end
-            rgb <= torgb(pixels[cx == 0 ? 0 : ox[3:0]]);
-        end else
-            rgb <= 24'h202020;
-
-        // if (cy >= 300 && cy < 330)    // a blue bar in the middle for debug
-        //     rgb <= 24'h4040ff;
+        if (scy < 10'd720 && scx < 11'd1280) begin
+            if (scx >= x_start && scx < x_end) begin
+                xcnt <= xcnt + fb_width;
+                if (xcnt >= diff_disp_width_width) begin
+                    xcnt <= xcnt - diff_disp_width_width;
+                    ox <= ox + 1;
+                end
+                pfifo_wdata <= torgb(pixels[scx == 0 ? 0 : ox[3:0]]);
+            end else
+                pfifo_wdata <= 24'h202020;
+            pfifo_wr <= 1'b1;
+        end
     end
 end
 
@@ -434,10 +495,10 @@ always @(posedge clk_x1) begin
         prefetch <= 0;
     end else begin
         prefetch <= 0;
-        if (cx == x_prefetch_start) begin
+        if (scx == x_prefetch_start) begin
             prefetch_x <= 0;
             prefetch_x_cnt <= fb_width;
-            if (cy == 0) begin
+            if (scy == 0) begin
                 prefetch_y_cnt <= 0;
                 prefetch_addr_line <= 0;
             end else begin

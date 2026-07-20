@@ -49,7 +49,7 @@ add_file ../src/ddr3fb/ddr3_framebuffer.v
 add_file ../src/ddr3fb/ddr3_memory_interface.v
 add_file ../src/ddr3fb/pll_27.v
 add_file ../src/ddr3fb/pll_ddr3.v
-add_file ../src/ddr3fb/pll_hdmi.v
+add_file ../src/ddr3fb/gowin_pll_hdmi27.v
 add_file ../src/ddr3fb/pll_mDRP_intf.v
 add_file ../src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv
 add_file ../src/ddr3fb/hdmi/audio_info_frame.sv

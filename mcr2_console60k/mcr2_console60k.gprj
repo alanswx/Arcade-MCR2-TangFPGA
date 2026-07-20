@@ -30,7 +30,7 @@
         <File path="../src/ddr3fb/ddr3_memory_interface.v" type="file.verilog" enable="1"/>
         <File path="../src/ddr3fb/pll_27.v" type="file.verilog" enable="1"/>
         <File path="../src/ddr3fb/pll_ddr3.v" type="file.verilog" enable="1"/>
-        <File path="../src/ddr3fb/pll_hdmi.v" type="file.verilog" enable="1"/>
+        <File path="../src/ddr3fb/gowin_pll_hdmi27.v" type="file.verilog" enable="1"/>
         <File path="../src/ddr3fb/pll_mDRP_intf.v" type="file.verilog" enable="1"/>
         <File path="../src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv" type="file.verilog" enable="1"/>
         <File path="../src/ddr3fb/hdmi/audio_info_frame.sv" type="file.verilog" enable="1"/>

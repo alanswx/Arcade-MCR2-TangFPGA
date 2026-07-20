@@ -45,3 +45,4 @@ create_clock -name hclk  -period 13.468 -waveform {0 6.734} [get_nets {fb_hclk}]
 // left related to each other - they come from one PLL).
 set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk_sys}]
 set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk4x}]
+set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk1x}]
