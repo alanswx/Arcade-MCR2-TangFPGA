@@ -145,7 +145,13 @@ wire tv15khz = mode15_s2;
 reg [7:0] reset_cnt = 255;
 wire      rom_ready;                          // ROM image settled
 wire core_reset_raw = (reset_cnt != 0);       // resets the SD loader itself
-wire core_reset     = core_reset_raw || !rom_ready;   // resets the game core
+
+// core_reset is REGISTERED: it fans out to every synchronous reset in the
+// core, and as a combinational function of reset_cnt it became the critical
+// path (deterministic -0.35ns on the shollow build). One extra cycle of
+// reset latency costs nothing.
+reg core_reset = 1'b1;
+always @(posedge clk_sys) core_reset <= core_reset_raw || !rom_ready;
 
 // Which slot of the SD pack to load. Fixed for now; this is what the
 // SW1-3..5 game-select DIPs will drive once the 74HC165 chain exists
