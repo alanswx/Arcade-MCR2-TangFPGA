@@ -561,11 +561,26 @@ assign vga_r = cab_blank ? 4'h0 : {r, r[2]};
 assign vga_g = cab_blank ? 4'h0 : {g, g[2]};
 assign vga_b = cab_blank ? 4'h0 : {b, b[2]};
 
-// 31 kHz: separate negative H/V syncs (standard VGA-style RGBHV).
-// 15 kHz: composite sync on the HS pin (RGBS convention used by arcade
-// monitors and OSSC/RetroTink over a VGA cable); VS still carried, harmless.
-assign vga_hs = tv15khz ? cs_d : hs_d;
-assign vga_vs = vs_d;
+// Sync format. 31 kHz always uses separate negative H/V (standard RGBHV).
+// For 15 kHz, displays disagree about what they want, so the format is
+// strap-selectable at the bench instead of costing a rebuild each time
+// (the two straps are the retired PmodVGA socket-orientation pins):
+//
+//   J10-39  J10-40   15 kHz output
+//   -------------------------------------------------------------------
+//   open    open     composite sync on HS, VS also driven   (default)
+//   open    GND      composite sync on HS, VS held inactive (pure RGBS)
+//   GND     open     separate H and V sync                  (RGBHV @ 15kHz)
+//   GND     GND      separate H sync, VS held inactive
+//
+// Worth trying if a display mis-detects the format - e.g. deciding a
+// 15 kHz source must carry sync-on-green and then clamping the green
+// channel, which looks like the green channel going missing.
+wire sync_separate = ~map_rows_n;   // J10-39 to GND
+wire vsync_off     = ~map_sock_n;   // J10-40 to GND
+
+assign vga_hs = (tv15khz && !sync_separate) ? cs_d : hs_d;
+assign vga_vs = vsync_off ? 1'b1 : vs_d;
 
 // --- PmodVGA plugged directly into the PMOD sockets --------------------------
 // Sipeed socket columns (anchored at the power end, which mates with the

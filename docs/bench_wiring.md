@@ -36,8 +36,8 @@ sixth pair. Count from there. Pin 12 is your ground for everything below.
 | 35 | `audio_l` | PWM, needs an RC filter before an amp |
 | 36 | `audio_r` | PWM |
 | 37 | `mode15_n` | **open = 31 kHz**, jumper to GND = 15 kHz |
-| 39 | `map_rows_n` | PmodVGA socket strap (see below) |
-| 40 | `map_sock_n` | PmodVGA socket strap (see below) |
+| 39 | sync format | 15 kHz: open = composite sync on HS, GND = separate H/V |
+| 40 | VSync enable | 15 kHz: open = VS driven, GND = VS held inactive (pure RGBS) |
 
 Everything else on J10 is unassigned in the current bitstream.
 
@@ -91,9 +91,31 @@ on hardware.
 ## 15 kHz vs 31 kHz
 
 - **J10-37 open** → 31 kHz progressive, works on any VGA monitor.
-- **J10-37 to GND** → native 15 kHz arcade timing, HS pin carries composite
-  sync. Needs an arcade CRT, multisync, or an OSSC/RetroTink — a normal VGA
-  LCD will not sync, which is expected, not a fault.
+- **J10-37 to GND** → native 15 kHz arcade timing (15.77 kHz; displays
+  usually report it as "16 kHz", which is correct). Needs an arcade CRT,
+  multisync, or an OSSC/RetroTink — an ordinary VGA LCD will not sync, which
+  is expected rather than a fault.
+
+### 15 kHz sync format (J10-39 / J10-40)
+
+Displays disagree about what a 15 kHz source should look like, so the format
+is strap-selectable rather than baked in:
+
+| J10-39 | J10-40 | Output at 15 kHz |
+|---|---|---|
+| open | open | composite sync on HS + VS driven (default) |
+| open | GND | composite sync on HS only — **pure RGBS** |
+| GND | open | separate H and V sync — **what a real MCR cabinet uses** (Video pins 8 and 9) |
+| GND | GND | separate H sync, VS inactive |
+
+31 kHz always uses separate H/V regardless of these straps.
+
+If a display drops a colour channel at 15 kHz (green going missing is the
+classic symptom), it is likely deciding the source must carry sync-on-green
+and clamping that input. Try the other sync formats, then look for a
+sync-on-green or input-format setting in the display's menu — the FPGA
+drives all three colour channels through identical logic, so it cannot lose
+one on its own.
 
 HDMI keeps working in both modes (the framebuffer captures whatever the core
 emits), so you always have a reference picture.
