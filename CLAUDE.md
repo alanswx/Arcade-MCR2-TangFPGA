@@ -54,6 +54,12 @@ Bitstream lands at `<board>/impl/pnr/<board>.fs`. Flash with Gowin Programmer
 1. **No `PA1019`** (PLL VCO out of range) warning in the log.
 2. 25K only: `BSRAM ... 56/56` in `impl/pnr/*.rpt.txt` — must not exceed 56.
 3. Positive SETUP and HOLD slack in `impl/pnr/*.timing_paths`.
+4. **`grep -i "Undeclared symbol" impl/gwsynthesis/*.log` must be empty.**
+   Gowin turns use-before-declaration into an implicit **1-bit wire** with
+   only a warning. A multi-bit signal referenced above its declaration
+   becomes one floating bit — this produced a perfectly synced, entirely
+   black HDMI picture (rgb input dead, its FIFO swept as unused) while the
+   build reported zero errors. Declare before use, always.
 
 ## ROMs
 

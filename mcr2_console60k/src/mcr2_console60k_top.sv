@@ -282,6 +282,11 @@ wire u_btn_a = pad_sync2[5], u_btn_b = pad_sync2[4];
 wire u_btn_x = pad_sync2[3], u_btn_y = pad_sync2[2];
 wire u_sel   = pad_sync2[1], u_sta   = pad_sync2[0];
 
+// Core video signals, declared ahead of everything that references them
+wire [2:0] r, g, b;
+wire       hblank, vblank;
+wire       hs, vs, cs;
+
 // --- Core Controls & Switch Mapping (per game, verified vs MAME mcr.cpp) -----
 // All inputs come from the USB pad (PMOD sockets carry the PmodVGA):
 // common decode: dpad = joystick, A = Button 1, Start = Start1,
@@ -462,9 +467,9 @@ end
 `endif
 
 // --- Core Instantiation ---
-wire [2:0] r, g, b;
-wire       hblank, vblank;
-wire       hs, vs, cs;
+// (r/g/b/hblank/vblank/hs/vs/cs are declared just before the controls
+// section - they are referenced there, and Gowin turns use-before-
+// declaration into an implicit 1-bit net with only a warning.)
 wire [15:0] audio_l_val, audio_r_val;
 
 wire [9:0] core_hcnt;

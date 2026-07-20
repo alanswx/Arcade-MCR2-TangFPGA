@@ -264,6 +264,10 @@ end
 
 wire [10:0] cx;
 wire [9:0] cy;
+reg [23:0] rgb_out;   // driven by the pixel-bridge logic further down;
+                      // MUST be declared before the hdmi instantiation below
+                      // (Gowin turns use-before-declaration into an implicit
+                      // 1-bit wire with only a warning - black screen)
 
 // HDMI output.
 wire [2:0] tmds;
@@ -419,6 +423,15 @@ always @(posedge clk_x1) begin
 end
 
 // pixel handoff clk_x1 -> hclk
+wire hdmi_active = (cx < 11'd1280) && (cy < 10'd720);
+// DIAGNOSTIC COLOURS - each failure mode paints differently:
+//   white 2px border   = hclk/hdmi/rgb path alive (drawn without the FIFO)
+//   magenta interior   = pixel FIFO underrunning (producer side broken)
+//   grey pillars+black = FIFO fine but pixels[] dark (prefetch/DDR reads)
+//   game picture       = everything works
+wire hdmi_border = hdmi_active &&
+    (cx < 11'd2 || cx >= 11'd1278 || cy < 10'd2 || cy >= 10'd718);
+
 wire        pfifo_can_read;
 wire [23:0] pfifo_data;
 reg         pfifo_wr;
@@ -430,15 +443,6 @@ asyncfifo #(.BUFFER_ADDR_WIDTH(6), .DATA_WIDTH(24)) pixel_fifo (
     .read_data(pfifo_data), .can_read(pfifo_can_read)
 );
 
-wire hdmi_active = (cx < 11'd1280) && (cy < 10'd720);
-// DIAGNOSTIC COLOURS - each failure mode paints differently:
-//   white 2px border   = hclk/hdmi/rgb path alive (drawn without the FIFO)
-//   magenta interior   = pixel FIFO underrunning (producer side broken)
-//   grey pillars+black = FIFO fine but pixels[] dark (prefetch/DDR reads)
-//   game picture       = everything works
-wire hdmi_border = hdmi_active &&
-    (cx < 11'd2 || cx >= 11'd1278 || cy < 10'd2 || cy >= 10'd718);
-reg [23:0] rgb_out;
 always @(posedge hclk)
     rgb_out <= !hdmi_active  ? 24'h000000 :
                hdmi_border   ? 24'hFFFFFF :
