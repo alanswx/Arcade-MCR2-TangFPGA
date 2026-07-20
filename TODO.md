@@ -71,11 +71,27 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
 
 ## Hardware bring-up (untested on the board)
 
-- **SD ROM loader has never run on hardware.** (Bug already found and fixed
-  this way: the DDR3 framebuffer was reset from `core_reset`, which now waits
-  on the loader — so a stalled SD load took HDMI sync down with it. Video now
-  resets only from the power-on counter, and the loader has a ~1.7 s
-  watchdog. **Rule: nothing on the video path may depend on ROM loading.**) Verified only in simulation
+- **SD ROM loader has never run on hardware** with a valid pack (the
+  reject-foreign-card path IS proven: NESTang's card is correctly refused,
+  beacon `L09`, and the baked game runs). Writing a pack to a spare card and
+  booting slot 0 is the remaining test.
+- ~~HDMI black screen~~ **RESOLVED 2026-07-20** after a long hunt. HDMI now
+  works: 720p from the DDR3 framebuffer, game + border verified on hardware.
+  Root causes, in the order found (each invisible to the error log):
+  1. video reset gated on ROM loading (fixed: video resets from power-on only)
+  2. IDE `Place_Option 0` vs build.tcl's 2 (DDR3 never trained on IDE builds)
+  3. **gbatang's cross-PLL serializer clocking** — pixel clock from the DDR3
+     controller, serial clock from a second PLL; OSER10 phase left to routing
+     luck. Restructured to NESTang's single chain (27→PLL→371.25→CLKDIV/5)
+     with a shadow-raster + async-FIFO bridge into the scanout domain.
+  4. **Verilog use-before-declaration** — Gowin makes an implicit 1-bit wire
+     with only a warning; the encoder's rgb input was one floating bit and
+     the pixel FIFO was swept. Post-build check #4 in CLAUDE.md now guards
+     this ("Undeclared symbol" grep must be empty).
+  Diagnostic assets that earned their keep, kept in the repo: the UART
+  beacon, `diag/hdmi_selftest` (dvi_tx 640x480), `diag/fb_selftest`
+  (framebuffer alone), `diag/nes_video_selftest` (NESTang clocking, the
+  decisive one). Verified only in simulation
   against a card model (`make -C sim`). The card image is built but not yet
   burned. Beacon field `L<hex>` = {sd_ready, sd_err, done, error}.
 - **Left-edge pixel overlap.** Root cause is the core's ~13-pixel RGB-vs-hcnt

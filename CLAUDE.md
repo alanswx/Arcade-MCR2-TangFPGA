@@ -125,12 +125,19 @@ violations. Do not remove; instance names (`pll_inst/PLLA_inst/CLKOUT1`,
 `clk_div_inst/CLKOUT`) must match the top.
 
 ### HDMI video — 60K: DDR3 framebuffer (current)
-**Bring-up lesson: the framebuffer's `clk_g` (50 MHz DDR3-controller/mDRP
-clock) MUST come from a PLL output, not the raw clock pad.** Pad-fed clk_g
-put a derived controller clock on generic routing (the build's only warning,
-PR1014) and the DDR3 IP never started — and since the 74.25 MHz pixel clock
-is generated *by* the DDR3 IP (`clk_x1` = 297/4), HDMI was completely dead.
-`gowin_pll_mcr2` now has a dedicated 50 MHz output (CLKOUT2) for this.
+**Two structural rules, both learned the hard way:**
+1. **`clk_g` (50 MHz DDR3-controller/mDRP clock) MUST come from a PLL
+   output, not the raw clock pad** — pad-fed clk_g put a derived controller
+   clock on generic routing (PR1014) and the DDR3 IP never started.
+2. **The TMDS serializer clocks MUST be one chain**: 27 MHz → gowin_pll_hdmi
+   → 371.25 MHz → CLKDIV÷5 → 74.25 MHz (NESTang's arrangement). Upstream
+   gbatang clocks the hdmi module from the DDR3 controller's `clk_x1` and
+   the serializer from a second PLL — the OSER10 PCLK/FCLK phase is then
+   routing luck, and it produced synced-but-dead TMDS here even in a
+   minimal design. The scanout still runs on `clk_x1`; pixels cross into
+   `hclk` via a shadow raster (720p counters re-aligned each frame, running
+   32 px ahead) into a 64-deep async FIFO — drift-free because both clocks
+   descend from the same 27 MHz.
 
 The 60K top streams the core's native pixels (512×480, RGB444, one `fb_we`
 per 20 MHz pixel, `cap_delay` capture-window shift — live-tunable with
