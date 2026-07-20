@@ -13,7 +13,15 @@ module mcr2_console60k_top (
     input        s1,            // User key AA13 - ACTIVE LOW on console (pull-up)
     input        reset2,        // User key AB13 - ACTIVE LOW on console (pull-up)
 
-    // DVI/HDMI output
+    // DVI/HDMI output.
+    // hpd_en drives the dock's HDMI enable. Sipeed's own NEO_DOCK example
+    // drives this pin at DRIVE=12; nand2mario's cores leave it unassigned
+    // (tri-stated with a weak internal pull-up), which is what we did too.
+    // If the net has an external pull-down, that weak pull-up loses and the
+    // dock's HDMI stays disabled - and because JTAG reconfiguration does not
+    // power-cycle the board, whether a previous core left the line high can
+    // decide if a picture appears. Drive it explicitly.
+    output       hpd_en,
     output       tmds_clk_p,
     output       tmds_clk_n,
     output [2:0] tmds_d_p,
@@ -79,6 +87,8 @@ module mcr2_console60k_top (
     output       audio_l,
     output       audio_r
 );
+
+assign hpd_en = 1'b1;   // enable the dock's HDMI path
 
 // --- Clock Generation ---
 wire clk_sys;  // 40 MHz  (Core system clock, generates 20 MHz pixel enable)
