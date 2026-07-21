@@ -226,6 +226,10 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
 - `docs/universal_mcr_shield_spec.md` — **consolidated shield spec** (net
   table, electrical, pin budget); supersedes the electrical sections of the
   two docs above for new work.
+- `docs/shield_j10_pinout.md` — **the frozen 40-pin J10 header sheet for
+  the shield PCB** (video + controls on one header via 74HC165/595
+  chains); the authority over spec §4b for any pin question. Change this
+  file first if a pin must move.
 - `docs/mcr_game_input_matrix.md` — machine-readable transcription of the
   pinout matrix PDF + MAME-verified SSIO bit maps; use it when porting a
   new game.

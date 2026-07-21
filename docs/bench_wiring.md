@@ -3,10 +3,11 @@
 What the **bitstreams in `bitstreams/` actually drive today**. Generated from
 `mcr2_console60k/src/mcr2_console60k.cst`; if you change the CST, update this.
 
-> **Do not wire from `universal_mcr_shield_spec.md` §4b.** That is the future
-> shield's cabinet-connector plan and deliberately differs from these
-> desk-test assignments. §4a of that doc is still the authority for which
-> FPGA ball a J10 pin reaches; this page is which *signal* is on it now.
+> Building the shield PCB? Use **`shield_j10_pinout.md`** — its "live"
+> pins are exactly this page's assignments (deliberately, so current
+> bitstreams drive the shield unchanged), plus the reserved control-chain
+> pins. Spec §4a remains the authority for which FPGA ball a J10 pin
+> reaches; this page is which *signal* is on it in today's bitstreams.
 
 ## Finding pin 1 on J10
 
@@ -39,7 +40,9 @@ sixth pair. Count from there. Pin 12 is your ground for everything below.
 | 39 | sync format | 15 kHz: open = separate H/V (default), GND = composite sync on HS |
 | 40 | VSync enable | 15 kHz: open = VS driven, GND = VS held inactive |
 
-Everything else on J10 is unassigned in the current bitstream.
+Everything else on J10 is unassigned in the current bitstream; pins
+25-34 are RESERVED for the shield's input/output shift-register chains
+(`shield_j10_pinout.md`) — leave them free on bench hookups too.
 
 ## Analogue video, option A — DE-15 breakout + 9 resistors
 

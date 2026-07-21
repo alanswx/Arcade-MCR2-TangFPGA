@@ -37,27 +37,32 @@ layout). Game-function reference: `docs/mcr_game_input_matrix.md`.
 
 ## 2. FPGA signal budget
 
-| Group | Signals | Direction | Interface |
+**Revised 2026-07-21: the shield connects to J10 ONLY** — one 40-pin
+header for video, audio and all controls; both PMOD sockets stay free.
+The definitive pin table is **`shield_j10_pinout.md`**; the budget that
+makes it fit:
+
+| Group | J10 pins | Direction | Interface |
 |---|---:|---|---|
-| J2 (P1) | 6 | in | opto, active low |
-| J3 (coin/start/tilt) | 5 | in | opto, active low |
-| J4 (Opt X, 8-bit dial bus) | 8 | in | opto, active low |
-| J5 (Opt Y / P2) | 11 | in | opto, active low |
-| Video RGB | 9 (3:3:3) | out | R2R DAC → 1 Vp-p |
-| Video sync | 2–3 (HS, VS, opt. CSYNC) | out | NPN/74HCT buffer → 5V TTL |
-| Audio | 1–2 (PWM) | out | RC filter → LM386 |
-| DIP config (16 switches) | 3 | in | 74HC165 chain (§7) |
-| **Total** | **~47** | | |
+| Video RGB (4:4:4 driven, 3:3:3 significant) | 12 | out | R2R DAC → 1 Vp-p |
+| Video sync HS/VS | 2 | out | NPN/74HCT buffer → 5V TTL |
+| Audio PWM L/R | 2 | out | RC filter → LM386 |
+| Status LEDs | 4 | out | direct |
+| Mode/sync straps | 3 | in | solder jumpers |
+| **ALL cabinet inputs + both DIP banks** (J2, J3, J4, J5, J6/IP4, SW1, SW2 = 56 bits) | **3** | in | 7× 74HC165 chain |
+| **All outputs** (coin meters, lamps — extensible) | 4 | out | 74HC595 chain + ULN2803 |
+| Service button | 1 | in | direct (opens the OSD) |
+| Spares | 7 | — | |
+| Power (+5 V out, GND) | 2 | | |
+| **Total** | **40** | | |
 
-Available to the shield: **54 I/O** = J10's 38 signal pins (40 less +5V/GND
-at 11/12) + PMOD0 (8) + PMOD1 (8). That leaves ~7 spare for coin meters and
-lamps, and keeps **J9 (38 pins) entirely free for the SDRAM module**.
-HDMI costs zero shield pins (TMDS is on dedicated SOM balls); likewise the
-USB-A ports, SD card, and DDR3 are all on SOM/dock pins.
-
-Note this is why the DIPs are serial: 16 parallel DIP pins would need 60
-I/O, forcing the design into J9 and forfeiting the SDRAM slot — i.e. giving
-up the big MCR-3 titles to save a 15-cent shift register.
+Serializing the inputs is what makes "every game on one header" possible:
+30+ harness lines plus the 8-bit IP4/J6 port plus 16 DIPs would need ~60
+parallel pins, forfeiting either video or the J9 SDRAM slot (i.e. the big
+MCR-3 titles). The '165 parallel-load strobe snapshots all 56 bits
+atomically, so the 8-bit spinner/trackball buses cannot tear, and a full
+scan (~30 µs) is ~500× faster than the games' own once-per-frame input
+polling. HDMI, USB, SD and DDR3 cost zero shield pins (SOM/dock balls).
 
 ## 3. Electrical interface (consolidated)
 
@@ -117,7 +122,12 @@ dual-purpose pins — synthesis needs the matching `-use_sspi_as_gpio`-family
 options (the 25K build.tcl shows the pattern). U20/V20 are GCLK-capable
 (bonus, not required). All J10 banks (6/7/8) are 3.3 V.
 
-### 4b. Cabinet pin → J10/PMOD assignment
+### 4b. Cabinet pin → J10/PMOD assignment — SUPERSEDED
+
+> **This section is superseded by `shield_j10_pinout.md`** (2026-07-21),
+> which puts everything on J10 via input/output shift-register chains and
+> keeps the PMODs free. It is retained only as the record of the earlier
+> parallel-input plan; do not route from it.
 
 Inputs (all opto-isolated, active low, internal pull-ups):
 
@@ -179,9 +189,11 @@ and the USB pad, so PMOD desk buttons retire.
    sheets; if a board is identified as rev A, spot-check sheets 4/6 (the
    only known dock-level reroute is SDRAM0_CS: F19 on the old NEO dock →
    F21 now — J9 side, doesn't affect the shield).
-3. **J6 / SSIO IP4** and **lamp/coin-meter outputs** — not in the matrix
-   PDF; 8 J10 pins are reserved for them. Survey MAME + cabinet manuals
-   before finalizing rev A (outputs need driver transistors, not optos).
+3. **J6 / SSIO IP4** and **lamp/coin-meter outputs** — ✅ resolved by the
+   chain architecture in `shield_j10_pinout.md`: IP4/J6 is '165 device U5
+   (8 bits, zero extra pins) and outputs are a 74HC595+ULN2803 chain,
+   extensible per game with no pin cost. J6's *cabinet-side* connector
+   wiring still wants a manual cross-check before the harness is crimped.
 4. **Board outline/mounting** — `pcb_design.md` + `tools/generate_pcb.py`
    own the physical layout; sync them to §4b (they currently assume generic
    2×20 headers, and J9 must be left clear for the SDRAM module).
@@ -231,18 +243,14 @@ wiring is established.
 
 ### 7b. Reading them (74HC165)
 
-Two 74HC165s daisy-chained (SW1 → SW2), read with 3 FPGA pins. Suggested
-J10 assignment, taken from the pins §4b reserves for outputs:
-
-| Signal | J10 pin | Ball | Note |
-|---|---|---|---|
-| `dip_clk` | 20 | U20 | GCLK-capable |
-| `dip_load` (SH/LD̄) | 31 | Y19 | |
-| `dip_data` (QH of last device) | 32 | Y18 | |
-
-Switch to GND with pull-ups to +3V3; a closed switch reads 0. Sampled once
-after reset — **silkscreen "power-cycle after changing DIPs"** next to the
-banks. No debounce needed.
+The two DIP banks are simply devices **U6 (SW1) and U7 (SW2) on the
+unified input chain** defined in `shield_j10_pinout.md` §2 (IN_CLK /
+IN_LOAD_N / IN_DATA on J10 pins 25/26/27) — the same chain that carries
+every harness input, so the DIPs cost zero additional pins. Switch to GND
+with pull-ups to +3V3; a closed switch reads 0. Because the chain is
+scanned continuously, DIP changes could be live — but the cores latch IP3
+meaningfully only at boot, so keep the **silkscreen "power-cycle after
+changing DIPs"** next to the banks.
 
 ### 7c. OSD (game selection & system settings)
 

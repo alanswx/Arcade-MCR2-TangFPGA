@@ -114,8 +114,11 @@ baked-in game boots.
 ## 6. Cabinet integration
 
 The goal is a drop-in board for real MCR cabinets: analog 15 kHz RGB,
-original harness connectors, physical DIPs for game options. The
-consolidated electrical spec is
-[docs/universal_mcr_shield_spec.md](docs/universal_mcr_shield_spec.md);
+original harness connectors, physical DIPs for game options. For anyone
+building the PCB: the **frozen 40-pin header sheet is
+[docs/shield_j10_pinout.md](docs/shield_j10_pinout.md)** — one header
+carries video, audio and all controls (inputs via a 74HC165 chain that
+covers every game, outputs via 74HC595). The consolidated electrical spec
+is [docs/universal_mcr_shield_spec.md](docs/universal_mcr_shield_spec.md);
 per-game harness pinouts are in
 [docs/mcr_game_input_matrix.md](docs/mcr_game_input_matrix.md).

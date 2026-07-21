@@ -64,8 +64,9 @@ cocktail cabinet manual or real hardware. (J5-19 "P2 Button 1" is pinned and
 is the obvious candidate, but that is a guess.)
 
 **Other pin impact:** cocktail P2 controls for Tron/Domino arrive on SSIO
-IP2 = J5 1-8, and §4b already pins all 11 J5 lines. **The one real gap is
-IP4 / J6, which is not pinned at all** — see the Shield PCB section.
+IP2 = J5 1-8, and IP4 / J6 is covered too — every harness input rides the
+shield's 74HC165 chain (`docs/shield_j10_pinout.md`), so no per-line pin
+budget exists anymore. See the Shield PCB section.
 
 ---
 
@@ -171,16 +172,23 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
 - **5 V delivery route unverified** — J10 pin 11 exposes +5 V but sits behind
   the dock's OR-ing/OVP chain; do not back-feed it until traced. USB-C is the
   known-good path.
-- **J6 / SSIO IP4 is not pinned, and it is not just a cocktail concern.**
-  IP4 carries: Wacko's cocktail aim joystick, Two Tigers' player-2 dial, and
-  **Kozmik Kroozr's analogue stick Y axis — which is needed in upright play
-  too**. The 8 reserved J10 pins can cover it, but the allocation has not
-  been made and the master pinout PDF has no J6 sheet, so J6's cabinet
-  wiring must be established before routing rev A.
-- **Lamp / coin-meter outputs** unsurveyed (share those 8 reserved pins).
-  Outputs need driver transistors, not optos.
-- **`tools/generate_pcb.py` is not synced** to the §4b net table, and still
-  assumes generic 2×20 headers; J9 must stay clear for the SDRAM module.
+- **Header pinout is FROZEN (2026-07-21): `docs/shield_j10_pinout.md`.**
+  Everything on J10 only — video/audio/straps/LEDs on the pins today's
+  bitstreams already drive, ALL cabinet inputs + both DIP banks on a
+  7×74HC165 chain (3 pins), outputs on a 74HC595+ULN2803 chain (4 pins),
+  service button direct. This resolved the old J6/IP4 gap (chain device
+  U5) and the lamp/coin-meter question ('595 chain, extensible free).
+  Remaining on it:
+  - **Expander-chain RTL does not exist yet** — a small module scanning
+    the '165s into the input mux (ORed with the USB pad), driving the
+    '595s, and a SERVICE_N → OSD-open hook. J10 pins 25-34 are reserved
+    and high-Z until then; the shield works for video/audio/straps/LEDs
+    with current bitstreams on day one.
+  - J6's *cabinet-side* connector wiring wants a manual cross-check
+    before crimping harnesses (the matrix PDF has no J6 sheet).
+- **`tools/generate_pcb.py` is not synced** to `shield_j10_pinout.md`, and
+  still assumes generic 2×20 headers; J9 must stay clear for the SDRAM
+  module.
 - **138K variant**: header nets are dock-level but the net→ball map is
   SOM-specific; re-extract before targeting it.
 
