@@ -1,114 +1,134 @@
-# MCR family porting roadmap (Tang Console 60K)
+# MCR family porting plan (Tang Console 60K)
 
-Plan for bringing the remaining Bally Midway MCR generations onto the 60K,
-in order of effort-to-payoff. Written 2026-07; supersedes the "Cores /
-ports" sketch that used to live in TODO.md.
+Rewritten 2026-07 after vendoring the five MiSTer MCR cores into `refs/`
+(local reference checkouts, gitignored — nested git repos). This replaces
+the earlier speculative roadmap: everything below is verified against the
+actual sources.
 
-## What already carries over (the platform)
+## What the survey established
 
-Everything below is core-agnostic and is reused by every phase unchanged:
+All five cores are the same dar/sorgelig lineage as our `mcr2.vhd` — one
+core `.vhd` each, identical support files (T80, Z80CTC, `dpram`,
+`gen_ram`, `cmos_ram`, `spinner.sv`), the **same `clock_40` input, the
+same external CPU/sound ROM ports, and the same `dl_` download bus** our
+SD loader already drives. The 60K platform (framebuffer/HDMI, analog
+video, OSD, SD loader+prefs, USB, beacon, shield header) carries over
+unchanged for every family.
 
-- DDR3 framebuffer → 720p HDMI + audio; analog VGA at 31/15 kHz with sync
-  straps; the OSD menu (core-raster overlay, so it works on every output);
-  SD pack loader; USB HID pads; UART beacon; headless build flow.
-- The SSIO sound board (`mcr_sound_board.vhd`) — MCR-1 and half of MCR-3
-  use the *same* board the MCR-2 games do.
-- T80/Z80CTC, `spinner.sv`, `dpram.sv`, the input-map conventions in
-  `docs/mcr_game_input_matrix.md` (IP0..IP4 are identical across all
-  SSIO-based generations — verified against MAME, see that doc).
+| refs/ core | Games (from the MRAs) | Sound | ROM home on MiSTer |
+|---|---|---|---|
+| Arcade-MCR1 | Kick, Solar Fox | SSIO (same `mcr_sound_board.vhd` we ship) | **all BRAM** — no sdram.sv in the repo |
+| Arcade-MCR3 | Tapper, Timber, Journey, Discs of Tron | SSIO + `wave_sound.sv` sample player (Journey tape music; **DoT speech absent upstream** — Squawk & Talk was never implemented) | CPU+sound+sprites in SDRAM, bg (32 KB) via `dl_` into BRAM |
+| Arcade-MCR3Scroll | Spy Hunter, Crater Raider, Turbo Tag | SSIO + Cheap Squeak Deluxe (`cheap_squeak_deluxe.vhd`, FX68K) | SDRAM |
+| Arcade-MCR3Mono | Rampage, Sarge, Max RPM, Power Drive, Star Guards, Demolition Derby (mono) | Turbo Cheap Squeak (`cpu09l` 6809) / Sounds Good (FX68K) — no SSIO | SDRAM |
 
-Porting a family = new game-board core (video generator + memory map) plus
-per-game input maps and ROM packing. It is **not** a new platform bring-up.
+Memory reality on the 60K (118 BSRAM blocks, ~78 free ≈ 156 KB for game
+ROM after platform + core RAM):
 
-## Sources to vendor
+- **MCR-1 fits BRAM trivially** (Kick ≈ 50 KB, Solar Fox ≈ 80 KB;
+  `cpu_rom_addr` is only 15 bits). No new memory hardware.
+- **Every MCR-3 family needs the SDRAM module** — sprite ROM alone is
+  128 KB (Tapper) to 256 KB (Rampage); MiSTer's own `sdram.sv` multi-port
+  arcade controller is in each refs/ repo, purpose-built for these cores.
 
-Same dar/sorgelig lineage as our `mcr2.vhd`, so the code style and
-structure will be familiar:
+## Phase A — MCR-1 core: Kick, Kickman, Solar Fox
 
-- MCR-1: <https://github.com/MiSTer-devel/Arcade-MCR1_MiSTer>
-- MCR-3 (91490 + scroll games): <https://github.com/MiSTer-devel/Arcade-MCR3_MiSTer>
-- MCR-3 monoboard: <https://github.com/MiSTer-devel/Arcade-MCR3Mono_MiSTer>
+No new hardware; the only new RTL is `mcr1.vhd` itself. Work items:
 
-## ROM budget arithmetic (what forces SDRAM and when)
+1. **Diff the shared support files first** (`refs/Arcade-MCR1_MiSTer/rtl/`
+   vs our `src/rtl/`): ours carry local fixes (dpram INIT_FILE ROM mode,
+   mcr2 bg download decode). Take `mcr1.vhd`; keep ours for everything
+   shared.
+2. Vendor `mcr1.vhd` → `src/rtl/`. Its download map differs from MCR-2
+   (verified): sprites `0x10000-0x17FFF`, bg1 `0x18000-0x18FFF`, bg2
+   `0x19000-0x19FFF`; CPU ROM is 32 KB max, sound 16 KB.
+3. `merge_roms.py`: add `kick`, `kickman`, `solarfox` specs (zips already
+   in `roms/`), writing the MCR-1 layout; `make_rompack.py` gains a
+   **pack format v2**: per-slot family byte + name, so one card serves
+   every family bitstream and the loader refuses cross-family slots.
+4. New `mcr1_console60k/` project = copy of the 60K project with the core
+   swapped and a 2-game input mux (Kick: spinner on IP1 via `spinner.sv`,
+   1 button; Solar Fox: stick + 2 buttons — bit maps from MAME mcr.cpp,
+   recorded in `mcr_game_input_matrix.md` as we did for MCR-2).
+5. OSD: game names come from the pack header (already written there by
+   `make_rompack.py`) instead of hardcoded strings — after that, no
+   family ever touches menu RTL again. Prefs record gains the family
+   byte (sector format has room).
 
-Anchor from the current build: 94/118 BSRAM *including* Tron's 108 KB of
-ROM (54 blocks at 2 KB/block) → platform + core RAM ≈ 40 blocks →
-**~78 blocks ≈ 156 KB of BSRAM available for game ROM**.
+Deliverable: `bitstreams/console60k_mcr1.fs` — boots Kick, OSD switches
+between the three, prefs persist. **This phase is deliberately first: it
+forces all the multi-family packaging decisions while the RTL risk is
+near zero.**
 
-| Family | Game ROM totals | Verdict |
-|---|---|---|
-| MCR-1 (Kick, Solar Fox) | ~80 KB | BSRAM, easy fit |
-| MCR-2 (current six) | 96–108 KB | BSRAM (shipping today) |
-| 91490+SSIO (Tapper 232 KB, Timber, Journey; DoT 152 KB) | 152–232 KB | **SDRAM** (DoT alone is borderline-BSRAM) |
-| MCR-3 scroll/mono (Spy Hunter, Crater, Rampage 480 KB, …) | 224–480 KB | **SDRAM**, plus second sound CPUs |
+## Phase B — SDRAM module bring-up (the gate for all MCR-3)
 
-## Phase 1 — MCR-1 core: Kick, Kickman, Solar Fox  *(cheap win)*
+1. Tang SDRAM module into **J9** (pins from `docs/pinrefs/` nand2mario
+   csts; CS = F21 on the Console). Retire the F19/F20 PMOD buttons.
+2. Vendor MiSTer's `sdram.sv` (from `refs/Arcade-MCR3_MiSTer/rtl/` — the
+   multi-port arcade variant with dedicated sprite/CPU ports).
+3. `rom_loader` v3: slots larger than 128 KB stream through the existing
+   `dl_` path into SDRAM (MiSTer's `rom_download` wiring in
+   `Arcade-MCR3.sv` is the template). Pack v2 already carries per-slot
+   sizes.
+4. Standalone validation before any core uses it: memtest pattern
+   bitstream, pass/fail in the UART beacon and on the shield LEDs.
 
-The only genuinely new RTL is the 90009 video generator; sound is our
-existing SSIO, ROMs fit BSRAM with lots of headroom, Kick's spinner is
-`spinner.sv`. ROM zips are already in `roms/`.
+## Phase C — MCR-3 core: Tapper, Timber, Journey, Discs of Tron
 
-Work items: vendor core → `src/rtl/mcr1.vhd`; a `mcr1_console60k` build
-config (same top, new core + input maps); `merge_roms.py` gains the MCR-1
-specs; pack format v2 (below); OSD menu shows the family's games.
-Deliverable: `console60k_mcr1.fs` — boots Kick, OSD switches within family.
+1. Vendor `mcr3.vhd`; SSIO is shared and already ours. Wire CPU/sound/
+   sprite ROM ports to `sdram.sv` exactly as `Arcade-MCR3.sv` does
+   (56 KB CPU, 16 KB sound, 128 KB sprites), bg via `dl_` into BRAM.
+2. `wave_sound.sv` + samples in SDRAM for Journey's tape music (the
+   MiSTer `/sound/journey.zip` sample pack becomes an extra pack-v2
+   region streamed at boot). DoT ships without speech initially — same
+   as MiSTer; real Squawk & Talk (6809 + TMS5200) is a separate stretch
+   goal we can schedule if it stings.
+3. Input maps per game from mcr.cpp (Tapper 2×2-way sticks + buttons;
+   Timber 2 sticks; Journey stick+button; DoT stick + aim spinner on
+   the Opt X bus — the shield's U3 '165 already carries it).
+4. IP0 bit 4 is now "coin 3"-ish per game — re-verify all IP0 bits; the
+   91490 games moved some system buttons.
 
-## Phase 2 — SDRAM bring-up  *(prerequisite for everything MCR-3)*
+Deliverable: `console60k_mcr3.fs`, 4 games, marquee titles done.
 
-- Tang SDRAM module in the J9 slot. Chip select is **F21** on the Console
-  (F19 on the Mega dock); F19/F20 are currently PMOD-button inputs —
-  retire them, USB pads won.
-- MiSTer's MCR3 cores already fetch ROMs from SDRAM (that is how MiSTer
-  runs them) — port their arbitration rather than inventing one. We have
-  a `src/rtl/sdram.sv` from the original port to start from.
-- Extend `rom_loader.sv` to stream big pack slots into SDRAM instead of
-  BSRAM (same download bus, bigger address space).
+## Phase D — MCR3Scroll: Spy Hunter, Crater Raider, Turbo Tag
 
-## Phase 3 — MCR-3 / 91490 + SSIO: Tapper, Timber, Journey
+`mcr3scroll.vhd` + Cheap Squeak Deluxe (FX68K — new clocking to bring up,
+one-time) + `steering_control.vhd` for wheel/pedal synthesis from pad or
+real cabinet controls (shield '165 bus). Spy Hunter's lamp panel lands on
+the shield's 74HC595 chain — add a second '595, zero header pins. CMOS
+option: Crater Raider is SSIO-only if CSD proves stubborn — it can ship
+from this core before Spy Hunter does.
 
-New 91490 video (same 512×480 scanner family, 4 bpp / 64 colors), SSIO
-reused, ROMs from SDRAM. Journey's exact machine variant (background
-board) to be confirmed against MAME during vendoring.
+## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards, Demolition Derby
 
-## Phase 4 — Squawk & Talk: Discs of Tron
+`mcr3mono.vhd` + Turbo Cheap Squeak (`cpu09l`) + Sounds Good (FX68K,
+already proven by Phase D). Rampage's 256 KB sprites are the biggest ROM
+load of the whole family — SDRAM budget is fine, pack slots grow again.
+Bonus once TCS exists: **Demolition Derby's 4-player version (`demoderb`)
+is MCR-2 hardware + TCS** — it slots into our existing MCR-2 core.
 
-M6809 + AY + TMS5200 speech, all present in the MiSTer MCR3 repo. DoT's
-152 KB might even fit BSRAM, so this can land before Phase 2 if the
-speech board turns out easy — treat the ordering of 2↔4 as flexible.
+## Cross-cutting decisions (do once, in Phase A)
 
-## Phase 5 — MCR-3 scroll + monoboard
+- **Pack format v2**: version byte, per-slot {family, sector count,
+  name}; loader rejects slots whose family byte doesn't match the
+  running bitstream; OSD renders names from the header. Bigger slots
+  (MCR-3: 512 KB; sample regions: MBs) are just sector counts.
+- **Prefs v2**: add the family byte so the future multiboot selector
+  (spec §7d) can pick the right *bitstream*, not just the right slot.
+  Until multiboot exists, switching families = reflash (openFPGALoader
+  one-liner, documented in README).
+- **One board project per family** (`mcr1_console60k/` …): same top
+  structure, different core + input mux. Shared fixes keep living in
+  `src/`.
+- **refs/ hygiene**: `refs/` is gitignored reference material (nested
+  git checkouts). We copy files out deliberately, with a dated comment,
+  as with every previous vendor (usb_hid_host, ddr3fb).
 
-- **Scroll video**: Spy Hunter (+ Chip Squeak Deluxe, a 68000 + DAC music
-  board → `fx68k`), Crater Raider (SSIO), Turbo Tag (prototype).
-- **Monoboard**: Sarge / Max RPM / Demolition Derby-mono (Turbo Cheap
-  Squeak, 6809), Rampage / Power Drive / Star Guards (Sounds Good, 68000).
-- Cabinet controls get interesting (wheel/pedals/dual sticks); lamps for
-  Spy Hunter. Map to pads first, real cabinet I/O via the shield.
-- Bonus unlocked by TCS: **Demolition Derby (`demoderb`, the 4-player
-  version) is MCR-2 hardware + Turbo Cheap Squeak** — once TCS exists it
-  slots into our *existing* MCR-2 core (verify machine config in mcr.cpp
-  when we get there).
+## Sequencing rationale
 
-## Cross-cutting decisions
-
-- **One bitstream per family.** Game switching *within* a family stays
-  OSD + SD pack (proven). Switching *between* families = reflash for now
-  (`openFPGALoader -b tangconsole -f bitstreams/<family>.fs`); a Gowin
-  MultiBoot selector (all families fit the 8 MB flash) or the BL616/
-  TangCore loader is its own later spike — decide when there are two
-  families to switch between.
-- **Pack format v2**: header gains a format version and per-slot family
-  tag + sector count (128 KB slots for MCR-1/2, 512 KB for MCR-3);
-  `make_rompack.py` already writes slot *names* into the header — the OSD
-  should start rendering those instead of its hardcoded strings, so new
-  families never touch the menu RTL.
-- **Input maps**: extend `docs/mcr_game_input_matrix.md` per game as each
-  family lands, from MAME, same as we did for the six MCR-2 titles.
-
-## Order rationale
-
-MCR-1 first because it is nearly free and forces the multi-family
-packaging decisions (pack v2, OSD-from-header, per-family builds) while
-the RTL risk is tiny. SDRAM second because it unlocks everything else.
-Tapper is the marquee title and lands immediately after. Sound boards
-last because each is a self-contained module with its own CPU core.
+A before B because packaging decisions are cheaper to iterate on a
+2-game BRAM core than on an SDRAM bring-up; B gates C/D/E; C first among
+the MCR-3s because Tapper/DoT are the marquee titles and it needs no new
+CPU cores (SSIO only); D before E so FX68K clocking is proven on one
+board (CSD) before it appears twice more (Sounds Good).

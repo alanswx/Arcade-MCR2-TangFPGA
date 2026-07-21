@@ -236,6 +236,10 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
 - `docs/MCR_Master_Pinouts.pdf` — master MCR cabinet pinout matrix (the
   original source for the two docs above). Confirms per-game J2/J3/
   J4/J5 usage; e.g. Domino Man = 4-way joystick + 1 button ("Place/Strike").
+- `refs/` — **gitignored** local checkouts of the five MiSTer MCR cores
+  (MCR1/MCR2/MCR3/MCR3Mono/MCR3Scroll), the source material for the
+  porting plan in `docs/mcr_core_roadmap.md`. Copy files out deliberately
+  (with a dated comment) — never point the build at them directly.
 - `docs/pinrefs/` — known-good Tang Console 60K / Mega 60K constraint files
   fetched from nand2mario's nestang/snestang/gbatang and Sipeed's NEO_DOCK
   examples; the authority for 60K pin questions (USB, SD, SDRAM, DDR3,

@@ -35,3 +35,7 @@ bitstreams/ab-test/
 sim/obj_dir/
 *.img
 __pycache__/
+
+# Local MiSTer reference checkouts (nested git repos) - vendor files out
+# of them deliberately, never commit the trees themselves
+refs/
