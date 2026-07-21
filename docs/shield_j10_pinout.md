@@ -74,43 +74,132 @@ Sanity check for layout review: 20 live signals + 3 straps + 8 reserved +
 schematic-verified table, and every **live** pin matches what the current
 bitstreams already drive (`bench_wiring.md`).
 
-## 2. Input chain — every switch in the cabinet on 3 pins
+## 2. Power domains and level shifting (read this first)
 
-Seven 74HC165s (3.3 V supply — the shield regulates its own 3V3; J10 has
-no 3V3 pin), daisy-chained `U1.QH → U2.SER … U6.QH → U7.SER`, with
-`IN_DATA` reading `U7.QH`. Cabinet lines arrive through the optos (spec
-§3), then 4.7 kΩ pull-ups to 3V3 into the '165 parallel inputs: idle
-high, active low — the same polarity the SSIO saw.
+**All logic on the shield runs at 3.3 V — the 74HC165s, the 74HC595s,
+everything that touches a J10 pin. There are no level-shifter ICs
+anywhere.** The board has exactly three voltage domains, and every
+crossing between them is done by a part that is there for another reason
+anyway:
 
-`IN_LOAD_N` snapshots **all 56 bits in the same instant**, which is what
-makes the 8-bit parallel spinner/trackball buses safe to serialize — no
-tearing, by construction. A full scan at 2 MHz takes ~30 µs; the games
-poll their inputs once per frame (16.7 ms), so the chain is ~500× faster
-than anything the software can observe.
-
-| Device | Input A…H (in order) | Covers |
+| Domain | What lives in it | Crossing to/from |
 |---|---|---|
-| U1 | J2-1 P1 Up, J2-2 P1 Down, J2-3 P1 Left, J2-4 P1 Right, J2-5 P1 Btn1, J2-6 P1 Btn2, J3-1 Coin1, J3-2 Coin2 | player 1 + coins |
-| U2 | J3-3 Start1, J3-4 Start2, J3-5 Tilt, J5-17 P2 Left, J5-18 P2 Right, J5-19 P2 Btn1, spare, spare | system + P2 switches |
-| U3 | J4-1..7,9 = Opt X D0…D7 | dial/spinner/trackball-X bus (Tron, Kick, Kroozr, Wacko, DoT, Spy Hunter) |
-| U4 | J5-1..6 = Opt Y D0…D5, J5-15 D6/P2 Up, J5-16 D7/P2 Down | trackball-Y / P2 stick |
-| U5 | J6-1..8 = IP4 D0…D7 | aux port: Wacko cocktail aim, Two Tigers P2 dial, **Kroozr stick Y (needed even upright)**, DoT aux |
-| U6 | SW1 positions 1…8 | game option DIPs = the core's IP3, verbatim (spec §7a) |
-| U7 | SW2 positions 1…8 | system DIPs: menu enable, video mode, … (spec §7a) |
+| **3.3 V logic** (shield LDO from the buck's 5 V — J10 has no 3V3 pin) | 74HC165 ×7, 74HC595, pull-ups, everything wired to J10 | is the FPGA's native level: direct connection |
+| **5 V / cabinet harness** | switch loops (pulled to 5 V via 4.7 kΩ, switched to cabinet GND), monitor sync inputs | **inputs:** TLP281-4 optos — LED on the 5 V side, transistor on the 3.3 V side. The opto IS the level shifter (plus fault isolation). **sync out:** 74HCT244 powered at 5 V (its TTL thresholds accept 3.3 V swings — that is why HCT here) or a BC847 stage. **RGB out:** passive R2R ladder, no logic. |
+| **12 V loads** | coin meters, lamps | ULN2803 Darlington array (3.3 V logic input is sufficient drive; built-in flyback diodes) |
 
-Serial arrival order (for the RTL, not the PCB): after a `IN_LOAD_N`
-pulse, bits arrive **U7 first, input H first** — i.e. U7.H, U7.G, … U7.A,
-U6.H, … down to U1.A last.
+Part-selection rule that follows: the shift registers must be **74HC**
+(CMOS thresholds, 2–6 V supply — happy at 3.3 V), **not 74HCT** (5 V-only
+TTL thresholds) and not 74LS. The one deliberate HCT part is the 5 V sync
+buffer, chosen *because* of its TTL thresholds. At 3.3 V a 74HC165 shifts
+well above 10 MHz; the chain runs at 2 MHz.
 
-Wiring notes that matter to the layout:
-- **Tron cocktail rule** (spec §7a): the J5-19 cocktail-fire line is ALSO
-  ORed with SW1-8 in the FPGA — no extra wiring; just route each to its
-  own chain bit as tabled.
-- DIP switches connect position→GND with the same 4.7 kΩ pull-ups (closed
-  switch reads 0); no optos needed for the two DIP banks.
-- Unused inputs (U2 spares): tie high through the pull-up, do not float.
+## 3. Input chain — every switch in the cabinet on 3 pins
 
-## 3. Output chain — meters and lamps on 4 pins
+Seven 74HC165s daisy-chained, read through 3 header pins. `IN_LOAD_N`
+snapshots **all 56 bits in the same instant**, which is what makes the
+8-bit parallel spinner/trackball buses safe to serialize — no tearing, by
+construction. A full scan at 2 MHz takes ~30 µs; the games poll their
+inputs once per frame (16.7 ms), so the chain is ~500× faster than
+anything the software can observe.
+
+### 3a. Chain control lines ↔ J10 (bussed to all seven '165s)
+
+| Signal | 74HC165 pin(s) | J10 pin | FPGA ball | Direction |
+|---|---|---|---|---|
+| `IN_CLK` | pin 2 (CP) on U1…U7 | 25 | AA21 | FPGA → chain |
+| `IN_LOAD_N` | pin 1 (PL̄) on U1…U7 | 26 | AA20 | FPGA → chain |
+| `IN_DATA` | pin 9 (QH) of **U7 only** | 27 | AB20 | chain → FPGA |
+| cascade | U1.9 → U2.10, U2.9 → U3.10, … U6.9 → U7.10 | — | — | on-shield |
+| tie-offs | pin 15 (CE̅) → GND, pin 10 (SER) of **U1** → GND, pin 7 (Q̄H) n/c, pin 16 → 3V3, pin 8 → GND | — | — | all devices |
+
+Serial arrival order (RTL contract, not a PCB concern): after the load
+pulse, bits arrive **U7 first, input H first** — U7.H, U7.G … U7.A, U6.H
+… down to U1.A last.
+
+### 3b. '165 inputs ↔ optos ↔ MCR harness, device by device
+
+'165 input pins: A=11, B=12, C=13, D=14, E=3, F=4, G=5, H=6. Each
+harness line goes: cabinet connector → TLP281-4 LED side (4.7 kΩ to +5 V,
+switch closes to cabinet GND) → opto transistor pulls the '165 input low
+against its 4.7 kΩ pull-up to 3V3. Idle = high, pressed = low — the same
+polarity the original SSIO saw. Optos are numbered OK1…OK10 (TLP281-4 =
+4 channels each); two quads serve each harness '165.
+
+**U1 — player 1 + coins** (optos OK1, OK2)
+
+| '165 input | pin | opto ch | MCR harness | Function |
+|---|---|---|---|---|
+| A | 11 | OK1.1 | J2-1 | P1 Up |
+| B | 12 | OK1.2 | J2-2 | P1 Down |
+| C | 13 | OK1.3 | J2-3 | P1 Left |
+| D | 14 | OK1.4 | J2-4 | P1 Right |
+| E | 3 | OK2.1 | J2-5 | P1 Button 1 |
+| F | 4 | OK2.2 | J2-6 | P1 Button 2 |
+| G | 5 | OK2.3 | J3-1 | Coin 1 |
+| H | 6 | OK2.4 | J3-2 | Coin 2 |
+
+**U2 — system + P2 switches** (optos OK3, OK4)
+
+| '165 input | pin | opto ch | MCR harness | Function |
+|---|---|---|---|---|
+| A | 11 | OK3.1 | J3-3 | Start 1 |
+| B | 12 | OK3.2 | J3-4 | Start 2 |
+| C | 13 | OK3.3 | J3-5 | Tilt |
+| D | 14 | OK3.4 | J5-17 | P2 Left |
+| E | 3 | OK4.1 | J5-18 | P2 Right |
+| F | 4 | OK4.2 | J5-19 | P2 Button 1 (Tron cocktail fire — the FPGA also ORs this with SW1-8, spec §7a; no special wiring) |
+| G | 5 | OK4.3 | spare pad | tie the '165 input high via its pull-up |
+| H | 6 | OK4.4 | spare pad | " |
+
+**U3 — Opt X: the 8-bit dial/spinner/trackball-X bus** (optos OK5, OK6)
+
+| '165 input | pin | opto ch | MCR harness | Function |
+|---|---|---|---|---|
+| A | 11 | OK5.1 | J4-1 | Opt X D0 |
+| B | 12 | OK5.2 | J4-2 | Opt X D1 |
+| C | 13 | OK5.3 | J4-3 | Opt X D2 |
+| D | 14 | OK5.4 | J4-4 | Opt X D3 |
+| E | 3 | OK6.1 | J4-5 | Opt X D4 |
+| F | 4 | OK6.2 | J4-6 | Opt X D5 |
+| G | 5 | OK6.3 | J4-7 | Opt X D6 |
+| H | 6 | OK6.4 | J4-9 | Opt X D7 (J4-8 is the connector key, J4-10 is GND) |
+
+Used by: Tron aim dial, Kick spinner, Kroozr dial, Wacko trackball X,
+DoT rotary, Spy Hunter steering (roadmap).
+
+**U4 — Opt Y / P2 stick** (optos OK7, OK8)
+
+| '165 input | pin | opto ch | MCR harness | Function |
+|---|---|---|---|---|
+| A | 11 | OK7.1 | J5-1 | Opt Y D0 |
+| B | 12 | OK7.2 | J5-2 | Opt Y D1 |
+| C | 13 | OK7.3 | J5-3 | Opt Y D2 |
+| D | 14 | OK7.4 | J5-4 | Opt Y D3 |
+| E | 3 | OK8.1 | J5-5 | Opt Y D4 |
+| F | 4 | OK8.2 | J5-6 | Opt Y D5 |
+| G | 5 | OK8.3 | J5-15 | Opt Y D6 / P2 Up |
+| H | 6 | OK8.4 | J5-16 | Opt Y D7 / P2 Down |
+
+Used by: Wacko trackball Y; P2 stick for Tapper/Timber (roadmap) and
+cocktail play.
+
+**U5 — J6 / SSIO IP4 aux port** (optos OK9, OK10; J6 pin IDs provisional
+— the matrix PDF has no J6 sheet, cross-check a cabinet manual before
+crimping, `TODO.md`)
+
+| '165 input | pin | opto ch | MCR harness | Function |
+|---|---|---|---|---|
+| A…H | 11,12,13,14,3,4,5,6 | OK9.1…OK10.4 | J6-1…J6-8 | IP4 D0…D7: Kroozr stick Y (**needed even upright**), Two Tigers P2 dial, Wacko cocktail aim, DoT aux (roadmap) |
+
+**U6 / U7 — the DIP banks** (no optos: the switches live ON the shield)
+
+| Device | '165 input A…H | Connects to | Function |
+|---|---|---|---|
+| U6 | pins 11,12,13,14,3,4,5,6 | SW1 positions 1…8, switch→GND, 4.7 kΩ pull-up to 3V3 | game option DIPs = the core's IP3 verbatim (spec §7a); closed = 0 |
+| U7 | pins 11,12,13,14,3,4,5,6 | SW2 positions 1…8, same wiring | system DIPs: menu enable, video mode, … (spec §7a) |
+
+## 4. Output chain — meters and lamps on 4 pins
 
 One 74HC595 (U8) to start; more daisy-chain onto `U8.QH'` later at zero
 pin cost (Spy Hunter's lamp panel, MCR-3 era). Outputs feed a ULN2803
@@ -128,7 +217,7 @@ pin cost (Spy Hunter's lamp panel, MCR-3 era). Outputs feed a ULN2803
 output off from power-on until the gateware takes control — no coin-meter
 clicks or lamp flashes during the ~1 s of FPGA configuration.
 
-## 4. Video, audio, straps (live today)
+## 5. Video, audio, straps (live today)
 
 - **DAC:** 3-bit R2R per gun — MSB 510 Ω, 1 kΩ, 2 kΩ (bench-proven values,
   `bench_wiring.md`) summed into the monitor's 75 Ω ≈ 1 Vp-p. Bit 0 of
@@ -146,7 +235,7 @@ clicks or lamp flashes during the ~1 s of FPGA configuration.
   the case-closed diagnostics: calib steady + pix/27M blinking + ddr_rst
   off = video pipeline healthy.
 
-## 5. Does it cover every game? (the proof)
+## 6. Does it cover every game? (the proof)
 
 | Game | Needs beyond P1+coins+SW1 | Where it lands |
 |---|---|---|
@@ -165,7 +254,7 @@ U6 (+the Tron OR rule), and the USB pads stay active in parallel for
 bench/home use. Nothing about a new game can outgrow the header — worst
 case adds a '165 or '595 to a chain.
 
-## 6. Bring-up order for the board
+## 7. Bring-up order for the board
 
 1. Populate video DAC + sync buffer + audio + straps + LEDs only. Flash
    any current `bitstreams/console60k_*.fs` → full game on the cabinet
@@ -174,7 +263,7 @@ case adds a '165 or '595 to a chain.
    (tracked in TODO.md; pins are frozen here, so no board spin).
 3. USB pad and HDMI work throughout as the reference path.
 
-## 7. Change control
+## 8. Change control
 
 - This table is the contract: `mcr2_console60k.cst`, the expander RTL, and
   `tools/generate_pcb.py` must follow it. If a pin must move, change THIS

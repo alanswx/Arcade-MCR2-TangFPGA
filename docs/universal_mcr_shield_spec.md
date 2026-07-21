@@ -244,7 +244,7 @@ wiring is established.
 ### 7b. Reading them (74HC165)
 
 The two DIP banks are simply devices **U6 (SW1) and U7 (SW2) on the
-unified input chain** defined in `shield_j10_pinout.md` §2 (IN_CLK /
+unified input chain** defined in `shield_j10_pinout.md` §3 (IN_CLK /
 IN_LOAD_N / IN_DATA on J10 pins 25/26/27) — the same chain that carries
 every harness input, so the DIPs cost zero additional pins. Switch to GND
 with pull-ups to +3V3; a closed switch reads 0. Because the chain is
