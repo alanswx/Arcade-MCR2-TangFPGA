@@ -133,5 +133,7 @@ emits), so you always have a reference picture.
 - **MicroSD** (ROM loading) — onboard slot.
 - **Status beacon** — USB-C serial, 115200 8N1: `FB c_ r_ x____ q__ d__ L__`
   (DDR calib, DDR reset, pixel-clock counter, 27 MHz counter,
-  d = game_id[2:0] in the high 3 bits + capture delay in the low 5,
-  loader state).
+  d = game_id[2:0] in the high 3 bits + capture delay in the low 5).
+  `L` high nibble = {heartbeat, heartbeat, usb_typ[1:0]} — **usb_typ = 3
+  means a gamepad is enumerated**, 0 = nothing answered on USB; low nibble
+  = {sd_ready, sd_err, loader done, loader error}.

@@ -1,46 +1,119 @@
 # Bally Midway MCR2 Arcade Core for Gowin Tang FPGAs
 
-This repository contains the standalone, hardcoded ports of Bally Midway's MCR2 arcade core (supporting games like *Satan's Hollow*, *Tron*, etc.) for the **Sipeed Tang** series of Gowin FPGA development boards.
+Standalone port of the Bally Midway MCR-2 arcade hardware (Tron, Domino
+Man, Satan's Hollow, Wacko, Kozmik Kroozr, Two Tigers) for Sipeed Tang
+FPGA boards — no MiSTer/HPS required. The flagship target is the **Tang
+Console 60K**: all six games in one bitstream, selected at runtime from an
+on-screen menu, with ROMs loaded from a microSD card.
 
-We support three physical configurations concurrently:
-1.  **Sipeed Tang Primer 25K (GW5A-LV25)**
-2.  **Sipeed Tang Console 60K (GW5A-LV60)**
-3.  **Sipeed Tang Console 138K (GW5AST-LV138)**
+| Board | Status |
+|---|---|
+| **Tang Console 60K** (GW5AT-60) | All six games + OSD menu; 720p HDMI with audio (DDR3 framebuffer); analog RGB at 31/15 kHz for real cabinets; USB gamepad; SD ROM loading |
+| Tang Primer 25K (GW5A-25) | Domino Man over HDMI (single game per build, BSRAM-limited) |
+| Tang Console 138K (GW5AST-138) | Stale — needs the 60K backport |
 
-Both the 60K and 138K ports run **100% on-chip in full Block RAM (BRAM) mode** (119.5 KB of CPU/sound/graphics ROMs + working memory), completely bypassing the need for external DDR3/SDRAM controllers. This results in zero latency, zero wait states, and no memory bus contention.
-
----
-
-## 1. Project Directory Structure
-
-To maximize code reuse, the repository is organized with a shared source directory and independent board-level project folders:
-
-*   **[`src/`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/src/) (Platform-Independent Shared Source Code):**
-    *   `src/rtl/`: Core VHDL/SystemVerilog files (`mcr2.vhd`, Z80 CPUs, Z80CTC, RAM wrappers).
-    *   `src/audio/`: Shared Delta-Sigma audio DAC.
-    *   `src/dvi_tx/`: Shared HDMI serialization logic.
-    *   `src/roms/`: Initialized Satan's Hollow ROM hex tables.
-*   **[`mcr2_primer25k/`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/):** Gowin project, top-level wrapper, and constraints for the Tang Primer 25K.
-*   **[`mcr2_console60k/`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_console60k/):** Gowin project, top-level wrapper, and constraints for the Tang Console 60K.
-*   **[`mcr2_console138k/`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_console138k/):** Gowin project, top-level wrapper, and constraints for the Tang Console 138K.
+Deeper docs: build gotchas and architecture notes in [CLAUDE.md](CLAUDE.md),
+open issues in [TODO.md](TODO.md), bench hookup in
+[docs/bench_wiring.md](docs/bench_wiring.md), cabinet shield spec in
+[docs/universal_mcr_shield_spec.md](docs/universal_mcr_shield_spec.md),
+porting plan for the other MCR generations in
+[docs/mcr_core_roadmap.md](docs/mcr_core_roadmap.md).
 
 ---
 
-## 2. Compilation Instructions
+## 1. Generate the ROM hex tables
 
-1.  Launch the **Gowin IDE** (Yunyuan) on your PC.
-2.  Select **Open Project** and open the project file for your specific target board:
-    *   For Tang Primer 25K: [`mcr2_primer25k/mcr2_primer25k.gprj`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_primer25k/mcr2_primer25k.gprj)
-    *   For Tang Console 60K: [`mcr2_console60k/mcr2_console60k.gprj`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_console60k/mcr2_console60k.gprj)
-    *   For Tang Console 138K: [`mcr2_console138k/mcr2_console138k.gprj`](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/mcr2_console138k/mcr2_console138k.gprj)
-3.  Click **Process** $\rightarrow$ **Run All** in the IDE. This will run synthesis, mapping, and place-and-route to generate the binary bitstream file (`.fs`) under the selected project's `impl/` directory.
-4.  Open the **Gowin Programmer**, connect the board's JTAG, and program the `.fs` bitstream file to the FPGA SRAM or Flash memory.
+ROM zips (MAME sets) go in `roms/` — they are **not** in the repo. Then,
+from the repo root:
 
----
+```sh
+python3 tools/merge_roms.py tron     # or domino / shollow / wacko / kroozr / twotiger
+```
 
-## 3. Hardware Integration & Custom Shield Design
+This writes the `rom_*.hex` tables the build bakes into BSRAM and sets the
+board's `game_config.vh`. On the 60K the baked game only decides **what
+boots with no SD card** — every game is reachable at runtime from the OSD.
 
-To mount these boards inside an original Bally Midway MCR cabinet, we design custom daughterboard shields (Option A) to interface with the cabinet's original wire harness.
+## 2. Build
 
-*   For a comparative analysis of the boards and custom shield manufacturing cost estimates, see the **[FPGA Board Comparison & Custom Shield BOM](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/board_comparison_and_bom.md)**.
-*   For the complete electrical specifications, level-shifting, DAC schematics, and pinout routing tables for each board, see the **[MCR2 V2 Handoff & PCB Design Specification](file:///Users/alans/Documents/development/Arcade-MCR2-TangFPGA/handoff_v2_design.md)**.
+Headless (recommended; macOS paths shown — see CLAUDE.md for why the IDE
+flow needs extra care):
+
+```sh
+GWLIB=/Applications/GowinIDE.app/Contents/Resources/Gowin_EDA/IDE/lib
+GW=/Applications/GowinIDE.app/Contents/Resources/Gowin_EDA/IDE/bin/gw_sh
+cd mcr2_console60k
+DYLD_LIBRARY_PATH="$GWLIB" DYLD_FRAMEWORK_PATH="$GWLIB" "$GW" build.tcl
+```
+
+The bitstream lands at `mcr2_console60k/impl/pnr/mcr2_console60k.fs`.
+Prebuilt images for all six games are kept in `bitstreams/`.
+
+IDE builds work too (open `mcr2_console60k/mcr2_console60k.gprj`, Run All)
+but several project settings must be exactly right — read the Gotchas
+table in CLAUDE.md first; in particular **Place & Route → Place Option
+must be 2** or HDMI silently dies.
+
+## 3. Flash the board
+
+With [openFPGALoader](https://github.com/trabucayre/openFPGALoader)
+(`brew install openfpgaloader`), board connected over USB-C:
+
+```sh
+# quick test - loads SRAM, lost at power-off
+openFPGALoader -b tangconsole bitstreams/console60k_tron.fs
+
+# make it the POWER-ON default - writes the SPI flash
+openFPGALoader -b tangconsole -f bitstreams/console60k_tron.fs
+```
+
+The `-f` form replaces whatever was in flash (e.g. NESTang) — reflash that
+the same way if you want it back. The Gowin Programmer GUI works as well
+(External Flash Mode → exFlash Erase, Program).
+
+## 4. Make the SD card (all six games, switchable from the menu)
+
+The ROM pack lives in **raw sectors starting at sector 2048** (1 MiB in) —
+no filesystem involved, and it coexists with a normally-formatted card
+(standard SD formatting starts the first partition at 4 MiB+; existing
+files are untouched).
+
+```sh
+python3 tools/make_rompack.py                 # builds mcr_rompack.img from roms/
+sudo python3 tools/write_rompack.py           # lists candidate cards
+sudo python3 tools/write_rompack.py disk4     # writes + verifies (macOS)
+```
+
+`write_rompack.py` refuses to touch anything that is not a removable disk,
+refuses cards whose partitions would overlap the pack, and verifies the
+header after writing. On Linux/Windows use the `dd`/Win32DiskImager recipe
+that `make_rompack.py` prints.
+
+Put the card in the **console's** microSD slot. At boot the loader pulls
+the baked-in game's slot from the card (or falls back to the baked ROMs if
+there is no card).
+
+## 5. Play
+
+- **USB gamepad** in the left USB-A port: D-pad = joystick, A = Button 1,
+  Start = Start 1, Select = Coin 1 (B/X/Y vary per game — see the input
+  maps in `mcr2_console60k_top.sv`).
+- **Select+Start opens the game-select menu** on every video output:
+  Up/Down move, A loads the highlighted game from the SD card, B exits.
+  The screen freezing (HDMI) or dropping sync (analog) for ~1 s after
+  pressing A is the ROM reload, not a crash.
+- Board keys: AA13 = reset, AB13 = Coin 1.
+- HDMI is always live at 720p. Analog RGB comes out of the J10 header
+  (31 kHz VGA, or jumper J10-37 to GND for native 15 kHz arcade timing) —
+  wiring recipes in [docs/bench_wiring.md](docs/bench_wiring.md).
+- A UART status beacon prints on the USB-C serial port (115200 8N1) for
+  case-closed debugging — field decoding in docs/bench_wiring.md.
+
+## 6. Cabinet integration
+
+The goal is a drop-in board for real MCR cabinets: analog 15 kHz RGB,
+original harness connectors, physical DIPs for game options. The
+consolidated electrical spec is
+[docs/universal_mcr_shield_spec.md](docs/universal_mcr_shield_spec.md);
+per-game harness pinouts are in
+[docs/mcr_game_input_matrix.md](docs/mcr_game_input_matrix.md).

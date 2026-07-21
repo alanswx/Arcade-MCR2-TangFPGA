@@ -94,7 +94,7 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
   (framebuffer alone), `diag/nes_video_selftest` (NESTang clocking, the
   decisive one). Verified only in simulation
   against a card model (`make -C sim`). The card image is built but not yet
-  burned. Beacon field `L<hex>` = {sd_ready, sd_err, done, error}.
+  burned. Beacon `L` low nibble = {sd_ready, sd_err, done, error}; high nibble low 2 bits = USB device type (3 = gamepad).
 - **Left-edge pixel overlap.** Root cause is the core's ~13-pixel RGB-vs-hcnt
   pipeline lag. HDMI compensates in the capture window; the analog path did
   not compensate at all until 2026-07 (the previous line's tail leaked into

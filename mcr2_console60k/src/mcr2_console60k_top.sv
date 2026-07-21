@@ -271,10 +271,30 @@ dpram #(
 // --- USB HID host (gamepad on USB-A port 1) -----------------------------------
 // nand2mario usb_hid_host: low-speed USB, standard HID pads (DInput). The
 // board provides the 15k host pulldowns and 5V VBUS. Runs at 12 MHz.
-reg [7:0] usb_rst_cnt = 8'hFF;
-wire usb_resetn = (usb_rst_cnt == 8'd0);
+//
+// Reset policy - learned from the flash-boot regression: a JTAG load starts
+// the design on a board that has been powered for minutes (pad enumerated,
+// idle), but an SPI-flash boot starts it ~200 ms after power-on, while the
+// pad's own MCU is still booting. The original 21 us reset ran enumeration
+// once into a not-yet-ready pad and never retried -> USB dead from flash,
+// fine from JTAG. So: hold the host in reset ~87 ms at power-on, and if the
+// host reports a connection error continuously for ~1.4 s, pulse reset and
+// re-enumerate. With no pad plugged this idles in a harmless slow retry
+// loop; a late-booting or hot-plugged pad gets picked up on the next cycle.
+reg [20:0] usb_rst_cnt = 21'd0;
+reg [23:0] usb_err_cnt = 24'd0;
+wire usb_resetn = usb_rst_cnt[20];        // 2^20 / 12 MHz = 87 ms
+wire usb_conerr;
+wire [1:0] usb_typ;
 always @(posedge clk_usb) begin
-    if (usb_rst_cnt != 0) usb_rst_cnt <= usb_rst_cnt - 8'd1;
+    if (!usb_resetn)
+        usb_rst_cnt <= usb_rst_cnt + 21'd1;
+    if (!usb_resetn || !usb_conerr)
+        usb_err_cnt <= 24'd0;
+    else begin
+        usb_err_cnt <= usb_err_cnt + 24'd1;
+        if (&usb_err_cnt) usb_rst_cnt <= 21'd0;   // ~1.4 s of error: re-init
+    end
 end
 
 wire pad_l, pad_r, pad_u, pad_d;
@@ -285,9 +305,9 @@ usb_hid_host usb1 (
     .usbrst_n(usb_resetn),
     .usb_dm(usb1_dn),
     .usb_dp(usb1_dp),
-    .typ(),
+    .typ(usb_typ),
     .report(),
-    .conerr(),
+    .conerr(usb_conerr),
     .key_modifiers(), .key1(), .key2(), .key3(), .key4(),
     .mouse_btn(), .mouse_dx(), .mouse_dy(),
     .game_l(pad_l), .game_r(pad_r), .game_u(pad_u), .game_d(pad_d),
@@ -298,9 +318,12 @@ usb_hid_host usb1 (
 
 // Synchronize the (active-high, 12 MHz-domain) pad bits into clk_sys
 reg [9:0] pad_sync1 = 0, pad_sync2 = 0;
+reg [1:0] usb_typ_s1 = 0, usb_typ_s2 = 0;   // quasi-static, for the beacon
 always @(posedge clk_sys) begin
     pad_sync1 <= {pad_l, pad_r, pad_u, pad_d, pad_a, pad_b, pad_x, pad_y, pad_sel, pad_sta};
     pad_sync2 <= pad_sync1;
+    usb_typ_s1 <= usb_typ;
+    usb_typ_s2 <= usb_typ_s1;
 end
 wire u_left  = pad_sync2[9], u_right = pad_sync2[8];
 wire u_up    = pad_sync2[7], u_down  = pad_sync2[6];
@@ -734,7 +757,9 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     .cnt_x({hb_h[24:21], hb_x1[25:14]}),
     .cnt_q(hb_27[24:17]),
     .aux({game_id, cap_delay}),   // dXX: high 3 bits = running game_id
-    .aux2({hb_h[24:21], sd_ready, sd_err, ldr_done, ldr_error}),
+    // L high nibble: {heartbeat, heartbeat, usb_typ} - usb_typ = 3 means a
+    // gamepad is enumerated (0 = nothing on USB); low nibble = SD/loader.
+    .aux2({hb_h[24:23], usb_typ_s2, sd_ready, sd_err, ldr_done, ldr_error}),
     .txd(uart_tx)
 );
 
