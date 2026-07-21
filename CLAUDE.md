@@ -186,6 +186,9 @@ bus is inert in these standalone builds.
 game-select menu** (Up/Down move, A loads the highlighted game from the SD
 pack, B exits; all game inputs are masked while it is open; the raster
 stops during the ~1 s reload, so the screen freezes/drops sync — expected).
+Selections persist: the loader writes the chosen slot to SD sector 2047
+("MCRPREF1", CMD24) and consults it at power-on, so the cabinet boots back
+into the owner's game; the OSD-commanded reload path bypasses the pref.
 The menu draws in the core raster domain, so it appears on HDMI and analog
 video alike, rotated on Tron/Shollow (ROT90 cabinets). UART beacon on U15
 (→ USB-C serial, 115200): `FB c<calib> r<ddr_rst> x<clk_x1 cnt> q<27M cnt>

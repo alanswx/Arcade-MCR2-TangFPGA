@@ -1,8 +1,10 @@
 // Behavioural SD card (SPI mode) for simulation only.
-// Answers CMD0/CMD8/CMD55/ACMD41/CMD58/CMD17 well enough to exercise
-// sd_reader's init and block-read paths. Block data is a deterministic
-// pattern so the testbench can verify what came back:
+// Answers CMD0/CMD8/CMD55/ACMD41/CMD58/CMD17/CMD24 well enough to exercise
+// sd_reader's init, block-read and block-write paths. Unwritten block data
+// is a deterministic pattern so the testbench can verify what came back:
 //     byte i of sector S = (S*13 + i) & 0xFF
+// CMD24 writes land in a sparse memory and shadow the pattern on read-back,
+// which is exactly what the prefs-sector round trip needs.
 module sd_card_model #(
     parameter int unsigned HDR_SECTOR = 2048   // this sector returns a valid
                                                // "MCRPACK1" header
@@ -53,13 +55,35 @@ bit in_cmd = 0;
 int acmd41_seen = 0;
 bit last_was_55 = 0;
 
+// CMD24 write capture
+logic [7:0] wmem [int unsigned];   // sparse: key = sector*512 + offset
+bit in_write = 0;
+int wr_phase = 0;                  // 0 token, 1 data, 2/3 CRC
+int unsigned wr_sector = 0;
+int wr_cnt = 0;
+
 always @(posedge sclk) begin
     if (!cs_n) begin
         rx = {rx[6:0], mosi};
         ibit++;
         if (ibit == 8) begin
             ibit = 0;
-            if (in_cmd) begin
+            if (in_write) begin
+                case (wr_phase)
+                0: if (rx == 8'hFE) begin wr_phase = 1; wr_cnt = 0; end
+                1: begin
+                       wmem[wr_sector*512 + wr_cnt] = rx;
+                       wr_cnt++;
+                       if (wr_cnt == 512) wr_phase = 2;
+                   end
+                2: wr_phase = 3;                    // CRC byte 1
+                3: begin                            // CRC byte 2 -> respond
+                       push(8'h05);                 // data accepted
+                       push(8'h00); push(8'h00);    // busy for two byte-times
+                       in_write = 0;
+                   end
+                endcase
+            end else if (in_cmd) begin
                 cmdbuf[cmdidx] = rx;
                 cmdidx++;
                 if (cmdidx == 6) begin
@@ -74,6 +98,22 @@ always @(posedge sclk) begin
         end
     end
 end
+
+// One byte of block `sector`: written data shadows the built-in pattern.
+function automatic logic [7:0] block_byte(input int unsigned sector,
+                                          input int i);
+    if (wmem.exists(sector*512 + i))
+        return wmem[sector*512 + i];
+    if (sector == HDR_SECTOR) begin
+        case (i)
+        0: return 8'h4D; 1: return 8'h43; 2: return 8'h52; 3: return 8'h50;
+        4: return 8'h41; 5: return 8'h43; 6: return 8'h4B; 7: return 8'h31;
+        8: return 8'd8;                       // slot count
+        default: return 8'h00;
+        endcase
+    end
+    return 8'((sector*13 + i) & 32'hFF);
+endfunction
 
 function automatic void do_command();
     logic [5:0]  cmd;
@@ -111,17 +151,15 @@ function automatic void do_command();
                push(8'hFF);                                  // pre-token gap
                push(8'hFE);                                  // data token
                sector = arg;
-               if (sector == HDR_SECTOR) begin
-                   // "MCRPACK1", slot count, then zeros
-                   push(8'h4D); push(8'h43); push(8'h52); push(8'h50);
-                   push(8'h41); push(8'h43); push(8'h4B); push(8'h31);
-                   push(8'd8);
-                   for (int i = 9; i < 512; i++) push(8'h00);
-               end else begin
-                   for (int i = 0; i < 512; i++)
-                       push(8'((sector*13 + i) & 32'hFF));
-               end
+               for (int i = 0; i < 512; i++) push(block_byte(sector, i));
                push(8'h12); push(8'h34);                     // CRC16 (ignored)
+               last_was_55 = 0;
+           end
+    6'd24: begin                                             // WRITE_BLOCK
+               push(8'h00);                                  // R1 ok
+               wr_sector = arg;
+               wr_phase  = 0;
+               in_write  = 1;
                last_was_55 = 0;
            end
     default: begin push(8'h04); last_was_55 = 0; end          // illegal command

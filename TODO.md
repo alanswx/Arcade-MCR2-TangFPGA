@@ -155,7 +155,9 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
   - **Stale CMOS RAM across switches**: each game boots on the previous
     game's CMOS contents; MCR games checksum it and factory-reset, so this
     should self-heal — verify per game, else clear cmos_ram on reload.
-  - **No prefs persistence** (last-selected game etc. → SD CMD24 write).
+  - ~~No prefs persistence~~ **DONE 2026-07-21**: selections are written
+    to SD sector 2047 (CMD24) and win over the baked default at power-on;
+    sim-verified round trip (`make -C sim`). Untested on hardware.
   - **Two Tigers' Dogfight Start moved to D-pad Up** (was Select+Start,
     which is now the menu combo).
 - **No multiboot selector** for switching MCR family cores (2.5 MB per core,

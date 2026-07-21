@@ -1,5 +1,6 @@
-// SD card reader (SPI mode): initialises the card, then streams out 512-byte
-// blocks on request. Enough for loading ROM images at boot; no writes.
+// SD card reader/writer (SPI mode): initialises the card, streams out
+// 512-byte blocks on request (CMD17), and writes single blocks (CMD24) -
+// the latter used for the one prefs sector that persists the selected game.
 //
 // Init sequence per the SD Physical Layer spec:
 //   >=74 clocks with CS high -> CMD0 (idle) -> CMD8 (interface condition)
@@ -21,6 +22,16 @@ module sd_reader #(
     output reg [7:0]  dout,        // block data, streamed
     output reg        dout_valid,
     output reg        rd_done,     // pulse: 512 bytes delivered
+
+    // Block write (CMD24) - used for the prefs sector. Same address input
+    // as reads. A failed/rejected write raises wr_err but still completes
+    // with wr_done and returns to READY: a bad write must never take down
+    // the reader (the game keeps running; prefs just did not persist).
+    input             wr_start,    // pulse: write the block at rd_sector
+    input      [7:0]  wr_din,      // byte to send; update after each wr_next
+    output reg        wr_next,     // pulse: present the NEXT byte on wr_din
+    output reg        wr_done,     // pulse: write finished (check wr_err)
+    output reg        wr_err,      // valid with wr_done: card rejected it
 
     output            sclk,
     output            mosi,
@@ -55,7 +66,11 @@ localparam [3:0]
     S_RD_DATA  = 4'd7,
     S_RD_CRC   = 4'd8,
     S_GAP      = 4'd9,   // one idle byte between transactions
-    S_ERR      = 4'd10;
+    S_ERR      = 4'd10,
+    S_WR_TOKEN = 4'd11,  // CMD24 accepted -> send the 0xFE data token
+    S_WR_DATA  = 4'd12,  // stream 512 bytes from wr_din
+    S_WR_RESP  = 4'd13,  // 2 dummy CRC bytes, then poll the data response
+    S_WR_BUSY  = 4'd14;  // wait out the card's internal programming
 
 reg [3:0]  st, st_after;
 reg [47:0] cmd_sr;       // command being shifted out, MSB first
@@ -70,6 +85,8 @@ reg [2:0]  init_step;
 reg        ccs;          // 1 = block addressing (SDHC/SDXC)
 reg        rd_pending;   // rd_start is a pulse and the FSM only advances
                          // between SPI bytes, so latch the request
+reg        wr_pending;
+reg [19:0] busy_cnt;     // write-busy can last many ms; 2^20 bytes ~ 0.8 s cap
 reg [31:0] sector_q;
 
 localparam [15:0] POLL_MAX = 16'd1000;
@@ -90,6 +107,8 @@ always @(posedge clk) begin
     tx_go      <= 1'b0;
     dout_valid <= 1'b0;
     rd_done    <= 1'b0;
+    wr_next    <= 1'b0;
+    wr_done    <= 1'b0;
 
     if (rst) begin
         st         <= S_PWR;
@@ -102,9 +121,12 @@ always @(posedge clk) begin
         init_step  <= 3'd0;
         ccs        <= 1'b0;
         rd_pending <= 1'b0;
+        wr_pending <= 1'b0;
+        wr_err     <= 1'b0;
         acmd_tries <= 16'd0;
     end else begin
       if (rd_start) rd_pending <= 1'b1;
+      if (wr_start) wr_pending <= 1'b1;
       if (!tx_busy && !tx_go) begin
         case (st)
 
@@ -217,6 +239,16 @@ always @(posedge clk) begin
                 issue(6'd17, ccs ? rd_sector : (rd_sector << 9), 8'hFF,
                       S_RD_TOKEN, 3'd0);
                 poll <= 16'd0;
+            end else if (wr_pending) begin
+                wr_pending <= 1'b0;
+                wr_err     <= 1'b0;
+                sector_q   <= rd_sector;
+                ready      <= 1'b0;
+                cs_n       <= 1'b0;
+                // CMD24: same block/byte addressing rule as CMD17
+                issue(6'd24, ccs ? rd_sector : (rd_sector << 9), 8'hFF,
+                      S_WR_TOKEN, 3'd0);
+                poll <= 16'd0;
             end
         end
 
@@ -265,6 +297,77 @@ always @(posedge clk) begin
                 st       <= S_GAP;
                 st_after <= S_READY;
                 rd_done  <= 1'b1;
+                ready    <= 1'b1;
+            end
+        end
+
+        // ---- write path: token + 512 bytes + CRC + response + busy -------
+        // R1 was captured by S_R1; a non-zero R1 means the card refused the
+        // command - flag it and fall through the busy wait so the bus is
+        // left clean either way.
+        S_WR_TOKEN: begin
+            if (r1 != 8'h00) begin
+                wr_err   <= 1'b1;
+                busy_cnt <= 20'd0;
+                st       <= S_WR_BUSY;
+            end else begin
+                tx_byte  <= 8'hFE;      // single-block data token
+                tx_go    <= 1'b1;
+                wr_next  <= 1'b1;       // request byte 0
+                byte_cnt <= 10'd0;
+                st       <= S_WR_DATA;
+            end
+        end
+
+        // Each pass sends the byte the requester presented and asks for the
+        // next one; SPI is slow enough (~40 clk/byte) that the one-cycle
+        // wr_next -> wr_din latency never races the shifter.
+        S_WR_DATA: begin
+            tx_byte  <= wr_din;
+            tx_go    <= 1'b1;
+            byte_cnt <= byte_cnt + 10'd1;
+            if (byte_cnt == 10'd511) begin
+                byte_cnt <= 10'd0;
+                poll     <= 16'd0;
+                st       <= S_WR_RESP;
+            end else begin
+                wr_next <= 1'b1;
+            end
+        end
+
+        // Two dummy CRC bytes (CRC is off in SPI mode), then poll for the
+        // data-response token xxx0sss1; sss = 010 means accepted.
+        S_WR_RESP: begin
+            tx_byte <= 8'hFF;
+            tx_go   <= 1'b1;
+            if (byte_cnt < 10'd2) begin
+                byte_cnt <= byte_cnt + 10'd1;
+            end else begin
+                poll <= poll + 16'd1;
+                if (!rx_byte[4] && rx_byte[0]) begin
+                    if (rx_byte[3:1] != 3'b010) wr_err <= 1'b1;
+                    busy_cnt <= 20'd0;
+                    st       <= S_WR_BUSY;
+                end else if (poll > POLL_MAX) begin
+                    wr_err   <= 1'b1;
+                    busy_cnt <= 20'd0;
+                    st       <= S_WR_BUSY;
+                end
+            end
+        end
+
+        // The card holds DO low while programming (can be many ms). Wait it
+        // out - or give up after ~0.8 s - then hand the bus back.
+        S_WR_BUSY: begin
+            tx_byte  <= 8'hFF;
+            tx_go    <= 1'b1;
+            busy_cnt <= busy_cnt + 20'd1;
+            if ((busy_cnt != 20'd0 && rx_byte == 8'hFF) || (&busy_cnt)) begin
+                if (&busy_cnt) wr_err <= 1'b1;
+                cs_n     <= 1'b1;
+                st       <= S_GAP;
+                st_after <= S_READY;
+                wr_done  <= 1'b1;
                 ready    <= 1'b1;
             end
         end

@@ -98,7 +98,9 @@ def main(argv):
     if not os.path.exists(image):
         sys.exit(f"{IMAGE} not found - run: python3 tools/make_rompack.py")
     size = os.path.getsize(image)
-    first, last = PACK_BASE, PACK_BASE + (size + SECTOR - 1) // SECTOR - 1
+    # PACK_BASE-1 is the prefs sector (last-selected game, written by the
+    # FPGA) - include it in the overlap guard even though we don't write it.
+    first, last = PACK_BASE - 1, PACK_BASE + (size + SECTOR - 1) // SECTOR - 1
 
     disks = external_disks()
     if len(argv) < 2:

@@ -89,9 +89,11 @@ refuses cards whose partitions would overlap the pack, and verifies the
 header after writing. On Linux/Windows use the `dd`/Win32DiskImager recipe
 that `make_rompack.py` prints.
 
-Put the card in the **console's** microSD slot. At boot the loader pulls
-the baked-in game's slot from the card (or falls back to the baked ROMs if
-there is no card).
+Put the card in the **console's** microSD slot. Every game you select in
+the OSD is saved to the card (a reserved sector below the pack), and the
+next power-on boots straight back into it - so a cabinet owner picks a
+game once and it sticks. With no card (or a blank prefs sector) the
+baked-in game boots.
 
 ## 5. Play
 

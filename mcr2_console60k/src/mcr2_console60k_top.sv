@@ -195,10 +195,14 @@ end
 wire        sd_ready, sd_err, sd_rd_start, sd_rd_done, sd_dv;
 wire [7:0]  sd_dout;
 wire [31:0] sd_sector;
+wire        sd_wr_start, sd_wr_next, sd_wr_done;
+wire [7:0]  sd_wr_din;
 wire [16:0] dl_addr;
 wire [7:0]  dl_data;
 wire        dl_wr;
-wire        ldr_done, ldr_error;
+wire        ldr_done, ldr_error, ldr_saved;
+wire [3:0]  ldr_slot;      // slot actually loaded (SD-saved pref at boot)
+wire        osd_save;      // OSD: persist the selection to the prefs sector
 
 // Core runs once the loader has finished, or as soon as it gives up on a
 // missing/unreadable card (then the baked-in ROMs stand).
@@ -209,15 +213,24 @@ sd_reader #(.CLK_HZ(40_000_000)) sd (
     .ready(sd_ready), .err(sd_err),
     .rd_start(sd_rd_start), .rd_sector(sd_sector),
     .dout(sd_dout), .dout_valid(sd_dv), .rd_done(sd_rd_done),
+    .wr_start(sd_wr_start), .wr_din(sd_wr_din),
+    .wr_next(sd_wr_next), .wr_done(sd_wr_done), .wr_err(),
     .sclk(sd_clk), .mosi(sd_cmd), .miso(sd_dat0), .cs_n(sd_dat3)
 );
 
 rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
     .clk(clk_sys), .rst(core_reset_raw | osd_restart),
     .slot(game_slot),
+    // Boot consults the SD-saved preference; an OSD-commanded reload
+    // (menu open) loads exactly the slot the user picked.
+    .use_prefs(~osd_active),
+    .save_req(osd_save), .saved(ldr_saved),
+    .cur_slot(ldr_slot),
     .sd_ready(sd_ready), .sd_err(sd_err),
     .sd_rd_start(sd_rd_start), .sd_sector(sd_sector),
     .sd_dout(sd_dout), .sd_dout_valid(sd_dv), .sd_rd_done(sd_rd_done),
+    .sd_wr_start(sd_wr_start), .sd_wr_din(sd_wr_din),
+    .sd_wr_next(sd_wr_next), .sd_wr_done(sd_wr_done),
     .dl_addr(dl_addr), .dl_data(dl_data), .dl_wr(dl_wr),
     .done(ldr_done), .error(ldr_error)
 );
@@ -274,26 +287,31 @@ dpram #(
 //
 // Reset policy - learned from the flash-boot regression: a JTAG load starts
 // the design on a board that has been powered for minutes (pad enumerated,
-// idle), but an SPI-flash boot starts it ~200 ms after power-on, while the
-// pad's own MCU is still booting. The original 21 us reset ran enumeration
-// once into a not-yet-ready pad and never retried -> USB dead from flash,
-// fine from JTAG. So: hold the host in reset ~87 ms at power-on, and if the
-// host reports a connection error continuously for ~1.4 s, pulse reset and
-// re-enumerate. With no pad plugged this idles in a harmless slow retry
-// loop; a late-booting or hot-plugged pad gets picked up on the next cycle.
-reg [20:0] usb_rst_cnt = 21'd0;
-reg [23:0] usb_err_cnt = 24'd0;
-wire usb_resetn = usb_rst_cnt[20];        // 2^20 / 12 MHz = 87 ms
+// idle), but an SPI-flash boot starts it right after configuration, while
+// the pad's own MCU is still booting. The original 21 us reset ran
+// enumeration once into a not-yet-ready pad; the engine then sticks in a
+// state it cannot leave on its own - CONFIRMED on hardware: even
+// unplug/replug does not revive it, only reset does. So recovery must come
+// from out here, and it must not rely on the engine's conerr flag alone
+// (the stuck state may never raise it):
+//   - hold the host in reset ~350 ms at power-on (slow pads);
+//   - whenever NO device is enumerated (typ == 0) or conerr is up,
+//     continuously for ~2.8 s, pulse reset and re-enumerate.
+// With no pad plugged this is a harmless slow retry loop; late-booting and
+// hot-plugged pads get picked up on the next cycle.
+reg [22:0] usb_rst_cnt = 23'd0;
+reg [24:0] usb_idle_cnt = 25'd0;
+wire usb_resetn = usb_rst_cnt[22];        // 2^22 / 12 MHz = 350 ms
 wire usb_conerr;
 wire [1:0] usb_typ;
 always @(posedge clk_usb) begin
     if (!usb_resetn)
-        usb_rst_cnt <= usb_rst_cnt + 21'd1;
-    if (!usb_resetn || !usb_conerr)
-        usb_err_cnt <= 24'd0;
+        usb_rst_cnt <= usb_rst_cnt + 23'd1;
+    if (!usb_resetn || (usb_typ != 2'd0 && !usb_conerr))
+        usb_idle_cnt <= 25'd0;
     else begin
-        usb_err_cnt <= usb_err_cnt + 24'd1;
-        if (&usb_err_cnt) usb_rst_cnt <= 21'd0;   // ~1.4 s of error: re-init
+        usb_idle_cnt <= usb_idle_cnt + 25'd1;
+        if (&usb_idle_cnt) usb_rst_cnt <= 23'd0;  // ~2.8 s dead: re-init
     end
 end
 
@@ -610,6 +628,8 @@ osd #(.GAME_DEFAULT(GAME_DEFAULT)) osd_inst (
     .loader_restart(osd_restart),
     .loader_done(ldr_done),
     .loader_error(ldr_error),
+    .loaded_slot(ldr_slot),
+    .save_req(osd_save),
     .sd_ready(sd_ready),
     .osd_active(osd_active)
 );
