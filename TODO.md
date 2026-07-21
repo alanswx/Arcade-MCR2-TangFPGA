@@ -71,10 +71,11 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
 
 ## Hardware bring-up (untested on the board)
 
-- **SD ROM loader has never run on hardware** with a valid pack (the
-  reject-foreign-card path IS proven: NESTang's card is correctly refused,
-  beacon `L09`, and the baked game runs). Writing a pack to a spare card and
-  booting slot 0 is the remaining test.
+- ~~SD ROM loader has never run on hardware~~ **RESOLVED 2026-07-21**: pack
+  written to the card with `tools/write_rompack.py` (lands in the gap
+  before the card's partition, filesystem untouched) and games load from
+  the OSD on hardware. The reject-foreign-card path was proven earlier
+  (beacon `L09`).
 - ~~HDMI black screen~~ **RESOLVED 2026-07-20** after a long hunt. HDMI now
   works: 720p from the DDR3 framebuffer, game + border verified on hardware.
   Root causes, in the order found (each invisible to the error log):
@@ -138,8 +139,9 @@ IP4 / J6, which is not pinned at all** — see the Shield PCB section.
   the core raster domain so it shows on HDMI + VGA 31 kHz + 15 kHz alike.
   Select+Start opens; Up/Down, A = load slot from SD pack, B = exit. All six
   input maps are now compiled in and muxed at runtime by `game_id`;
-  `game_config.vh` only picks the baked-in boot game. Remaining OSD work:
-  - **Untested on hardware** (menu draw, reload flow, both orientations).
+  `game_config.vh` only picks the baked-in boot game. **Working on
+  hardware 2026-07-21** (menu, SD reload, game switching; navigation
+  debounce fixed by frame-rate button sampling). Remaining OSD work:
   - **ROT90 direction unverified**: menu on Tron/Shollow is drawn rotated
     for a cabinet monitor; if it reads mirrored/upside-down, swap the
     mapping noted in `osd.sv` (u/v remap line).
