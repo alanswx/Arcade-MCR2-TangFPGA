@@ -208,14 +208,64 @@ Recommended parts and wiring:
   the ADC channels and feeds the digitized value into the analog input port;
   the running game_id tells it whether to use the ADC or the '165 byte.
 
-Simplest build: **leave the ADC footprint unpopulated for the common
-(digital) cabinets**, and populate it + set the MODE jumpers only when a
-shield goes into a Spy Hunter or Max RPM cabinet. Both are Phase D/E games,
-so the ADC can come after the first analog core is running.
+### 4b. FPGA-driven mode switch (recommended — no jumper)
 
-An FPGA-controlled analog mux (74HC4053) could auto-switch digital/analog by
-game_id instead of a manual jumper — slicker, but since a cabinet is one
-game the jumper is simpler and cheaper. Offered as an option, not the base.
+The manual jumper works, but the FPGA can drive the digital/analog switch
+itself, which keeps the "select the game, nothing else" promise for the
+analog cabinets too. It's actually cleaner **and reuses hardware already on
+the shield**:
+
+```mermaid
+flowchart LR
+    GID["core game_id<br/>(from OSD)"] --> MB["MODE bit<br/>= analog for<br/>Spy Hunter / Max RPM"]
+    MB -->|rides a spare<br/>74HC595 output bit| SW["74HC4053 analog switch<br/>(per analog channel)"]
+    J["J4/J5 analog-capable pin"] --> SW
+    SW -->|MODE=digital| PAD["4.7k pull-up + '165 pad"]
+    SW -->|MODE=analog| ADCIN["ADC channel (clean)"]
+```
+
+How it works, step by step:
+
+1. **The FPGA already knows the running game** (`game_id` from the OSD). It
+   derives one **MODE** bit — high only for Spy Hunter / Max RPM. MODE is
+   static per game (set when the game loads, never changes mid-play).
+2. **MODE rides a spare bit of the existing 74HC595 output chain** — no new
+   J10 pin. The '595s are already on the board for lamps/meters; one unused
+   output bit becomes the mode line.
+3. That bit drives a **74HC4053-class analog switch** on each analog-capable
+   channel (≈4: Max RPM's worst case). In **digital** mode the pin routes to
+   its normal pull-up + '165 pad; in **analog** mode the switch **lifts the
+   pull-up** and routes the pin straight to the ADC channel. Lifting the
+   pull-up is the whole point — a 4.7 kΩ pull-up to 5 V would offset a pot's
+   reading, so it must be out of circuit for analog.
+4. In analog mode the '165 still *sees* that pin and clocks in some
+   arbitrary 0/1 — **harmless, the FPGA ignores those bits for that game.**
+
+**Bonus you get for free:** the *channel* muxing (steering vs gas; which of
+Max RPM's four axes) was **already game-driven on the original hardware** —
+the game wrote the ADC0844's channel select and RD/WR strobes through its
+SSIO output ports (`mcr3.cpp`: Max RPM latches the mux on `output`, Spy
+Hunter toggles the ADC via an output bit). Our core reproduces those output
+ports, so if you wire the core's `output_4/5/6` to the ADC's channel-select/
+strobe lines, the game sequences the ADC exactly as it did in 1984 — no
+extra logic. The only *new* thing is the per-cabinet digital-vs-analog pin
+routing (MODE), because a universal shield serves both a dial cabinet and a
+pot cabinet on the same pins, whereas the original Spy Hunter board was
+always analog.
+
+**Recommendation:** design for the FPGA-driven switch (MODE on a '595 bit +
+74HC4053s), and keep a **manual override jumper in parallel** as a
+populate-option fallback — cheap insurance while the analog path is
+unproven. Cost over the jumper-only build: ~one 74HC4053 (maybe two) and a
+few traces; payoff: the analog cabinets are as plug-and-play as the rest.
+
+**One detail to lock down at Phase D:** exactly which harness pins carry the
+Spy Hunter / Max RPM pot wipers (the master matrix normalizes them onto the
+"Opt X D0–D7" label, but 2 pots ≠ 8 data bits, so the physical wiper pins
+need confirming against those games' schematics). Finalize the analog
+channel count and pin map when the first analog core (Spy Hunter) is brought
+up — until then, route the ADC + switch footprints for the worst case (4
+channels) and leave them unpopulated.
 
 ---
 
@@ -249,7 +299,8 @@ back-feed the cabinet 5 V (spec §6.1).
 | 2 | ULN2803 | 12 V coin-meter / lamp drivers |
 | 1 | 74HCT244 | 5 V sync buffer |
 | 1 | ADS7830 / MCP3208 (opt.) | analog pots (Spy Hunter / Max RPM) |
-| — | ADC MODE jumpers (opt.) | route Opt X/Y to '165 or ADC per cabinet |
+| 1–2 | 74HC4053 (opt.) | FPGA-driven digital/analog mode switch (§4b); MODE rides a spare '595 bit |
+| — | manual MODE jumper (opt., fallback) | override the FPGA switch per cabinet |
 | — | R2R resistors (9), sync caps, BAT54S clamps, pull-ups | passives |
 | 1 | buck + LDO | 12 V → 5 V → 3.3 V |
 | — | .156" MCR connectors (J2/J3/J4/J5/Video/Audio) | harness interface |
