@@ -79,7 +79,7 @@ between the three, prefs persist. **This phase is deliberately first: it
 forces all the multi-family packaging decisions while the RTL risk is
 near zero.**
 
-## Phase B — SDRAM module bring-up (the gate for all MCR-3)   [STARTED]
+## Phase B — SDRAM module bring-up (the gate for all MCR-3)   [DONE — verified on hardware 2026-07-22]
 
 **Standalone memtest built (2026-07), not yet hardware-run.** The exact
 controller MCR-3 will use is vendored and Gowin-adapted:
@@ -95,6 +95,13 @@ read back -> compare) on port1; the diag top
 Bitstream: `bitstreams/console60k_sdram_memtest.fs` (builds clean, timing
 met at 100 MHz). FSM logic is Verilator-validated (`make -C sim memtest`:
 clean memory PASSes, an injected bad word is caught at the right address).
+
+**VERIFIED ON HARDWARE (2026-07-22):** with the Tang SDRAM module in
+place, the memtest completed and PASSED (PASS LED on J10-21 steady high;
+beacon `c1`). The one fix needed was the SDRAM_CLK phase — the initial
+180 deg failed (module responded, wrong data); flipping the `sdram_gw`
+ODDR to 0 deg (D0=1/D1=0) made all reads correct. SDRAM is now a proven
+foundation; MCR-3 board builds are unblocked.
 
 **On hardware:** plug the Tang SDRAM module into J9, flash the memtest,
 watch the LEDs. DONE+PASS = the module, pins and clock phase are good. If

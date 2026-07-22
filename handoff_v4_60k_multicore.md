@@ -97,8 +97,8 @@ Key realities the roadmap captures:
 | SD loader + boot-into-last-game | ✅ on hardware |
 | OSD menu (all 6 MCR-2 games) | ✅ on hardware |
 | MCR-1 (Kick/Solar Fox) | ⏳ builds, flash + play pending |
-| SDRAM module (J9) | ⏳ memtest built, module in hand, test scheduled |
-| MCR-3 board | ⛔ blocked on the SDRAM memtest |
+| SDRAM module (J9) | ✅ **memtest PASSED on hardware** (clock phase fixed to 0 deg) |
+| MCR-3 board | ▶️ unblocked — SDRAM verified; Tapper is the next build |
 
 Per-game control caveats (derived, not yet play-tuned): Kick spinner
 sensitivity; Tron aim direction (MAME PORT_REVERSE); Kroozr/Wacko/Two

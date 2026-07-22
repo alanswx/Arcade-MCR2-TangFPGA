@@ -228,7 +228,7 @@ budget exists anymore. See the Shield PCB section.
   40/100 MHz CDC; SD->SDRAM sprite loader). Do the board build AFTER the
   Phase B memtest passes on hardware - Tapper/Timber first (plain SSIO
   sound). Journey needs a DDR3 wave port; DoT ships without speech.
-- **SDRAM memtest — Phase B started, not yet on hardware.** Standalone
+- ~~SDRAM memtest — Phase B~~ **DONE / VERIFIED ON HARDWARE 2026-07-22.** Standalone
   test of the Tang SDRAM module (J9) using the exact controller MCR-3 will
   use (`src/rtl/sdram_gw.sv`, Gowin-adapted from MiSTer MCR-3). Flash
   `bitstreams/console60k_sdram_memtest.fs` with the module plugged in:
