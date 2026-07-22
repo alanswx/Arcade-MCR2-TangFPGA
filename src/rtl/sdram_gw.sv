@@ -28,7 +28,12 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>. 
 //
 
-module sdram_gw (
+module sdram_gw #(
+	// Cycles between auto-refreshes. Default 842 suits the memtest's 100 MHz
+	// clock; the MCR-3 build runs at 80 MHz and overrides to 600 (7.5us < the
+	// 7.81us tREF row interval). Sized per SDRAM clock so data is retained.
+	parameter [9:0] RFRSH_CYCLES = 10'd842
+) (
 
 	// interface to the MT48LC16M16 chip
 	inout      [15:0] SDRAM_DQ,   // 16 bit bidirectional data bus (Gowin: driven via the tristate assign below)
@@ -94,7 +99,8 @@ localparam NO_WRITE_BURST = 1'b1;   // 0= write burst enabled, 1=only single acc
 localparam MODE = { 3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_LENGTH}; 
 
 // 64ms/8192 rows = 7.8us -> 842 cycles@108MHz
-localparam RFRSH_CYCLES = 10'd842;
+// RFRSH_CYCLES is now a module parameter (see the header) so the 80 MHz MCR-3
+// build can shrink it; the memtest leaves it at the 842 default.
 
 // ---------------------------------------------------------------------
 // ------------------------ cycle state machine ------------------------

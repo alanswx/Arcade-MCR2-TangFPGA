@@ -87,23 +87,40 @@ module mcr3_console60k_top (
 
     // PWM Audio output
     output       audio_l,
-    output       audio_r
+    output       audio_r,
+
+    // Tang SDRAM module (J9) - holds the 128 KB sprite ROM (too big for BSRAM).
+    // Pins from the verified sdram_memtest.cst (nand2mario snestang layout);
+    // CKE is tied high on the module (no FPGA pin). Bank is 3.3V (these balls
+    // are NOT in the DDR3's bank 9), so LVCMOS33 coexists with the framebuffer.
+    inout  [15:0] O_sdram_dq_io,
+    output [12:0] O_sdram_addr,
+    output [1:0]  O_sdram_ba,
+    output [1:0]  O_sdram_dqm,
+    output        O_sdram_clk,
+    output        O_sdram_cs_n,
+    output        O_sdram_wen_n,
+    output        O_sdram_ras_n,
+    output        O_sdram_cas_n
 );
 
 assign hpd_en = 1'b1;   // enable the dock's HDMI path
 
 // --- Clock Generation ---
-wire clk_sys;  // 40 MHz  (Core system clock, generates 20 MHz pixel enable)
-wire clk_p5;   // 125 MHz (HDMI 5x pixel clock)
+// gowin_pll_core80 (60K/MCR-3 variant, VCO=800): drops the unused 125 MHz TMDS
+// clock and adds clk_sdram = 80 MHz = 2x clk_sys, phase-locked off the same VCO
+// so the SDRAM sprite read is a synchronous 1:2 crossing to the 40 MHz core.
+wire clk_sys;    // 40 MHz  (Core system clock, generates 20 MHz pixel enable)
+wire clk_sdram;  // 80 MHz  (SDRAM controller, synchronous 2x clk_sys)
 wire pll_locked;
 
 wire clk50_pll;  // PLL-buffered 50 MHz for the DDR3 controller/mDRP (clk_g).
                  // Feeding the raw pad clock there put a derived clock on
                  // generic routing (PR1014) and the DDR3 IP never came up.
-gowin_pll_mcr2 pll_inst (
+gowin_pll_core80 pll_inst (
     .clkin(sys_clk),
     .clk_sys(clk_sys),
-    .clk_p5(clk_p5),
+    .clk_sdram(clk_sdram),
     .clk_50(clk50_pll),
     .lock(pll_locked)
 );
@@ -226,10 +243,81 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
     .done(ldr_done), .error(ldr_error)
 );
 
-// Download decode for the two ROMs that live here (the gfx ROMs decode
-// inside mcr2.vhd): CPU 0x00000-0x0FFFF, sound 0x10000-0x13FFF.
-wire cpu_rom_we = dl_wr && !dl_addr[16];
-wire snd_rom_we = dl_wr && (dl_addr[16:14] == 3'b100);
+// Phase 1 (sprites-first): CPU/sound/bg stay BAKED in BSRAM (INIT_FILE); the
+// SD pack holds ONLY the 128 KB sprite blob, and the whole dl stream is routed
+// to SDRAM below. So the CPU/sound dl-write ports are held off here (a sprite
+// byte at dl_addr < 0x10000 must NOT land in the CPU ROM), and the core's
+// dl_wr is tied low (its bg dl-decode must not overwrite the baked bg).
+wire cpu_rom_we = 1'b0;
+wire snd_rom_we = 1'b0;
+
+// ------------------------------------------------------------------------
+// Sprite SDRAM (Tang module, J9): read port to the core + write port from the
+// SD loader. sdram_gw is the MiSTer MCR-3 controller (verified by the memtest
+// at 100 MHz); here it runs at clk_sdram = 80 MHz = 2x the 40 MHz core.
+// ------------------------------------------------------------------------
+wire [14:0] core_sp_addr;   // core -> SDRAM: 15-bit sprite word address
+wire [31:0] sp_q;           // SDRAM -> core: 32-bit (4-plane) sprite word
+
+// The loader streams the 128 KB sprite blob as dl_addr[16:0]/dl_data on
+// clk_sys. Route it to SDRAM port1 with MiSTer's exact sprite write-swizzle
+// (Arcade-MCR3.sv): the 8 concatenated planes merge into 32-bit words so a
+// linear sp_addr read returns the 4 planes for that pixel column.
+//   port1_a  = {7'b0, dl_addr[14:0], dl_addr[16]}   (16-bit word address)
+//   port1_ds = {dl_addr[15], ~dl_addr[15]}          (which byte of the word)
+//   port1_d  = {dl_data, dl_data}                   (ds picks the lane)
+// clk_sdram = 2x clk_sys (synchronous), so dl_wr is a 2-cycle pulse here;
+// rising-edge detect turns each into exactly one port1 write. The SD byte rate
+// is << clk_sdram, so a write always finishes before the next dl_wr.
+wire        p1_ack;
+reg         sdram_rst_s1 = 1'b1, sdram_rst = 1'b1;
+always @(posedge clk_sdram) begin
+    sdram_rst_s1 <= core_reset_raw;
+    sdram_rst    <= sdram_rst_s1;
+end
+
+reg        dl_wr_s1 = 1'b0, dl_wr_s2 = 1'b0;
+reg        p1_req_r = 1'b0, p1_we_r = 1'b0;
+reg [23:1] p1_a_r = 23'd0;
+reg [1:0]  p1_ds_r = 2'b00;
+reg [15:0] p1_d_r = 16'd0;
+always @(posedge clk_sdram) begin
+    dl_wr_s1 <= dl_wr;
+    dl_wr_s2 <= dl_wr_s1;
+    if (dl_wr_s1 && !dl_wr_s2) begin        // rising edge of a new dl byte
+        p1_a_r   <= {7'b0, dl_addr[14:0], dl_addr[16]};
+        p1_ds_r  <= {dl_addr[15], ~dl_addr[15]};
+        p1_d_r   <= {dl_data, dl_data};
+        p1_we_r  <= 1'b1;
+        p1_req_r <= ~p1_req_r;              // launch (toggle req vs ack)
+    end
+end
+
+sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
+    .SDRAM_DQ(O_sdram_dq_io),
+    .SDRAM_A(O_sdram_addr),
+    .SDRAM_DQML(O_sdram_dqm[0]),
+    .SDRAM_DQMH(O_sdram_dqm[1]),
+    .SDRAM_BA(O_sdram_ba),
+    .SDRAM_nCS(O_sdram_cs_n),
+    .SDRAM_nWE(O_sdram_wen_n),
+    .SDRAM_nRAS(O_sdram_ras_n),
+    .SDRAM_nCAS(O_sdram_cas_n),
+    .SDRAM_CKE(),                 // no board pin; module ties CKE high
+    .SDRAM_CLK(O_sdram_clk),
+    .init_n(~sdram_rst),
+    .clk(clk_sdram),
+    // port1: sprite download write (from the SD loader)
+    .port1_req(p1_req_r), .port1_ack(p1_ack), .port1_we(p1_we_r),
+    .port1_a(p1_a_r), .port1_ds(p1_ds_r), .port1_d(p1_d_r), .port1_q(),
+    .cpu1_addr(23'd0), .cpu1_q(),
+    .cpu2_addr(23'd0), .cpu2_q(),
+    .cpu3_addr(23'd0), .cpu3_q(),
+    .port2_req(1'b0), .port2_ack(), .port2_we(1'b0),
+    .port2_a(23'd0), .port2_ds(2'b00), .port2_d(16'd0), .port2_q(),
+    // sprite read to the core: 15-bit word addr -> 32-bit plane word
+    .sp_addr({7'd0, core_sp_addr}), .sp_q(sp_q)
+);
 
 wire [15:0] rom_addr;
 wire [7:0]  rom_do;
@@ -426,14 +514,15 @@ mcr3 mcr3_core (
     .snd_rom_addr(snd_addr),
     .snd_rom_do(snd_do),
 
-    // Sprite ROM: INCREMENT 0 ties it off (blank sprites). Increment 1 wires
-    // sp_addr -> sdram_gw sp port -> sp_graphx32_do (128 KB sprites in SDRAM).
-    .sp_addr(),
-    .sp_graphx32_do(32'd0),
+    // Sprite ROM: 128 KB in SDRAM (Phase 1). The core drives a 15-bit word
+    // address; sdram_gw returns the 32-bit (4-plane) word.
+    .sp_addr(core_sp_addr),
+    .sp_graphx32_do(sp_q),
 
-    // Download bus (16-bit on MCR-3; inert here - all ROMs are baked)
+    // Download bus (16-bit on MCR-3). Held OFF here: CPU/sound/bg are baked;
+    // the SD pack feeds sprites straight to SDRAM (see the sprite loader below).
     .dl_addr(dl_addr[15:0]),
-    .dl_wr(dl_wr),
+    .dl_wr(1'b0),
     .dl_data(dl_data),
     .dl_nvram_wr(1'b0),
     .dl_din(),

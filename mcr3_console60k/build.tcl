@@ -34,7 +34,8 @@ set_option -use_i2c_as_gpio 1
 add_file src/mcr3_console60k_top.sv
 add_file ../src/rtl/dpram.sv
 add_file ../src/rtl/gen_ram.sv
-add_file ../src/rtl/gowin_pll_mcr2.v
+add_file ../src/rtl/gowin_pll_core80.v
+add_file ../src/rtl/sdram_gw.sv
 add_file ../src/usb/gowin_pll_usb.v
 add_file ../src/usb/usb_hid_host.v
 add_file ../src/usb/usb_hid_host_rom.v

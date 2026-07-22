@@ -8,6 +8,13 @@ create_clock -name sys_clk -period 20 -waveform {0 10} [get_ports {sys_clk}]
 //   clk_sys = 40MHz = sys_clk * 4/5   (PLLA CLKOUT1, core clock)
 create_generated_clock -name clk_sys -source [get_ports {sys_clk}] -multiply_by 4 -divide_by 5 [get_pins {pll_inst/PLLA_inst/CLKOUT1}]
 
+// clk_sdram = 80MHz = sys_clk * 8/5 (PLLA CLKOUT0, gowin_pll_core80). It is 2x
+// clk_sys off the SAME VCO, so the two are SYNCHRONOUS - deliberately NOT cut
+// from clk_sys (the sprite-load crossing is a real 1:2 relationship the tool
+// should analyze; it closes easily at 80MHz). Only the async DDR3/HDMI domains
+// below are cut from it.
+create_generated_clock -name clk_sdram -source [get_ports {sys_clk}] -multiply_by 8 -divide_by 5 [get_pins {pll_inst/PLLA_inst/CLKOUT0}]
+
 // DDR3 framebuffer clocks (per nand2mario gbatang_ddr.sdc): the DDR3 PLL is
 // mDRP-reconfigured at runtime, so its outputs are declared explicitly.
 //   clk4x = 297MHz DDR3 memory clock, clk1x = 74.25MHz pixel/user clock.
@@ -18,6 +25,11 @@ create_clock -name clk1x -period 13.47 -waveform {0 6.734} [get_nets {fb_inst/cl
 set_clock_groups -asynchronous -group [get_clocks {clk_sys}] -group [get_clocks {clk4x}]
 set_clock_groups -asynchronous -group [get_clocks {clk4x}] -group [get_clocks {clk1x}]
 set_clock_groups -asynchronous -group [get_clocks {clk_sys}] -group [get_clocks {clk1x}]
+
+// SDRAM clock is async to the DDR3/HDMI framebuffer domains (only related to
+// clk_sys). Cut it from clk4x/clk1x here; the hclk cuts are added below.
+set_clock_groups -asynchronous -group [get_clocks {clk_sdram}] -group [get_clocks {clk4x}]
+set_clock_groups -asynchronous -group [get_clocks {clk_sdram}] -group [get_clocks {clk1x}]
 
 // USB HID host clock: 12MHz from the second PLLA (50 * 6/25). The pad outputs
 // are 2FF-synchronized into clk_sys, so the domains are asynchronous.
@@ -46,3 +58,4 @@ create_clock -name hclk  -period 13.468 -waveform {0 6.734} [get_nets {fb_hclk}]
 set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk_sys}]
 set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk4x}]
 set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk1x}]
+set_clock_groups -asynchronous -group [get_clocks {hclk5 hclk}] -group [get_clocks {clk_sdram}]
