@@ -235,13 +235,55 @@ Same as MCR-3 (CPU/sound/bg baked BRAM; sprites -> SDRAM) plus:
 Extra core I/O: `mod_crater`/`mod_turbo` (game select), `show_lamps`
 (Spy Hunter lamps), `output_4` (SSIO out, drives the input mux + lamps).
 
-## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards, Demolition Derby
+## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards   [CORE READY]
 
-`mcr3mono.vhd` + Turbo Cheap Squeak (`cpu09l`) + Sounds Good (FX68K,
-already proven by Phase D). Rampage's 256 KB sprites are the biggest ROM
-load of the whole family — SDRAM budget is fine, pack slots grow again.
-Bonus once TCS exists: **Demolition Derby's 4-player version (`demoderb`)
-is MCR-2 hardware + TCS** — it slots into our existing MCR-2 core.
+**Core vendored + adapted (2026-07):** `src/rtl/mcr3mono.vhd` patched like
+the others (two bg dprams get INIT_FILE + we_a/we_b/d/q tie-offs, palette
+gets we_b/d_b, `hcnt_out` added). Uses only vendorable entities. Board
+integration is **SDRAM-gated**, and this is the heaviest MCR title set.
+
+### Sound stack (both boards compiled in, selected by `soundsgood`)
+
+The mono board carries no SSIO sound Z80; instead the core instantiates
+BOTH sound boards and the `soundsgood` input picks one:
+- **Turbo Cheap Squeak** (`turbo_cheap_squeak.vhd`) = a 6809
+  (`cpu09l_128a.vhd`, the new CPU here) + `pia6821.vhd` + gen_ram. Used by
+  Sarge, Max RPM, Power Drive.
+- **Sounds Good** (`sounds_good.vhd`) = FX68K (already proven portable in
+  Phase D) + pia6821. Used by Rampage, Star Guards.
+All confirmed Gowin-clean (no Altera primitives; cpu09 reads no vendor
+macros). Vendor list at board-build: `cpu09l_128a.vhd`,
+`turbo_cheap_squeak.vhd`, `sounds_good.vhd`, `pia6821.vhd`, FX68K.
+
+### Memory split (the heaviest of the family)
+
+| ROM | Size | Home |
+|---|---|---|
+| CPU program | 64 KB | BRAM (baked) |
+| Background | **64 KB** (2x32 KB) | BRAM (baked) - large; watch the block budget |
+| **Sprites** | **256 KB** (16-bit `sp_addr`) | **SDRAM** - biggest sprite load of any MCR game |
+| **Sounds Good ROM** | **256 KB** (18-bit addr, 16-bit) | **SDRAM** (Rampage/Star Guards); MiSTer's `snd` port remap |
+| Turbo Cheap Squeak ROM | ~48 KB (8-bit) | BRAM (baked) - small |
+
+The 64 KB bg + 64 KB CPU baked in BRAM is tight alongside the framebuffer;
+if it doesn't fit, move a bg plane to SDRAM (a second read port) or start
+with a smaller-bg game. **Sarge (TCS) is the clean first target**: only
+sprites need SDRAM (TCS sound ROM is small enough to bake), so it's the
+mono analog of "Crater first" / "Tapper first."
+
+### Games, in order
+
+1. **Sarge** - TCS sound (6809, baked ROM), sprites in SDRAM only.
+2. **Rampage** - Sounds Good (FX68K) with its 256 KB ROM in SDRAM too;
+   the full heavy path.
+3. Max RPM, Power Drive (TCS), Star Guards (Sounds Good).
+
+### Bonus unlocked here
+
+Once Turbo Cheap Squeak is vendored, **Demolition Derby's 4-player version
+(`demoderb`) is MCR-2 hardware + TCS** - it slots straight into the
+existing `mcr2.vhd` core (add the TCS instance + its input map), no mono
+board needed. A free extra game on the already-shipping MCR-2 build.
 
 ## Cross-cutting decisions (do once, in Phase A)
 

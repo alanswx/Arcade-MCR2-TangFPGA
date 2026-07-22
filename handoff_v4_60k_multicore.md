@@ -76,7 +76,7 @@ Status at this handoff:
 | **SDRAM foundation** | — | **Memtest built** (`console60k_sdram_memtest.fs`); verifies the J9 module before any core rides it. Gate for all MCR-3 |
 | **MCR-3** | Tapper, Timber, Journey, DoT | **Core vendored + adapted** (`src/rtl/mcr3.vhd`); board integration fully designed, gated on the SDRAM memtest passing |
 | **MCR3Scroll** | Spy Hunter, Crater, Turbo Tag | **Core vendored + adapted** (`src/rtl/mcr3scroll.vhd`); FX68K sound stack verified portable; board gated on SDRAM |
-| **MCR3Mono** | Rampage, Sarge, … | Roadmap (SDRAM + Turbo Cheap Squeak / Sounds Good) |
+| **MCR3Mono** | Rampage, Sarge, Max RPM, … | **Core vendored + adapted** (`src/rtl/mcr3mono.vhd`); TCS (6809) + Sounds Good (FX68K) verified portable; board gated on SDRAM |
 
 Key realities the roadmap captures:
 - MCR-1 needs **no new hardware** (small ROMs, all BRAM) — the cheap win.

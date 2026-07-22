@@ -195,6 +195,14 @@ budget exists anymore. See the Shield PCB section.
 ## Cores / ports
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
+- **MCR3Mono core (Rampage/Sarge/Max RPM/Power Drive/Star Guards) —
+  Phase E, core ready, board gated on SDRAM.** `src/rtl/mcr3mono.vhd`
+  vendored + adapted (dprams + hcnt_out). Both sound boards verified
+  Gowin-clean: Turbo Cheap Squeak (6809 `cpu09l`) and Sounds Good (FX68K).
+  Heaviest ROM set (256 KB sprites + 256 KB Sounds Good ROM, both SDRAM;
+  64 KB bg baked). Sarge first (TCS, sprites-only SDRAM). Once TCS is
+  vendored, demoderb (4-player Demolition Derby) drops into the existing
+  MCR-2 core for free. Design in the roadmap.
 - **MCR3Scroll core (Spy Hunter/Crater/Turbo Tag) — Phase D, core ready,
   board gated on SDRAM.** `src/rtl/mcr3scroll.vhd` vendored + adapted
   (dprams + hcnt_out). The Cheap Squeak Deluxe / FX68K / pia6821 /
