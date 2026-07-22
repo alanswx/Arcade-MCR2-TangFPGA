@@ -109,10 +109,10 @@ reads fail (DONE+FAIL), the likely culprit is the SDRAM_CLK phase - swap
 D0/D1 on the ODDR in `sdram_gw.sv` (the one documented phase knob) and
 rebuild.
 
-Remaining Phase B:
-1. Run the memtest on real hardware; tune the clock phase if needed.
-2. Retire the F19/F20 PMOD buttons (they overlap nothing here, but will
-   when the module is wired into a real board build).
+Remaining Phase B (now carried into the MCR-3 board build):
+1. ~~Run the memtest on hardware~~ **done — PASS.**
+2. Retire the F19/F20 PMOD buttons when the module is wired into a real
+   board build.
 3. `rom_loader` v3: stream slots >128 KB through the `dl_` path into SDRAM
    (MiSTer's `rom_download` wiring in `Arcade-MCR3.sv` is the template).
    Pack v2 carries per-slot sizes.
