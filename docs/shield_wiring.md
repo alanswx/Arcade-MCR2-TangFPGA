@@ -9,72 +9,74 @@ Interface style is settled (spec §0): the **cabinet harness plugs into the
 shield**; the FPGA maps every pin per game, so nothing is rewired. Rev A
 targets the **SSIO-family connectors** (MCR-1/2 + SSIO MCR-3).
 
-Pin functions below are from `docs/MCR_Master_Pinouts.pdf` (the master
-matrix) — authoritative for what each pin does. Physical housing/pin-count
-should be confirmed against a real MCR harness before ordering connectors.
+Connector types, pin counts and **pitch** are from **`docs/MCR Series
+Pinouts.html`** (John Sanford's archived MCR reference) — the real board
+connectors. Per-pin/per-game signal meaning is in that file and
+`docs/mcr_game_input_matrix.md`. Still confirm the exact housing/keying
+against a physical harness before ordering.
 
 ---
 
 ## 1. Cabinet connectors (what the harness plugs into)
 
-**Two pitches, and only one is ours.** MCR used both .156" and .100"/ribbon
-connectors, but they served different jobs:
+Authoritative source: **`docs/MCR Series Pinouts.html`** (John Sanford's MCR
+pinout reference, archived) — the real board-connector table. **These are
+the actual MCR connectors and this is the real J-numbering** (it matches
+MAME's `ssio:IP*` J-comments). It supersedes the normalized numbering in the
+"Master Pinout Matrix" PDF (whose J2/J3/J4/J5 are *cabinet-function*
+labels, not the physical connectors) — for footprints, use THIS table.
 
-- **.100" (2.54 mm) / ribbon — board-to-board interconnect, NOT ours.** The
-  original MCR boardset (CPU + video-gen + SSIO/sound) was stacked and
-  interconnected with small-pitch ribbon/SIPP connectors (the MCR FAQ:
-  "very early MCR games used SIPP-style sockets for the J1 and J2 connectors
-  with solid core wire ribbon cables interconnecting the boards"). **The
-  shield replaces the entire boardset, so those interconnects simply don't
-  exist for us** — there are no separate boards to link.
-- **.156" (3.96 mm) — the cabinet harness, which is what the shield
-  presents.** Player controls, coins, video, power, audio: the connectors
-  the cabinet's own wiring plugs into.
+**Only the power connector is .156"; every signal connector is .100" MTA:**
 
-So for the shield, target the **.156" cabinet-harness connectors** below.
-(Pitch on a couple of individual connectors — the video connector
-especially — is worth confirming against a real harness or the specific
-game's schematic before ordering; see the caveat after the table.)
-
-Present these on the shield edge, keyed, in the standard MCR positions:
-
-| Ref | Connector | Pins | Carries | Footprint (verify vs harness) |
+| Ref | Board | Pins | Pitch | Carries |
 |---|---|---:|---|---|
-| **J2** | Player 1 controls | 13 | P1 stick + 2 buttons, GND | .156" 13-pin (1-row) header, key at the game's keyed pin |
-| **J3** | Coin door / system | 5–6 | Coin1/2, Start1/2, Tilt | .156" 6-pin header |
-| **J4** | Opt X (dial bus / analog) | 10 | 8-bit dial data **or** analog pots, key, GND | .156" 10-pin header; **also feeds the ADC — see §4** |
-| **J5** | Opt Y / Player 2 | 19 | P2 controls, trackball-Y, P2 mux data | .156" 19-pin header |
-| **Video** | RGB + sync | 9 | R, G, B (+ GNDs), HSync, VSync, key | .156" 9-pin header |
-| **Audio** | speaker | 2 | speaker + / − | .156" 2-pin or screw terminal |
-| **Power** | cabinet 12 V in | 2–3 | +12 V, GND (shield bucks to 5 V/3.3 V) | screw terminal or .156" |
+| **J1** | CPU | 20 | **.156" MTA** | **Power in**: +5 V ×4, GND ×4, +12 V, V.BATT, RESET, audio GND, key |
+| **J2** | CPU | 9 | **.100" MTA** | **Video**: Red, G, B (+ Video GND ×3), key, HSync(−), VSync(−) |
+| **J3** | — | 9/10 | **.100" MTA** | **Audio** out + a volume-control pot |
+| **J4** | SSIO | 19 | **.100" MTA** | **IP0** (Coin1/2, 1P/2P Start, button, Tilt, Service, Test, GND) + **IP1** (D0–D7 game inputs, key) |
+| **J5** | SSIO | 23 | **.100" MTA** | **IP2** (P2 controls / trackball-Y / more inputs) |
+| **J6** | SSIO | 10 | **.100" MTA** | **IP4** (aux: P3 stick, second dial, etc.) |
 
-Notes:
-- **J1 / +5 V:** the shield generates its own 5 V/3.3 V from cabinet 12 V
-  (spec §3). Do **not** take the cabinet's +5 V logic rail.
-- **Key pins** (J4-8, Video-7) are the connector's mechanical key — leave
-  the shield position blank/plugged to match.
-- Grounds (J2-13, J4-10, Video-2/4/6) all tie to the shield star ground.
-- **Pitch caveat — verify before ordering.** The controls/coin/power
-  connectors are .156"; the **video connector's pitch (.156 vs .100) is the
-  one to double-check** against the target game's harness, as it varied. The
-  dial games' 8-bit Opt-X bus arrives on J4 as **parallel digital**, not
-  raw quadrature — the cabinet's *Angle Encoder Board* converts the knob's
-  quadrature to parallel position data before J4/J6 (MCR FAQ). So the '165
-  reads it directly, **provided the cabinet still has its Angle Encoder
-  Board**; a bare encoder would need quadrature decode in the FPGA
-  (`spinner.sv`) instead.
+**MTA = the AMP/TE MTA series** (MTA-156 for J1, **MTA-100 for J2–J6**).
+Classic Bally/Midway friction-lock IDC headers. Match the exact pin count
+and keyed position per connector; the per-pin/per-game signal detail is in
+the HTML above and `docs/mcr_game_input_matrix.md`.
 
-Pin-by-pin functions (from the master matrix), abbreviated to the standard
-MCR function — the FPGA re-interprets per game:
+Consequences for the shield footprints:
+- **The input chain feeds off J4 (19-pin), J5 (23-pin), J6 (10-pin)** — all
+  **.100"**. J4 alone carries IP0 **and** IP1 (coins/starts/button + the
+  8-bit player/dial bus), so it's the busiest connector.
+- **J1 is the only .156" part** — and the shield ideally powers from its own
+  12 V terminal rather than the cabinet 5 V rail (spec §6.1), so J1 may only
+  be needed for V.BATT/RESET/audio-GND references, not the 5 V rail.
+- **Video is J2 (.100", 9-pin)** — not a .156 part. The R2R DAC + sync buffer
+  drive it.
+- **Audio + volume is J3 (.100")** — the original had a panel volume pot on
+  J3; keep a pot footprint or fix the level in the PWM/amp stage.
+- **Key pins** (J1, J2-7, J4-14) are mechanical keys — leave blank/plugged.
+- Grounds (J4-9, Video GNDs, J1 GNDs) tie to the shield star ground.
+
+Note on the dial games: the 8-bit bus on J4/J6 (Tron, Kick, Kroozr, etc.) is
+**parallel digital** — the cabinet's *Angle Encoder Board* converts the
+knob's quadrature to parallel before the connector (MCR FAQ). So the '165
+reads it directly **if that board is present**; a bare encoder would need
+quadrature decode in the FPGA (`spinner.sv`).
+
+Pin-by-pin, using the **real board numbering** (from `MCR Series
+Pinouts.html`); the FPGA re-interprets the game-specific bits per game:
 
 ```
-J2 (P1):   1 Up   2 Down  3 Left  4 Right  5 Btn1  6 Btn2            13 GND
-J3 (sys):  1 Coin1  2 Coin2  3 Start1  4 Start2  5 Tilt
-J4 (OptX): 1..7 = Data D0..D6   8 Key   9 = Data D7   10 GND
-J5 (OptY): 1..6 = P2mux/D0..D5  15 D6/P2Up  16 D7/P2Dn  17 P2Left
-           18 P2Right  19 P2Btn1
-Video:     1 Red  2 GND  3 Green  4 GND  5 Blue  6 GND  7 Key
-           8 HSync(-)  9 VSync(-)
+J1 (power): 1-4 +5V  5-8 GND  9 KEY  10 V.BATT  11 RESET  12 +12V  13 audio-GND
+J2 (video): 1 Red  2 GND  3 Green  4 GND  5 Blue  6 GND  7 Key
+            8 HSync(-)  9 VSync(-)
+J3 (audio): speaker out + a 3-terminal volume pot
+J4 (SSIO, IP0+IP1):
+   IP0  1 Coin1  2 Coin2  3 1P-Start  4 2P-Start  5 Button/Fire
+        6 Tilt   7 Service  8 Test    9 GND
+   IP1  10-13 = D0..D3   14 Key   15-18 = D4..D7   (D0-7 = the game's
+        player stick / dial / buttons, per docs/mcr_game_input_matrix.md)
+J5 (SSIO, IP2):  23-pin — P2 controls / trackball-Y / more inputs
+J6 (SSIO, IP4):  10-pin — aux (P3 stick, second dial, …)
 ```
 
 ---
@@ -132,17 +134,18 @@ Per-'165 pin map (all devices identical): `CP`=pin2, `PL̄`=pin1,
 
 ### 2c. Which harness pins land on which '165
 
-| '165 | SSIO byte | Wire these harness pins to A..H |
+| '165 | SSIO byte | Real connector pins → A..H |
 |---|---|---|
-| U1 | IP0 | J3-1 Coin1, J3-2 Coin2, J3-3 Start1, J3-4 Start2, J3-5 Tilt, J2-5 Btn1, (service), (spare) |
-| U2 | IP1 | J2-1 Up, J2-2 Dn, J2-3 Lf, J2-4 Rt, J2-6 Btn2 **— or —** J4-1..7,9 (the 8-bit Opt X dial, dial games) |
-| U3 | IP2 | J5-17 P2Lf, J5-18 P2Rt, J5-19 P2Btn1, J5-15 P2Up, J5-16 P2Dn **— or —** J5-1..6,15,16 (Opt Y bus) |
-| U4 | IP4 | J6 aux / **P3 stick+buttons (Rampage)** / P2 dial |
+| U1 | IP0 | **J4 pins 1-8**: Coin1, Coin2, 1P-Start, 2P-Start, Button, Tilt, Service, Test |
+| U2 | IP1 | **J4 pins 10-13,15-18**: D0..D7 (the game's P1 stick / dial / extra buttons) |
+| U3 | IP2 | **J5** (23-pin): P2 controls / trackball-Y / more inputs |
+| U4 | IP4 | **J6** (10-pin): aux — **P3 stick (Rampage)**, second dial, … |
 | U6/U7 | IP3 | on-shield SW1 / SW2 DIP banks (no harness) |
 
-The "**— or —**" rows are the same '165 serving a stick **or** a dial,
-depending on the cabinet's control — the FPGA reads the byte and maps it per
-game. A given cabinet wires one or the other into U2/U3.
+Because it's the real connectors, the mapping is clean — one '165 per SSIO
+byte, and J4 alone feeds U1+U2. What the D0–D7 bits on IP1 (and IP2/IP4)
+*mean* is per game (stick vs dial vs buttons); the FPGA maps it, so the
+wiring is identical across all games.
 
 ---
 
@@ -297,11 +300,12 @@ channels) and leave them unpopulated.
 
 ## 5. Video DAC & sync buffer (live today)
 
-- **RGB:** 3-bit R2R per gun into Video-1/3/5 — MSB 510 Ω, then 1 kΩ, 2 kΩ,
+- **RGB:** 3-bit R2R per gun into **J2** (the 9-pin .100" video conn) pins
+  1/3/5 — MSB 510 Ω, then 1 kΩ, 2 kΩ,
   summed into the monitor's 75 Ω ≈ 1 Vp-p (bench-proven, `bench_wiring.md`).
-  Drive from J10 `VID_R/G/B` (§ pinout). Video-2/4/6 = GND.
+  Drive from J10 `VID_R/G/B` (§ pinout). J2 pins 2/4/6 = Video GND.
 - **Sync:** J10 `VID_HS`/`VID_VS` (3.3 V, negative) → 74HCT244 at 5 V (TTL
-  thresholds accept 3.3 V in) → Video-8/9. Real MCR monitors take separate
+  thresholds accept 3.3 V in) → J2 pins 8/9. Real MCR monitors take separate
   H/V; the pin-39/40 straps offer csync for OSSC/RetroTink gear.
 - **15 kHz:** close the J10 pin-37 solder jumper for cabinet timing.
 
@@ -329,7 +333,7 @@ back-feed the cabinet 5 V (spec §6.1).
 | — | manual MODE jumper (opt., fallback) | override the FPGA switch per cabinet |
 | — | R2R resistors (9), sync caps, BAT54S clamps, pull-ups | passives |
 | 1 | buck + LDO | 12 V → 5 V → 3.3 V |
-| — | .156" MCR connectors (J2/J3/J4/J5/Video/Audio) | harness interface |
+| — | MCR MTA connectors: J1 (.156" 20-pin power), J2–J6 (.100" MTA: video/audio/inputs) | harness interface |
 
 Everything except the ADC block is required for every cabinet; the ADC
 block is populate-if-analog.
