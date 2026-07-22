@@ -235,12 +235,22 @@ Same as MCR-3 (CPU/sound/bg baked BRAM; sprites -> SDRAM) plus:
 Extra core I/O: `mod_crater`/`mod_turbo` (game select), `show_lamps`
 (Spy Hunter lamps), `output_4` (SSIO out, drives the input mux + lamps).
 
-## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards   [CORE READY]
+## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards   [PARKED — future board rev]
 
-**Core vendored + adapted (2026-07):** `src/rtl/mcr3mono.vhd` patched like
-the others (two bg dprams get INIT_FILE + we_a/we_b/d/q tie-offs, palette
-gets we_b/d_b, `hcnt_out` added). Uses only vendorable entities. Board
-integration is **SDRAM-gated**, and this is the heaviest MCR title set.
+**Parked (2026-07): the core lives in `future/mcr3mono.vhd`, out of the
+active build/OSD roster.** It is vendored + adapted (dprams + hcnt_out) and
+ready, but the MCR3Mono *board* is a different target from the SSIO-family
+shield rev A, so it waits for a board revision that supports it:
+- **different cabinet connectors** — the mono board routes IP ports to
+  different physical connectors (IP0/IP1→J2, IP2→J3, IP4→J4) than the SSIO
+  board the shield targets;
+- **3 players** — Rampage needs P1/P2/P3, beyond the current 1–2P scope;
+- **analog controls** — Max RPM's pot wheels/pedals need the
+  populate-optional ADC block.
+
+The design notes below are retained for when it comes back (`future/
+README.md` has the un-park steps). Board integration is otherwise
+SDRAM-gated like the rest, and this is the heaviest MCR title set.
 
 ### Sound stack (both boards compiled in, selected by `soundsgood`)
 
