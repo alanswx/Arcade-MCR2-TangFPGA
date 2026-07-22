@@ -50,7 +50,7 @@ makes it fit:
 | Status LEDs | 4 | out | direct |
 | Mode/sync straps | 3 | in | solder jumpers |
 | **ALL cabinet inputs + both DIP banks** (J2, J3, J4, J5, J6/IP4, SW1, SW2 = 56 bits) | **3** | in | 7× 74AHC165 chain (5 V-tolerant inputs) |
-| **All outputs** (coin meters, lamps — extensible) | 4 | out | 74HC595 chain + ULN2803 |
+| **All outputs** (coin meters, lamps — mono drives output_5+output_6 = 16 bits) | 4 | out | 2× 74HC595 chain + ULN2803 |
 | Service button | 1 | in | direct (opens the OSD) |
 | Spares | 7 | — | |
 | Power (+5 V out, GND) | 2 | | |

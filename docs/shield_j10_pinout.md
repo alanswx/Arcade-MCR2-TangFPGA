@@ -135,6 +135,11 @@ pulse, bits arrive **U7 first, input H first** — U7.H, U7.G … U7.A, U6.H
 
 ### 3b. '165 inputs ↔ conditioning ↔ MCR harness, device by device
 
+> **This section is the MCR-2 wiring example.** For a board meant to run
+> the whole family (3-player Rampage, the mono/scroll connector remapping),
+> allocate the chain by SSIO input port instead — see §6(a). The electrical
+> pad and control lines below are unchanged either way.
+
 '165 input pins: A=11, B=12, C=13, D=14, E=3, F=4, G=5, H=6. Each
 harness line gets the same passive pad — this is the whole input stage:
 
@@ -225,19 +230,25 @@ needed, and their pull-ups go to 3V3, not 5 V — mixed levels are fine on
 | U6 | pins 11,12,13,14,3,4,5,6 | SW1 positions 1…8, switch→GND, 4.7 kΩ pull-up to 3V3 | game option DIPs = the core's IP3 verbatim (spec §7a); closed = 0 |
 | U7 | pins 11,12,13,14,3,4,5,6 | SW2 positions 1…8, same wiring | system DIPs: menu enable, video mode, … (spec §7a) |
 
-## 4. Output chain — meters and lamps on 4 pins
+## 4. Output chain — meters and lamps (2× 74HC595 = 16 bits)
 
-One 74HC595 (U8) to start; more daisy-chain onto `U8.QH'` later at zero
-pin cost (Spy Hunter's lamp panel, MCR-3 era). Outputs feed a ULN2803
-(cabinet 12 V loads, flyback diodes included in the ULN):
+**Populate two 74HC595s (U8, U9) from the start.** The original single '595
+was sized for MCR-2 (2 coin meters + 2 start lamps); vendoring the MCR-3
+family showed 8 bits is short: the **MCR3Mono board drives two SSIO output
+ports, `output_5` and `output_6` (16 bits)**, and Spy Hunter adds a lamp
+panel (`show_lamps`). Two '595s cover it on the same 4 pins (they daisy-
+chain, `U8.QH' → U9.SER`); add a third later at zero pin cost. Outputs feed
+ULN2803s (cabinet 12 V loads, flyback diodes in the ULN):
 
-| U8 bit | QA…QH | Load |
+| Device.bit | Typical load | Notes |
 |---|---|---|
-| 0 | QA | Coin meter 1 |
-| 1 | QB | Coin meter 2 |
-| 2 | QC | Start 1 lamp |
-| 3 | QD | Start 2 lamp |
-| 4–7 | QE…QH | spare lamps (game-specific) |
+| U8.QA/QB | Coin meter 1 / 2 | all games |
+| U8.QC/QD | Start 1 / 2 lamp | |
+| U8.QE–QH | player-3 start lamp, game lamps | Rampage is **3-player** |
+| U9.QA–QH | `output_6` / Spy Hunter lamp panel | mono + scroll games |
+
+The FPGA maps SSIO `output_4/5/6` (per game) onto these bits; wire the
+cabinet's real loads to whichever bits a given game drives.
 
 `OUT_EN_N` (pin 34) **must have a pull-up on the shield**: it holds every
 output off from power-on until the gateware takes control — no coin-meter
@@ -261,24 +272,64 @@ clicks or lamp flashes during the ~1 s of FPGA configuration.
   the case-closed diagnostics: calib steady + pix/27M blinking + ddr_rst
   off = video pipeline healthy.
 
-## 6. Does it cover every game? (the proof)
+## 6. Coverage across the WHOLE MCR family (reviewed after vendoring)
 
-| Game | Needs beyond P1+coins+SW1 | Where it lands |
+The header, pin budget, AHC-direct input stage and (now-16-bit) output
+chain all hold up for every MCR family. But vendoring MCR-3/Scroll/Mono
+surfaced three things the original MCR-2-era allocation missed — none break
+the header, all are allocation/labeling fixes:
+
+**(a) Allocate the input chain by SSIO input PORT, not by MCR-2 function.**
+The cores read five bytes `input_0..input_4` (IP0–IP4) and each game maps
+its own controls into them. Crucially, **different boards route the same IP
+port to different cabinet connectors** — the SSIO board puts IP0/IP1 on J4,
+IP2 on J5, IP4 on J6; the MCR3Mono board puts IP0/IP1 on J2, IP2 on J3,
+IP4 on J4 (verified in MAME `mcr3.cpp`). So a universal shield should give
+each IP port its **own '165 with a clean 8 bits**, wired from whatever
+control that cabinet uses, and let the FPGA do the per-game mapping:
+
+| '165 | Byte | Wire from the cabinet's… |
 |---|---|---|
-| Tron | aim dial (8-bit), cocktail P2 stick + fire | U3; U4 (J5-15/16) + U2 (J5-17/18) + J5-19‖SW1-8 rule |
-| Domino Man | 4-way stick only | U1 |
-| Satan's Hollow | P2 controls (cocktail) | U2/U4 |
-| Wacko | trackball X+Y, aim stick, cocktail trackball | U3 + U4; aim on U5 (J6) |
-| Kozmik Kroozr | dial + analogue stick X/Y | U3; stick X on U4, **stick Y on U5 (J6)** |
-| Two Tigers | two dials + 4 buttons | U3 (P1 dial), U5 (P2 dial), U1/U2 buttons |
-| MCR-1 Kick / Solar Fox (roadmap) | spinner | U3 |
-| MCR-3 Tapper/Timber/Journey (roadmap) | P2 full stick, more buttons | U2/U4/U5 spares |
-| MCR-3 DoT / Spy Hunter (roadmap) | aim/steering buses, lamps | U3/U4/U5; lamps on '595 chain (extend, zero pins) |
+| U1 | IP0 | coins, starts, tilt, service, P1 button(s) |
+| U2 | IP1 | P1 stick **or** the 8-bit dial/spinner (dial games) |
+| U3 | IP2 | P2 stick / trackball-Y / gas pedal (per game) |
+| U4 | IP4 | aux: **P3 stick (Rampage)**, P2 dial, Kroozr stick-Y, DoT aux |
+| U6/U7 | IP3 | SW1 (game DIPs) / SW2 (system DIPs) |
 
-Every SSIO input port is reachable: IP0/IP1/IP2/IP4 from U1–U5, IP3 from
-U6 (+the Tron OR rule), and the USB pads stay active in parallel for
-bench/home use. Nothing about a new game can outgrow the header — worst
-case adds a '165 or '595 to a chain.
+This is simpler than the old 7-device hybrid (which split P1 across U1 and
+coins, and left P2 one bit short) and it covers everything below. The §3b
+tables above are the **MCR-2 wiring example**; re-label the screw terminals
+by IP port for a universal build.
+
+**(b) 3-player and multi-analog games are real.** Concretely:
+
+| Game(s) | The demand | Covered by |
+|---|---|---|
+| Domino/Tron/Shollow/Wacko/Kroozr/2Tigers (MCR-2) | 1–2 players, dials, cocktail | U1–U4 (shipping) |
+| Kick / Solar Fox (MCR-1) | spinner / stick | U2 |
+| Tapper, Timber (MCR-3) | 2 players, 2-way sticks + buttons | U1–U3 |
+| **Rampage (Mono)** | **3 players** (3× 8-way + 2 buttons) | IP1/IP2/IP4 = U2/U3/U4 |
+| **Spy Hunter (Scroll)** | steering **+** gas (2 analog axes, muxed by an SSIO output bit) + 5 buttons + gear | both on the IP2 byte, alternated by `output_4`; buttons on IP0/IP1; lamps on the '595 chain |
+| **Max RPM (Mono)** | **2 wheels + 2 pedals** (4 axes, muxed) | the IP1 byte, alternated by output bits |
+
+The analog axes arrive as **8-bit digital** on their IP byte (the original
+MCR control PCB does the pot→ADC conversion; the game time-multiplexes
+several axes onto one byte using an SSIO *output* select bit). So the
+shield's digital '165 reads them fine **from a cabinet that has that
+control PCB**. A bare-potentiometer hookup would need an ADC the shield
+does not provide — worth a silkscreen note, but out of scope for a
+harness-in build.
+
+**(c) J9 SDRAM is now mandatory, not optional.** Three of the five families
+(all of MCR-3/Scroll/Mono) require the Tang SDRAM module in J9 for the
+128–256 KB real-time sprite ROM. "Leave J9 clear" (§ ground rules) is a
+hard requirement for a board meant to run the whole family, not just
+future-proofing.
+
+Bottom line: **the guide still makes sense — the 40-pin header, the
+electrical design, and the chain architecture all scale to the full
+family.** The updates are: allocate the input chain by IP port (above),
+populate 2× '595 (§4), and treat J9 as reserved-mandatory.
 
 ## 7. Bring-up order for the board
 
