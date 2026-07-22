@@ -75,7 +75,7 @@ Status at this handoff:
 | **MCR-1** | Kick, Kickman, Solar Fox | **Builds** (`mcr1_console60k/`, `console60k_mcr1_*.fs`); no new HW; not yet hardware-tested |
 | **SDRAM foundation** | — | **Memtest built** (`console60k_sdram_memtest.fs`); verifies the J9 module before any core rides it. Gate for all MCR-3 |
 | **MCR-3** | Tapper, Timber, Journey, DoT | **Core vendored + adapted** (`src/rtl/mcr3.vhd`); board integration fully designed, gated on the SDRAM memtest passing |
-| **MCR3Scroll** | Spy Hunter, Crater, Turbo Tag | Roadmap (SDRAM + Cheap Squeak Deluxe / FX68K) |
+| **MCR3Scroll** | Spy Hunter, Crater, Turbo Tag | **Core vendored + adapted** (`src/rtl/mcr3scroll.vhd`); FX68K sound stack verified portable; board gated on SDRAM |
 | **MCR3Mono** | Rampage, Sarge, … | Roadmap (SDRAM + Turbo Cheap Squeak / Sounds Good) |
 
 Key realities the roadmap captures:

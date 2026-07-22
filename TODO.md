@@ -195,6 +195,12 @@ budget exists anymore. See the Shield PCB section.
 ## Cores / ports
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
+- **MCR3Scroll core (Spy Hunter/Crater/Turbo Tag) — Phase D, core ready,
+  board gated on SDRAM.** `src/rtl/mcr3scroll.vhd` vendored + adapted
+  (dprams + hcnt_out). The Cheap Squeak Deluxe / FX68K / pia6821 /
+  steering_control sound stack is verified Gowin-clean and listed for
+  vendoring at board-build time. Crater Raider first (SSIO-only, no FX68K);
+  Spy Hunter adds CSD + steering + lamps. Design in the roadmap.
 - **MCR-3 core (Tapper/Timber/Journey/DoT) — Phase C, core ready, board
   gated on SDRAM.** `src/rtl/mcr3.vhd` vendored + platform-adapted (builds
   once wired). Board integration is fully designed in

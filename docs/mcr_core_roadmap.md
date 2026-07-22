@@ -187,14 +187,53 @@ Journey stick + button; DoT stick + aim spinner on the Opt X bus).
 Deliverable: `console60k_mcr3.fs`, Tapper + Timber first; the marquee
 titles.
 
-## Phase D — MCR3Scroll: Spy Hunter, Crater Raider, Turbo Tag
+## Phase D — MCR3Scroll: Spy Hunter, Crater Raider, Turbo Tag   [CORE READY]
 
-`mcr3scroll.vhd` + Cheap Squeak Deluxe (FX68K — new clocking to bring up,
-one-time) + `steering_control.vhd` for wheel/pedal synthesis from pad or
-real cabinet controls (shield '165 bus). Spy Hunter's lamp panel lands on
-the shield's 74HC595 chain — add a second '595, zero header pins. CMOS
-option: Crater Raider is SSIO-only if CSD proves stubborn — it can ship
-from this core before Spy Hunter does.
+**Core vendored + adapted (2026-07):** `src/rtl/mcr3scroll.vhd` patched
+like the others — the three gfx dprams (char + 2 bg) get INIT_FILE +
+we_a/we_b/d/q tie-offs, palette gets we_b/d_b, and `hcnt_out` is added
+(this core didn't expose the raster counter; its scanner is the same
+633-wrap as the rest). Board integration is **SDRAM-gated** (same 128 KB
+sprite port as MCR-3) — build after the Phase B memtest passes.
+
+### Sound stack (all verified Gowin-clean, vendor at board-build time)
+
+Spy Hunter and Turbo Tag add the **Cheap Squeak Deluxe** board, a 68000 +
+DAC music board instantiated *inside* `mcr3scroll.vhd` as
+`cheap_squeak_deluxe.vhd`. Its dependencies, all confirmed portable (no
+Altera primitives):
+- `refs/Arcade-MCR3Scroll_MiSTer/rtl/cheap_squeak_deluxe.vhd` (gen_ram +
+  a 6821 PIA),
+- `pia6821.vhd`,
+- **FX68K** (`FX68K/fx68k.sv`, `fx68kAlu.sv`, `uaddrPla.sv` + the
+  `microrom.mem`/`nanorom.mem` microcode) — generic SystemVerilog, reads
+  its microcode via `$readmemb` (the only "altera" strings in it are
+  `// altera message_off` comment pragmas). This is the first FX68K on the
+  platform; MCR3Mono reuses it (Sounds Good), so proving it here is a
+  one-time cost.
+- `steering_control.vhd` for Spy Hunter's wheel/pedals.
+
+### Memory split
+
+Same as MCR-3 (CPU/sound/bg baked BRAM; sprites -> SDRAM) plus:
+- **char/alpha graphics** (Spy Hunter status line): baked BRAM,
+  `rom_gfx_ch.hex`, dl 0x8000.
+- **CSD 68000 ROM** (`csd_rom_addr`[14:1] -> `csd_rom_do`[15:0], 16-bit):
+  baked BRAM (Spy Hunter/Turbo only).
+- `csd_audio_out`[9:0] mixes into the main audio for those games.
+
+### Games, in order
+
+1. **Crater Raider** first — SSIO-only (`mod_crater=1`), CSD unused (tie
+   `csd_rom_do` off, ignore `csd_audio_out`). The clean first target, no
+   FX68K risk.
+2. **Spy Hunter** — CSD sound (FX68K) + `steering_control` (wheel/gas on
+   the Opt X bus) + the **lamp panel** (`show_lamps` -> the shield's
+   74HC595 chain; add a second '595, zero header pins).
+3. **Turbo Tag** (`mod_turbo=1`) — prototype; CSD sound.
+
+Extra core I/O: `mod_crater`/`mod_turbo` (game select), `show_lamps`
+(Spy Hunter lamps), `output_4` (SSIO out, drives the input mux + lamps).
 
 ## Phase E — MCR3Mono: Rampage, Sarge, Max RPM, Power Drive, Star Guards, Demolition Derby
 
