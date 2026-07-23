@@ -136,6 +136,19 @@ budget exists anymore. See the Shield PCB section.
 
 ## Multi-game / product
 
+- **SD card format v2 — DEFERRED, plan written**: see
+  `docs/sd_card_layout_v2.md`. **Do not touch the on-card format,
+  `rom_loader.sv`, or the `make_*_pack.py` tools until MCR-3 Tapper renders
+  sprites from the card as it is** — the current card is the only known-good
+  input to that debug. The motivating bug is live today: `make_rompack.py`
+  and `make_sprite_pack.py` both hardcode `PACK_BASE = 2048`, so one card
+  cannot hold both the MCR-2 game pack and the MCR-3 sprite pack; whichever
+  was written last wins, and an MCR-2 build then reads a garbage slot and
+  shows **Satan's Hollow** (`osd.sv:162`, slot 0). If coexistence is needed
+  before v2 lands, the cheap fix is to give the MCR-3 top a different
+  `PACK_BASE` — it is already a module parameter, so no format change is
+  required.
+
 - **OSD game-select menu is IMPLEMENTED (60K)** — `src/rtl/osd.sv`, drawn in
   the core raster domain so it shows on HDMI + VGA 31 kHz + 15 kHz alike.
   Select+Start opens; Up/Down, A = load slot from SD pack, B = exit. All six
@@ -203,6 +216,35 @@ budget exists anymore. See the Shield PCB section.
   SOM-specific; re-extract before targeting it.
 
 ## Cores / ports
+
+- **MCR-3 Tapper sprites — ACTIVE. `handoff_v6_sdram_refresh.md`'s root
+  cause is DISPROVED; do not act on it.** v6 concluded "AUTO_REFRESH runs at
+  ~2,325/s instead of ~133,000/s (measured)". That measurement is invalid:
+  `dbg_refresh` is 16-bit and the beacon's E1 slot only appears every ~1.9 s,
+  so at 133 k/s the counter wraps ~4x between samples and the delta is noise.
+  Proof it was never real — re-scaling the counter by 256 left the observed
+  rate unchanged at ~2,451/s; a genuine measurement must fall 256x.
+  Re-measured 2026-07-22 with a **windowed** counter (refreshes latched per
+  fixed 2^23-cycle window, cannot wrap, added to the MCR-3 top): **~146,000
+  refresh/s, i.e. all 8192 rows every 55.9 ms, inside the 64 ms JEDEC
+  limit.** Refresh is healthy. Also measured, and these are trustworthy
+  (a true zero cannot alias): `dbg_blk0` = exactly 0 on 36/36 samples, and
+  `dbg_blk1` ~ 2.1/s — so **both** arbiter-gate hypotheses v6 offered are
+  dead too, and the loader is clean (`spw_count` = 0x0200 = exactly one
+  128 KB pass, then stops).
+  Next step: the fault is in the sprite **data path**, not retention. The
+  probe cells read `FFFFFFFF`, but one run showed `CFCFCFCF` repeated —
+  `CF` is the *last* of the 16 pattern bytes appearing in all four lanes,
+  which reads as every pattern write landing at one address with no
+  byte-lane masking. Instrument the port2 write path directly: latch the
+  address and `ds` of the last few pattern writes into the beacon and
+  confirm they differ per write. That separates "address collapses" from
+  "`ds` mask ignored" in a single build.
+  Method note: opening `/dev/ttyUSB1` toggles DTR and **reconfigures the
+  board**. Hold one persistent open with `HUPCL` cleared; any number taken
+  through a fresh serial open is suspect. Separately, the SD card errors for
+  ~20 s after every reconfiguration and then recovers on its own (v6 loose
+  end #1) — that is not a bad card.
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for

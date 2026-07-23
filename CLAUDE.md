@@ -36,10 +36,20 @@ Because the PLL and `mcr2.vhd` are shared, fixes there apply to every board
 automatically; the per-board top/SDC/CST must be kept in sync by hand (the 25K
 top is the reference implementation).
 
-## Build (headless, macOS)
+## Build (headless)
 
-GowinIDE bundles Tcl; the CLI needs dylib/framework paths set (`$ORIGIN`
-doesn't resolve on macOS):
+Use the wrapper — it applies the per-host environment fix-ups below and
+optionally regenerates the ROM hex first:
+
+```sh
+tools/gw_build.sh mcr2_console60k domino   # merge_roms domino, then build
+tools/gw_build.sh mcr2_primer25k           # build with the current hex
+```
+
+Set `GOWIN_HOME` if the IDE isn't at the default location for the host.
+
+**macOS.** GowinIDE bundles Tcl; the CLI needs dylib/framework paths set
+(`$ORIGIN` doesn't resolve on macOS):
 
 ```sh
 GWLIB=/Applications/GowinIDE.app/Contents/Resources/Gowin_EDA/IDE/lib
@@ -48,11 +58,59 @@ cd mcr2_primer25k        # or mcr2_console60k
 DYLD_LIBRARY_PATH="$GWLIB" DYLD_FRAMEWORK_PATH="$GWLIB" "$GW" build.tcl
 ```
 
+**Linux** (tarball untarred to `~/IDE` + `~/Programmer`; same
+V1.9.11.03 Education build as the Mac, so reports and device support match).
+Three separate things must be fixed or `gw_sh` dies before printing anything:
+
+```sh
+cd mcr2_console60k
+LD_LIBRARY_PATH=$HOME/IDE/lib \
+LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libfreetype.so.6 \
+QT_QPA_PLATFORM=offscreen \
+$HOME/IDE/bin/gw_sh build.tcl
+```
+
+| Symptom | Cause / fix |
+|---|---|
+| `symbol lookup error: libfontconfig.so.1: undefined symbol: FT_Done_MM_Var` | gw_sh's RPATH prefers its own ancient `libfreetype.so.6`; the system fontconfig can't link against it. `LD_PRELOAD` the system freetype. |
+| `Cannot mix incompatible Qt library (5.15.13) with this library (5.15.14)` | the bundled Qt **plugins** carry no RPATH, so they pull in the *system* Qt. `LD_LIBRARY_PATH=$HOME/IDE/lib`. |
+| `no Qt platform plugin could be initialized` | `gw_sh` builds a QApplication even headless. `QT_QPA_PLATFORM=offscreen`. |
+
+Placement is not bit-identical across hosts — a Linux-built `.fs` differs in
+size/checksum from the Mac's for the same sources. That is normal Gowin
+placer variation, not a config mismatch; judge builds by the sanity checks
+below, not by diffing bitstreams.
+
 Bitstream lands at `<board>/impl/pnr/<board>.fs`. Flash with Gowin Programmer
 (GUI) or `openFPGALoader`. To make a build the POWER-ON default (survives
 power cycles, replaces whatever is in the SPI flash - e.g. NESTang):
 `openFPGALoader -b tangconsole -f bitstreams/console60k_<game>.fs`.
 For a volatile test load (SRAM only, lost at power-off) drop the `-f`.
+
+**openFPGALoader must be built from source — do not `apt install` it.**
+Ubuntu 24.04 ships v0.12.0, whose board list stops at `tangmega138k`: there
+is no `tangconsole`, so the 60K (the main target) cannot be flashed by it.
+Build master instead (v1.1.1 verified working here, `~/openFPGALoader`):
+
+```sh
+sudo apt install -y libftdi1-dev libusb-1.0-0-dev libhidapi-dev zlib1g-dev
+git clone https://github.com/trabucayre/openFPGALoader.git && cd openFPGALoader
+cmake -B build -DCMAKE_BUILD_TYPE=Release && cmake --build build -j$(nproc)
+sudo cmake --install build
+# udev rules are NOT installed by cmake -- copy them by hand:
+sudo cp 99-openfpgaloader.rules /etc/udev/rules.d/
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+Use the `99-` rules file, not `70-`: only `99-` sets `GROUP="plugdev"`, and
+at priority 99 the `TAG+="uaccess"` in both files is already inert (systemd's
+`73-seat-late.rules` has run). So membership in `plugdev` is what actually
+grants access — and unlike `uaccess` it also works over SSH with no local
+seat. The Console 60K enumerates as FTDI FT2232 (`0403:6010`).
+
+Sanity check with no board attached: `openFPGALoader --detect` should exit 1
+with `unable to open ftdi device: -3 (device not found)`. There is no offline
+dry-run — the cable is opened before the `.fs` is ever parsed.
 
 ### Post-build sanity checks (do these every build)
 1. **No `PA1019`** (PLL VCO out of range) warning in the log — with ONE
@@ -248,6 +306,12 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
   connector footprints the harness plugs into, chip-wiring diagrams
   (74AHC165 input chain, 74HC595 output chain, sync buffer, DAC), the
   analog/ADC design (Spy Hunter + Max RPM only, switchable), and the BOM.
+- `docs/sd_card_layout_v2.md` — **planned** SD card format (unified ROM +
+  core directory across MCR-1/2/3). **DEFERRED — do not implement, and do
+  not change the on-card format or `rom_loader.sv`, until MCR-3 Tapper
+  renders sprites from the current card.** Records the live
+  `PACK_BASE = 2048` collision between `make_rompack.py` and
+  `make_sprite_pack.py` and its no-format-change workaround.
 - `docs/mcr_game_input_matrix.md` — machine-readable transcription of the
   pinout matrix PDF + MAME-verified SSIO bit maps; use it when porting a
   new game.

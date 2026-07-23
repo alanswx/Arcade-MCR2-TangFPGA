@@ -273,8 +273,24 @@ wire [31:0] sp_q;           // SDRAM -> core: 32-bit (4-plane) sprite word
 // rising-edge detect turns each into exactly one port2 write. The SD byte rate
 // is << clk_sdram, so a write always finishes before the next dl_wr.
 wire        p1_ack;
-wire [15:0] dbg_refresh;    // DIAGNOSTIC: AUTO_REFRESH issue counter
+wire [23:0] dbg_refresh;    // DIAGNOSTIC: AUTO_REFRESH issue counter (24b, see sdram_gw)
 wire [15:0] dbg_blk0, dbg_blk1; // DIAGNOSTIC: refresh-demand blocker counters
+// DIAGNOSTIC: refresh RATE over a fixed 2^23-cycle window (~104.9 ms @80MHz).
+// A free-running counter sampled by the beacon aliases hopelessly at 133k/s:
+// dividing it by 256 did not change the observed rate, which proves the
+// sampling - not the signal - set that number. A per-window latched count
+// cannot wrap. Healthy = 133333*0.1049 = ~13976 (0x3698);
+// starved-at-2325/s would be ~244 (0x00F4). Read in beacon slot E1.
+reg [22:0] rw_div = 23'd0;
+reg [15:0] rw_cnt = 16'd0, rw_lat = 16'd0;
+reg        rw_d   = 1'b0;
+always @(posedge clk_sdram) begin
+    rw_div <= rw_div + 1'b1;
+    rw_d   <= dbg_refresh[0];            // bit0 toggles once per AUTO_REFRESH
+    if (dbg_refresh[0] != rw_d) rw_cnt <= rw_cnt + 1'b1;
+    if (&rw_div) begin rw_lat <= rw_cnt; rw_cnt <= 16'd0; end
+end
+
 reg         sdram_rst_s1 = 1'b1, sdram_rst = 1'b1;
 always @(posedge clk_sdram) begin
     sdram_rst_s1 <= core_reset_raw;
@@ -375,7 +391,9 @@ reg [23:0] spw_count_s = 0;
 reg        spq_nonff_s = 0;
 reg [15:0] chk_allff_s = 0, chk_loff_s = 0, chk_hoff_s = 0;
 reg        chk_done_s = 0;
-reg [15:0] dbg_refresh_s = 0, dbg_blk0_s = 0, dbg_blk1_s = 0;
+reg [23:0] dbg_refresh_s = 0;
+reg [15:0] dbg_blk0_s = 0, dbg_blk1_s = 0;
+reg [15:0] rw_lat_s = 0;
 always @(posedge clk_sys) begin
     spw_count_s <= spw_count;
     spq_nonff_s <= spq_nonff;
@@ -386,6 +404,7 @@ always @(posedge clk_sys) begin
     dbg_refresh_s <= dbg_refresh;
     dbg_blk0_s <= dbg_blk0;
     dbg_blk1_s <= dbg_blk1;
+    rw_lat_s   <= rw_lat;
 end
 
 // DIAGNOSTIC (temporary): repeating windowed dump of the sprite SDRAM over
@@ -948,7 +967,7 @@ wire [1:0]  diag_ph = diag_cnt[26:25];
 // issued (~133k/s, wraps ~2x/s); frozen x0000 qE1 = the branch never fires.
 wire [15:0] diag_x = !chk_done_s     ? spw_count_s[23:8] :
                      diag_ph == 2'd0 ? dbg_blk0_s :
-                     diag_ph == 2'd1 ? dbg_refresh_s :
+                     diag_ph == 2'd1 ? rw_lat_s :              // E1 = refreshes per 104.9ms window
                      diag_ph == 2'd2 ? dbg_blk1_s : spw_count_s[23:8];
 wire [7:0]  diag_q = !chk_done_s     ? spw_count_s[7:0] :
                      diag_ph == 2'd0 ? 8'hE0 :

@@ -81,7 +81,10 @@ module sdram_gw #(
 	// DIAGNOSTIC (temporary): counts AUTO_REFRESH commands actually issued.
 	// At 80 MHz / RFRSH_CYCLES=600 expect ~133k/s (wraps ~3x/s). Frozen at 0
 	// means the refresh branch never fires. Leave unconnected when unused.
-	output reg [15:0] dbg_refresh = 16'd0,
+	// 24-bit: at the intended ~133k/s a 16-bit counter wraps ~4x between
+	// beacon samples, which made the rate unmeasurable (and produced the
+	// bogus "2.3k/s starvation" reading). The top displays bits [23:8].
+	output reg [23:0] dbg_refresh = 24'd0,
 	// DIAGNOSTIC: refresh-demand cycles lost to each blocker (RAS1 slots where
 	// need_refresh was pending): blk1 = bank2/3 port busy, blk0 = port[0]
 	// we/oe_latch gate. Whichever runs ~130k/s is what starves refresh.
