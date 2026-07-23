@@ -21,7 +21,12 @@
 // that (status LED / test pattern) rather than sit on a black screen.
 module rom_loader #(
     parameter [31:0] PACK_BASE   = 32'd2048,   // first sector of the pack
-    parameter int    SLOT_SECTORS = 256        // 128 KB per slot
+    parameter int    SLOT_SECTORS = 256,       // 128 KB per slot
+    // Transient-failure retries. Each attempt can cost up to the watchdog
+    // (~3.4 s), and a card-less board only boots off baked BSRAM ROMs once
+    // `error` asserts - so the default stays low to keep that path fast.
+    // Boards that must have the card (MCR-3: sprites live there) raise it.
+    parameter [2:0]  MAX_RETRY   = 3'd3
 )(
     input             clk,
     input             rst,
@@ -35,6 +40,11 @@ module rom_loader #(
     // sd_reader interface
     input             sd_ready,
     input             sd_err,
+    // Pulsed high to force a full sd_reader re-init between retries. The
+    // reader latches `err`, so restarting only this FSM cannot clear a
+    // transient failure - the reader has to be reset too. Wire this into
+    // the sd_reader's rst (OR'd with the board reset) in the top.
+    output reg        sd_rst,
     output reg        sd_rd_start,
     output reg [31:0] sd_sector,
     input      [7:0]  sd_dout,
@@ -66,7 +76,8 @@ localparam [3:0]
     L_ERR     = 4'd6,
     L_PREF    = 4'd7,   // read the prefs sector (boot only)
     L_PREFCHK = 4'd8,
-    L_SAVE    = 4'd9;   // write the prefs sector (core keeps running)
+    L_SAVE    = 4'd9,   // write the prefs sector (core keeps running)
+    L_RETRY   = 4'd10;  // transient failure: reset the card and try again
 
 // "MCRPACK1" / "MCRPREF1"
 localparam [63:0] MAGIC      = 64'h4D_43_52_50_41_43_4B_31;
@@ -83,6 +94,8 @@ reg [31:0] sector;
 reg [16:0] addr;
 reg        save_pend;
 reg [9:0]  save_idx;
+reg [2:0]  retry_cnt;    // transient failures so far
+reg [21:0] retry_wait;   // ~0.1 s @40MHz settling delay between attempts
 
 // Content of the prefs sector: 8-byte magic, the slot, zeros to 512.
 function [7:0] pref_byte(input [9:0] i);
@@ -105,17 +118,20 @@ always @(posedge clk) begin
     sd_wr_start <= 1'b0;
     dl_wr       <= 1'b0;
     saved       <= 1'b0;
+    sd_rst      <= 1'b0;
 
     if (rst) begin
-        st        <= L_WAIT;
-        done      <= 1'b0;
-        error     <= 1'b0;
-        addr      <= 17'd0;
-        hdr_cnt   <= 9'd0;
-        hdr       <= 64'd0;
-        watchdog  <= 27'd0;
-        save_pend <= 1'b0;
-        cur_slot  <= slot;
+        st         <= L_WAIT;
+        done       <= 1'b0;
+        error      <= 1'b0;
+        addr       <= 17'd0;
+        hdr_cnt    <= 9'd0;
+        hdr        <= 64'd0;
+        watchdog   <= 27'd0;
+        save_pend  <= 1'b0;
+        cur_slot   <= slot;
+        retry_cnt  <= 3'd0;
+        retry_wait <= 22'd0;
     end else begin
         if (save_req) save_pend <= 1'b1;
 
@@ -123,16 +139,17 @@ always @(posedge clk) begin
         // transfer would otherwise leave the game core in reset forever.
         // A hung SAVE merely returns to DONE - the game is already running
         // and must not be reset over a failed prefs write.
-        if (st != L_DONE && st != L_ERR) begin
+        // L_RETRY is excluded: its settling delay must not trip the watchdog.
+        if (st != L_DONE && st != L_ERR && st != L_RETRY) begin
             watchdog <= watchdog + 27'd1;
             if (watchdog == 27'h7FF_FFFF)
-                st <= (st == L_SAVE) ? L_DONE : L_ERR;
+                st <= (st == L_SAVE) ? L_DONE : L_RETRY;
         end
 
         case (st)
 
         L_WAIT: begin
-            if (sd_err) st <= L_ERR;
+            if (sd_err) st <= L_RETRY;
             else if (sd_ready) begin
                 cur_slot    <= slot;
                 hdr_cnt     <= 9'd0;
@@ -149,7 +166,7 @@ always @(posedge clk) begin
 
         // capture the prefs sector's magic + slot byte
         L_PREF: begin
-            if (sd_err) st <= L_ERR;
+            if (sd_err) st <= L_RETRY;
             else begin
                 if (sd_dout_valid) begin
                     if (hdr_cnt < 9'd8) hdr <= {hdr[55:0], sd_dout};
@@ -173,7 +190,7 @@ always @(posedge clk) begin
 
         // capture the first 8 bytes of the header sector
         L_HDR: begin
-            if (sd_err) st <= L_ERR;
+            if (sd_err) st <= L_RETRY;
             else begin
                 if (sd_dout_valid) begin
                     if (hdr_cnt < 9'd8) hdr <= {hdr[55:0], sd_dout};
@@ -212,7 +229,7 @@ always @(posedge clk) begin
 
         // stream its bytes onto the download bus
         L_DATA: begin
-            if (sd_err) st <= L_ERR;
+            if (sd_err) st <= L_RETRY;
             else begin
                 if (sd_dout_valid) begin
                     dl_addr <= addr;
@@ -249,6 +266,36 @@ always @(posedge clk) begin
             if (sd_wr_done) begin
                 saved <= 1'b1;
                 st    <= L_DONE;
+            end
+        end
+
+        // Transient failure (card not answering, or a load that stalled).
+        // JTAG reconfiguration leaves the card mid-command, so the FIRST
+        // attempt after a reflash routinely fails; before this state that
+        // latched `error` forever, `rom_ready` released the core anyway, and
+        // the sprite SDRAM was simply never loaded - which is what made
+        // Tapper need the "OSD in/out + A" dance to start (that path resets
+        // this FSM via osd_restart, i.e. it WAS the only retry mechanism).
+        //
+        // Pulse sd_rst so the reader re-runs its init (it latches `err`, so
+        // restarting this FSM alone cannot clear the failure), wait for the
+        // card to settle, then start over. After MAX_RETRY attempts give up
+        // and assert `error` - the caller relies on that to boot a card-less
+        // board off its baked-in BSRAM ROMs.
+        L_RETRY: begin
+            if (retry_wait == 22'd0) begin
+                sd_rst <= 1'b1;              // one-cycle reader reset pulse
+                if (retry_cnt == MAX_RETRY) st <= L_ERR;
+            end
+            retry_wait <= retry_wait + 22'd1;
+            if (&retry_wait) begin           // ~0.1 s settle, then retry
+                retry_wait <= 22'd0;
+                retry_cnt  <= retry_cnt + 3'd1;
+                watchdog   <= 27'd0;
+                hdr_cnt    <= 9'd0;
+                hdr        <= 64'd0;
+                addr       <= 17'd0;
+                st         <= L_WAIT;
             end
         end
 

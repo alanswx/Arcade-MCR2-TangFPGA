@@ -216,8 +216,13 @@ wire        osd_save;      // OSD: persist the selection to the prefs sector
 // missing/unreadable card (then the baked-in ROMs stand).
 assign rom_ready = ldr_done | ldr_error;
 
+// ldr_sd_rst lets the loader force a full card re-init between retries;
+// sd_reader latches `err`, so without it a transient failure (e.g. the card
+// left mid-command by JTAG reconfiguration) could never be cleared.
+wire ldr_sd_rst;
+
 sd_reader #(.CLK_HZ(40_000_000)) sd (
-    .clk(clk_sys), .rst(core_reset_raw),
+    .clk(clk_sys), .rst(core_reset_raw | ldr_sd_rst),
     .ready(sd_ready), .err(sd_err),
     .rd_start(sd_rd_start), .rd_sector(sd_sector),
     .dout(sd_dout), .dout_valid(sd_dv), .rd_done(sd_rd_done),
@@ -226,7 +231,9 @@ sd_reader #(.CLK_HZ(40_000_000)) sd (
     .sclk(sd_clk), .mosi(sd_cmd), .miso(sd_dat0), .cs_n(sd_dat3)
 );
 
-rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
+// MAX_RETRY raised: MCR-3 sprites live on the card, so a boot that gives up
+// early renders white/garbage sprites rather than degrading gracefully.
+rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7)) loader (
     .clk(clk_sys), .rst(core_reset_raw | osd_restart),
     .slot(game_slot),
     // Boot consults the SD-saved preference; an OSD-commanded reload
@@ -234,7 +241,7 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
     .use_prefs(~osd_active),
     .save_req(osd_save), .saved(ldr_saved),
     .cur_slot(ldr_slot),
-    .sd_ready(sd_ready), .sd_err(sd_err),
+    .sd_ready(sd_ready), .sd_err(sd_err), .sd_rst(ldr_sd_rst),
     .sd_rd_start(sd_rd_start), .sd_sector(sd_sector),
     .sd_dout(sd_dout), .sd_dout_valid(sd_dv), .sd_rd_done(sd_rd_done),
     .sd_wr_start(sd_wr_start), .sd_wr_din(sd_wr_din),
