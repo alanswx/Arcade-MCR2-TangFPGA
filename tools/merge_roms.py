@@ -102,8 +102,12 @@ GAME_SPECS = {
                    "tapper_sound_snd_1_a8_12-7-83.a8",
                    "tapper_sound_snd_2_a9_12-7-83.a9",
                    "tapper_sound_snd_3_a10_12-7-83.a10"],
-        gfx1_1_file="tapper_c.p.u._bg_1_6f_12-7-83.6f",
-        gfx1_2_file="tapper_c.p.u._bg_0_5f_12-7-83.5f",
+        # bg_0 -> gfx1_1, bg_1 -> gfx1_2, same as every other game. These were
+        # reversed, which swapped bg pixel indices 1<->2: blue walls rendered
+        # orange, gray floor maroon, red title banner orange (sprites - same
+        # palette RAM - were fine, which is what localized it). 2026-07-24.
+        gfx1_1_file="tapper_c.p.u._bg_0_5f_12-7-83.5f",
+        gfx1_2_file="tapper_c.p.u._bg_1_6f_12-7-83.6f",
         gfx2_files=["tapper_video_fg_1_a7_12-7-83.a7",  # MRA sprite order
                     "tapper_video_fg_0_a8_12-7-83.a8",
                     "tapper_video_fg_3_a5_12-7-83.a5",
