@@ -236,7 +236,12 @@ DDR3_Memory_Interface_Top u_ddr3 (
 /////////////////////////////////////////////////////////////////////
 // Audio
 
-localparam AUDIO_RATE=48000;
+// 32000, not 48000 (2026-07-24): 74.25MHz/48k/2 = 773.4 truncated -> true
+// rate 48027Hz vs ACR constants claiming exactly 48000 - receivers' clock
+// regeneration drifts and periodically resyncs (the HDMI "cutouts", much
+// rarer with audio islands off). 32k divides ~5x more exactly; nand2mario
+// hit the same thing (nes2hdmi.sv: "weird only 32K sampling rate works").
+localparam AUDIO_RATE=32000;
 localparam AUDIO_CLK_DELAY = 74250 * 1000 / AUDIO_RATE / 2;
 logic [$clog2(AUDIO_CLK_DELAY)-1:0] audio_divider;
 logic clk_audio;
