@@ -162,6 +162,9 @@ wire tv15khz = mode15_s2;
 // lines per field and the upscaler adapts.)
 
 reg [7:0] reset_cnt = 255;
+// BOOT KICK state (logic lives in the reset_cnt block just below).
+reg       boot_kicked = 1'b0;
+reg       rom_ready_d = 1'b0;
 wire      rom_ready;                          // ROM image settled
 wire core_reset_raw = (reset_cnt != 0);       // resets the SD loader itself
 
@@ -186,13 +189,78 @@ wire [3:0] game_slot;    // SD pack slot the loader (re)loads
 wire       osd_restart;  // OSD pulse: restart the loader with game_slot
 wire       osd_active;   // menu open -> game inputs masked below
 
+// DIAGNOSTIC: count reset events and rom_ready rises so the beacon can say
+// whether the boot kick actually fired, instead of us inferring it. Three
+// attempts at this fix have now failed and each cost a power-cycle; measure
+// first. Reported in slot E2 as {rr_rises[7:0], rst_evts[6:0], boot_kicked}.
+reg [7:0] rst_evts = 8'd0;    // times reset_cnt was (re)loaded
+reg [7:0] rr_rises = 8'd0;    // rising edges of rom_ready seen
+reg [31:0] up_cnt   = 32'd0;  // free-running time since config (40MHz)
+reg        kick2_done = 1'b1; // 35s kick RETIRED (wedge watchdog supersedes)
+reg [7:0]  kick_n     = 8'd0; // wedge-watchdog kicks issued this power-on
+wire       wedge_kick;        // assigned below the liveliness meter
+
 always @(posedge clk_sys) begin
+    if (!(&up_cnt)) up_cnt <= up_cnt + 32'd1;   // saturate, no wrap re-kick
+    rom_ready_d <= rom_ready;
+    if (rom_ready && !rom_ready_d) rr_rises <= rr_rises + 8'd1;
+
     if (key_s1 || !pll_locked) begin
-        reset_cnt <= 255;
+        reset_cnt   <= 255;
+        boot_kicked <= 1'b0;             // re-arm for the next boot
+        if (!core_reset_raw) rst_evts <= rst_evts + 8'd1;
+    end else if (rom_ready && !rom_ready_d && !boot_kicked) begin
+        reset_cnt   <= 255;              // BOOT KICK - see comment below
+        boot_kicked <= 1'b1;
+        rst_evts    <= rst_evts + 8'd1;
+    end else if (wedge_kick) begin
+        // WEDGE WATCHDOG (replaces the fixed 35s kick2): if the CPU bus has
+        // gone quiet after the core was released - the halted-in-data-table
+        // crash signature - issue another full reset attempt, forever, every
+        // ~6.7s. Each cold boot self-heals at the earliest kick that works,
+        // and kick_n in the beacon records how many were needed, i.e. it
+        // MEASURES the settle time per boot instead of assuming 35s.
+        reset_cnt   <= 255;
+        kick_n      <= kick_n + 8'd1;
+        rst_evts    <= rst_evts + 8'd1;
+    end else if (up_cnt == 32'd1_400_000_000 && !kick2_done) begin
+        // EXPERIMENT kick2: a second full reset ~35s after config. The
+        // manual reset button (same reset path, pressed a minute in) cures
+        // the black cold boot where the early kick does not - the only
+        // difference is TIME. If this cures it, the blocker is something
+        // that needs tens of seconds to settle; find it next. If it does
+        // not, the button does something this path cannot, which is a
+        // contradiction worth having.
+        reset_cnt   <= 255;
+        kick2_done  <= 1'b1;
+        rst_evts    <= rst_evts + 8'd1;
     end else if (reset_cnt != 0) begin
         reset_cnt <= reset_cnt - 8'd1;
     end
 end
+
+// BOOT KICK (implemented in the reset_cnt block above): once the ROMs are
+// actually in place, give the whole front end - core, SD loader AND the
+// SDRAM controller - one more reset, exactly as pressing the reset key does.
+//
+// Measured on hardware: merely deasserting a long-held core reset when
+// ldr_done rises is NOT enough (the core then free-runs its raster at
+// ~69.5 Hz with a black picture and the game never starts), and neither is
+// a core-only reset pulse - that was tried and Tapper still needed the
+// button. Reloading reset_cnt is what works, because core_reset_raw also
+// resets the loader, producing a second clean load (spw_count 0x200->0x400)
+// with everything already settled.
+//
+// The boot_kicked one-shot is what stops this from boot-looping: the second
+// load re-raises rom_ready, but the latch is set by then so no further kick
+// is issued. A manual reset clears it and the cycle runs once more.
+//
+// This is structural, not a workaround. Phase 2 moves CPU/sound/bg ROMs out
+// of BSRAM and into SDRAM as well, at which point "hold the core in reset
+// until every region has been written, then reset once more" is simply the
+// correct boot contract - a core that starts mid-load executes garbage.
+// Keep this when the ROM source changes; widen rom_ready to cover all
+// regions rather than deleting the kick.
 
 // --- ROM source ---------------------------------------------------------
 // The INIT_FILE contents are the power-on default (whatever game
@@ -336,7 +404,7 @@ always @(posedge clk_sdram) begin
     // Expected readback: word k = {C3,C2,C1,C0} + k*04040404 (k = 0..3).
     ldrp_s1 <= ldr_done;
     ldrp_s2 <= ldrp_s1;
-    if (ldrp_s1 && !ldrp_s2) begin
+    if (1'b0) begin   // v6 pattern writer DISABLED (clobbered 4 real words)
         pat_step <= 5'd0;
         pat_wait <= 5'd0;
     end else if (pat_step != 5'd31) begin
@@ -367,27 +435,49 @@ reg [5:0]  chk_dwell = 6'd0;
 reg [15:0] chk_allff = 16'd0;  // words entirely 0xFFFFFFFF
 reg [15:0] chk_loff  = 16'd0;  // words with both DQML lanes 0xFF (not all-FF)
 reg [15:0] chk_hoff  = 16'd0;  // words with both DQMH lanes 0xFF (not all-FF)
+// PERIODIC sweep (2026-07-24): run right after each load AND every ~27s
+// forever. The trajectory of chk_allff answers the remaining question in
+// one boot: starts ~51 (perfect image) and GROWS -> something destroys the
+// array in operation (e.g. a read that acts as a write); starts at 32768 ->
+// the port2 writes never land. Latched per pass; pass_n counts sweeps.
+// HALF/FULL experiment (2026-07-24): the array dies within ~26s of a good
+// load (allff 16 -> 32768 measured). Suspect: reads destroy. So the engine
+// is disconnected again, periodic sweeps read ONLY the lower 16K words, and
+// every 4th pass reads the full 32K to check the UNTOUCHED upper half.
+//   read-half dies, untouched half lives  -> reads are destructive
+//   both halves die                       -> time-based destroyer
+reg [30:0] chk_timer  = 31'd0;
+reg [15:0] allff_lo_l = 16'hDEAD, allff_hi_l = 16'hDEAD;
+reg [15:0] allff_lo   = 16'd0,    allff_hi   = 16'd0;
+reg        chk_full   = 1'b0;
+reg [7:0]  pass_n     = 8'd0;
 always @(posedge clk_sdram) begin
     ldrd_s1 <= ldr_done;
     ldrd_s2 <= ldrd_s1;
-    if (ldrd_s1 && !ldrd_s2) begin
-        // EXPERIMENT: sweep DISABLED (it pre-reads every address, which is
-        // itself suspected of killing rows). chk_done still set so the dump
-        // triggers; counters stay 0.
-        chk_done <= 1'b1;
+    if (!chk_active) chk_timer <= chk_timer + 31'd1;
+    if ((ldrd_s1 && !ldrd_s2) || (!chk_active && chk_timer[30:0] == 31'd2_147_000_000)) begin
+        chk_active <= 1'b1;
+        chk_full   <= (pass_n[1:0] == 2'd3);   // every 4th pass: full array
+        chk_timer  <= 31'd0;
+        chk_addr   <= 15'd0;
+        chk_dwell  <= 6'd0;
+        allff_lo   <= 16'd0;
+        allff_hi   <= 16'd0;
     end else if (chk_active) begin
         chk_dwell <= chk_dwell + 6'd1;
         if (chk_dwell == 6'd63) begin
-            if (sp_q == 32'hFFFFFFFF)
-                chk_allff <= chk_allff + 16'd1;
-            else if (sp_q[7:0] == 8'hFF && sp_q[23:16] == 8'hFF)
-                chk_loff <= chk_loff + 16'd1;
-            else if (sp_q[15:8] == 8'hFF && sp_q[31:24] == 8'hFF)
-                chk_hoff <= chk_hoff + 16'd1;
+            if (sp_q == 32'hFFFFFFFF) begin
+                if (chk_addr[14]) allff_hi <= allff_hi + 16'd1;
+                else              allff_lo <= allff_lo + 16'd1;
+            end
             chk_addr <= chk_addr + 15'd1;
-            if (chk_addr == 15'h7FFF) begin
+            if (chk_addr == (chk_full ? 15'h7FFF : 15'h3FFF)) begin
                 chk_active <= 1'b0;
                 chk_done   <= 1'b1;
+                allff_lo_l <= allff_lo + ((sp_q == 32'hFFFFFFFF && !chk_addr[14]) ? 16'd1 : 16'd0);
+                if (chk_full)
+                    allff_hi_l <= allff_hi + ((sp_q == 32'hFFFFFFFF && chk_addr[14]) ? 16'd1 : 16'd0);
+                pass_n     <= pass_n + 8'd1;
             end
         end
     end
@@ -401,6 +491,7 @@ reg        chk_done_s = 0;
 reg [23:0] dbg_refresh_s = 0;
 reg [15:0] dbg_blk0_s = 0, dbg_blk1_s = 0;
 reg [15:0] rw_lat_s = 0;
+reg [15:0] boot_dbg_s = 0;   // DIAGNOSTIC: boot-kick evidence, beacon E2
 always @(posedge clk_sys) begin
     spw_count_s <= spw_count;
     spq_nonff_s <= spq_nonff;
@@ -412,6 +503,7 @@ always @(posedge clk_sys) begin
     dbg_blk0_s <= dbg_blk0;
     dbg_blk1_s <= dbg_blk1;
     rw_lat_s   <= rw_lat;
+    boot_dbg_s <= {rr_rises, rst_evts[6:0], boot_kicked};
 end
 
 // DIAGNOSTIC (temporary): repeating windowed dump of the sprite SDRAM over
@@ -456,7 +548,7 @@ always @(posedge clk_sys) begin
         dump_txd <= 1'b1;
         dump_gap <= dump_gap + 24'd1;
         // first snapshot right after the load completes, then periodic
-        if ((!dump_started && chk_done_s) || (dump_started && (&dump_gap))) begin
+        if (1'b0) begin  // v6 dump DISABLED (stole UART + probed sp bus)
             dump_started  <= 1'b1;
             dump_active   <= 1'b1;
             dump_marker   <= 1'b1;      // snapshot starts with a marker line
@@ -543,11 +635,15 @@ sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     .port2_req(p1_req_r), .port2_ack(p1_ack), .port2_we(p1_we_r),
     .port2_a(p1_a_r), .port2_ds(p1_ds_r), .port2_d(p1_d_r), .port2_q(),
     // sprite read to the core: 15-bit word addr -> 32-bit plane word
-    // (the post-load sweep, then the one-shot dump, borrow the address bus)
-    // EXPERIMENT: core disconnected from the sp bus entirely - ONLY the
-    // dump's probe reads may touch the array (core sees frozen sp_q; sprites
-    // will render wrong on screen for this build, expected).
-    .sp_addr({7'd0, dump_a}),
+    // v6 EXPERIMENT REVERTED 2026-07-23: the core drives the sp bus again.
+    // (While disconnected, sp_addr followed the dump's probe address and the
+    // core rendered from frozen sp_q - white boxes were GUARANTEED, masking
+    // whatever the real sprite-path state is.)
+    // While a sweep pass runs (~26ms every ~27s) it borrows the bus; the
+    // game's sprites glitch for that instant, which is fine for a diag build.
+    // HALF/FULL experiment: engine disconnected (parked at 0) - only the
+    // sweep touches the array, and only its lower half on most passes.
+    .sp_addr(chk_active ? {7'd0, chk_addr} : 22'd0),
     .sp_q(sp_q),
     .dbg_refresh(dbg_refresh),
     .dbg_blk0(dbg_blk0), .dbg_blk1(dbg_blk1)
@@ -709,6 +805,8 @@ end
 wire [15:0] audio_l_val, audio_r_val;
 
 wire [9:0] core_hcnt;
+wire [9:0] core_vcnt;
+wire       core_halt_n;
 
 mcr3 mcr3_core (
     .clock_40(clk_sys),
@@ -727,6 +825,8 @@ mcr3 mcr3_core (
     .video_hflip(1'b0),   // upright, no cocktail flip
     .video_vflip(1'b0),
     .hcntout(core_hcnt),
+    .vcntout(core_vcnt),
+    .cpu_halt_n(core_halt_n),
 
     .tv15Khz_mode(tv15khz),
 
@@ -962,20 +1062,184 @@ assign debug_o = {fb_ddr_rst, hb_27[24], hb_x1[25], fb_calib};
 // sprite write counter as before (x ~= 0x0200 per full 128 KB load). Once
 // chk_done, x rotates (~0.8 s per phase) through the sweep counters, with q
 // tagging which one is showing:
-//   qE0: x = words read back as all-FF        (expect ~0)
-//   qE1: x = words with both DQML lanes FF    (~0x7Fxx = low byte lane dead)
-//   qE2: x = words with both DQMH lanes FF    (~0x7Fxx = high byte lane dead)
-//   qE3: x = write counter [23:8] again
+//   qE0: x = core vblank count      (advancing ~60/s = core running)
+//   qE1: x = alternating: raw ra_snap (bit15 of a ROM addr < 0xE000 clears
+//        only for pages < 0x80... so use the marker) / trail entries
+//        {1'b1, idx[2:0], 4'b0, page[7:0]} - last 8 distinct pages visited
+//   qE2: x = line wraps per 209.7ms window (healthy 0x19D8 = 31.55kHz)
+//   qE3: x = {kick_n[7:0], hwin[21:14]} wedge-watchdog kicks issued this
+//        power-on / HALT_n-high cycles per 105ms window (0x00 low byte =
+//        CPU continuously halted = crashed; ~0xFF = running)
+//        (refresh window retired from the beacon - settled at 132,893/s)
+//   qE2: x = boot state {rr_rises[7:0], rst_evts[6:0], boot_kicked}
+//        (was dbg_blk1 - proven ~2/s and irrelevant, so the slot was reused)
+//   qE3: x = write counter [23:8]   (0x0200 = one clean 128 KB pass)
+// DIAGNOSTIC: boot-bug discriminators, packed into beacon slot E1.
+// [15:8] m15_flaps - edge count of the SYNCHRONIZED 15kHz strap (tv15khz).
+//        tv15Khz_mode selects the vcnt wrap point (263/524) AND the vblank
+//        decode window (240/480 lines) in mcr3.vhd, so a fluttering strap
+//        makes vblank fire erratically while HS stays ~31kHz - exactly the
+//        varying-rate black-boot signature (69.5/80.8/316 Hz measured on
+//        three broken boots). Must be FROZEN on a healthy boot. The strap is
+//        J10-37, two pins from the PWM audio outputs, weak pull-up only.
+// [7:0]  rom_act - main-CPU ROM address activity counter. Racing between
+//        beacon samples = the Z80 is fetching; frozen = halted/looping-tight.
+// vcnt jump detector: count every vcnt transition that is neither +1 nor a
+// legal wrap (524->0 progressive, 263->0 interlaced), and latch the value it
+// jumped FROM. In the broken boot vblank fires at 60-316 Hz although vcnt
+// has no third writer besides reset - this shows the jumps directly.
+reg [9:0]  vcnt_d     = 10'd0;
+reg [7:0]  vdisc      = 8'd0;
+reg [9:0]  vjump_from = 10'd0;
+// hcnt jump detector + line-rate window. vdisc=0 on a BROKEN boot (85.2 Hz
+// vblank) proved vcnt counts cleanly - so the extra frames can only come
+// from hcnt reaching 633 too often. Watch hcnt the same way, plus count
+// line wraps per 2^23-cycle window (~104.9ms): healthy = 31.5k*0.1049 =
+// ~3304 (0x0CE8); a 45k line rate reads ~4720.
+reg [9:0]  hcnt_dd     = 10'd0;
+reg [7:0]  hdisc       = 8'd0;
+reg [9:0]  hjump_from  = 10'd0;
+reg [9:0]  hjump_to    = 10'd0;
+// One-boot simultaneous discriminators (prior boots each measured only one
+// signal - never together, so every theory died on a DIFFERENT boot's data):
+// vdisc263 counts 263->0 wraps specifically. That wrap is only legal in
+// 15kHz mode; with the strap open it must NEVER happen. It was whitelisted
+// as "legal" in the vcnt detector - which would have masked exactly this.
+// vs_cnt counts video_vs falling edges: if frames wrap early at 263, vs
+// (decoded at line 490) is SKIPPED in short frames -> vs rate drops BELOW
+// 60 while vblank rises ABOVE it. The split direction identifies the fault.
+reg [7:0]  vdisc263   = 8'd0;
+reg        vsedge_d   = 1'b1;
+reg [15:0] vs_cnt     = 16'd0;
+// Z80 fetch-address snapshot, latched ~9.5x/s. The beacon samples slot E1
+// every ~3s, so over a minute it collects a scatter of the addresses the
+// CPU actually visits. On a black boot that set names the wait loop, which
+// MAME's Tapper disassembly can then explain. Plain register capture -
+// the earlier 16-bit COMPARE on rom_addr broke core timing; a gated FF
+// sink is far lighter.
+reg [21:0] snap_div   = 22'd0;
+reg [15:0] ra_snap    = 16'd0;
+// CPU wedge detect, take 2. Page-change rate was WRONG: a healthy game can
+// idle inside one 256-byte page for a whole window, and the first watchdog
+// build reset a running Tapper every few seconds (kick_n 13->24 while
+// pgrate showed alive - measured). The unambiguous crash signature is the
+// T80 sitting in HALT with interrupts dead: HALT_n low with ZERO high
+// cycles for an entire ~105ms window. A live game - even one that idles on
+// HALT-until-vblank - wakes 60+/s and shows hundreds of high cycles per
+// window. No overlap.
+reg [21:0] hwin_cnt   = 22'd0;   // HALT_n-high cycles this window
+reg [21:0] hwin       = 22'd1;   // latched last window (init nonzero)
+// Sprite-path probes (core reconnected to the sp bus 2026-07-23):
+//  - spf_cnt/spf_win: core_sp_addr changes per ~105ms window = fetch rate.
+//    0 = the engine never fetches; thousands = fetching normally.
+//  - q_nz/q_nff: sticky "sp_q was seen nonzero"/"seen non-FFFFFFFF".
+//  - spq_snap: latest NONZERO sp_q value (0 forever = data is all zeros).
+reg [14:0] spa_d      = 15'd0;
+reg [13:0] spf_cnt    = 14'd0, spf_win = 14'd0;
+reg        q_nz       = 1'b0, q_nff = 1'b0;
+reg [31:0] spq_snap   = 32'd0;
+reg [27:0] wd_holdoff = 28'd0;
+reg        core_reset_d2 = 1'b1;
+// Crash trail: ring of the last 8 distinct 256-byte PAGES the CPU visited.
+// When the CPU halts in the AFxx data table, the pages just before AF name
+// the routine that crashed - that plus MAME's disassembly identifies what
+// it was reading when it went over the cliff. Reported round-robin on E1
+// as {1'b1, trail_idx[2:0], 4'b0, page[7:0]} (bit15 set = trail format).
+reg [7:0]  trail [0:7];
+reg [2:0]  trail_w   = 3'd0;
+reg [7:0]  ra_page_d = 8'd0;
+reg [2:0]  trail_r   = 3'd0;
+reg [22:0] lr_div      = 23'd0;
+reg [15:0] lr_cnt      = 16'd0, lr_lat = 16'd0;
+reg        m15_d      = 1'b0;
+reg [7:0]  m15_flaps  = 8'd0;
+// Tap ONE bit of rom_addr, not all 16: the full-width compare loaded the
+// Z80's address net enough to break setup on the cpu->video_ram path by
+// -0.174ns. Bit 0 toggles on virtually every fetch - same signal, 1/16 load.
+reg        rom_a0_d   = 1'b0;
+reg [7:0]  rom_act    = 8'd0;
+always @(posedge clk_sys) begin
+    m15_d <= tv15khz;
+    if (tv15khz != m15_d) m15_flaps <= m15_flaps + 8'd1;
+    rom_a0_d <= rom_addr[0];
+    if (rom_addr[0] != rom_a0_d) rom_act <= rom_act + 8'd1;
+    vcnt_d <= core_vcnt;
+    if (core_vcnt != vcnt_d
+        && core_vcnt != vcnt_d + 10'd1
+        && !(core_vcnt == 10'd0 && (vcnt_d == 10'd524 || vcnt_d == 10'd263))) begin
+        vdisc      <= vdisc + 8'd1;
+        vjump_from <= vcnt_d;
+    end
+    snap_div <= snap_div + 22'd1;
+    if (&snap_div) begin
+        ra_snap <= rom_addr;
+        trail_r <= trail_r + 3'd1;      // rotate which trail entry E1 shows
+    end
+    ra_page_d <= rom_addr[15:8];
+    if (rom_addr[15:8] != ra_page_d) begin
+        trail[trail_w] <= rom_addr[15:8];
+        trail_w        <= trail_w + 3'd1;
+    end
+    if (core_halt_n) hwin_cnt <= hwin_cnt + 22'd1;
+    if (&snap_div) begin hwin <= hwin_cnt; hwin_cnt <= 22'd0; end
+    spa_d <= core_sp_addr;
+    if (core_sp_addr != spa_d && !(&spf_cnt)) spf_cnt <= spf_cnt + 14'd1;
+    if (&snap_div) begin spf_win <= spf_cnt; spf_cnt <= 14'd0; end
+    if (sp_q != 32'd0)         begin q_nz  <= 1'b1; spq_snap <= sp_q; end
+    if (sp_q != 32'hFFFFFFFF)  q_nff <= 1'b1;
+    core_reset_d2 <= core_reset;
+    if (core_reset) wd_holdoff <= 28'd0;                 // arm on each release
+    else if (!(&wd_holdoff)) wd_holdoff <= wd_holdoff + 28'd1;
+    if (core_vcnt == 10'd0 && vcnt_d == 10'd263) vdisc263 <= vdisc263 + 8'd1;
+    vsedge_d <= vs;
+    if (!vs && vsedge_d) vs_cnt <= vs_cnt + 16'd1;   // falling edge = sync start
+    hcnt_dd <= core_hcnt;
+    if (core_hcnt != hcnt_dd
+        && core_hcnt != hcnt_dd + 10'd1
+        && !(core_hcnt == 10'd0 && hcnt_dd == 10'd633)) begin
+        hdisc      <= hdisc + 8'd1;
+        hjump_from <= hcnt_dd;
+        hjump_to   <= core_hcnt;
+    end
+    lr_div <= lr_div + 1'b1;
+    if (core_hcnt == 10'd0 && hcnt_dd != 10'd0) lr_cnt <= lr_cnt + 1'b1;
+    if (&lr_div) begin lr_lat <= lr_cnt; lr_cnt <= 16'd0; end
+end
+
+// fire when: core running, ~6.7s since its release, and the bus is quiet
+// Hold-off ~3.4s (2^27 cycles): the halt test cannot false-fire on a live
+// or booting game, so there is no reason to wait longer - a crashed cold
+// boot retries every ~3.4s+reload until the power-on disturbance has
+// passed, and kick_n counts the attempts (= measures the window).
+assign wedge_kick = (!core_reset) && (wd_holdoff == 28'd134_217_712)
+                    && (hwin == 22'd0);
+
 reg [26:0] diag_cnt = 0;
 always @(posedge clk_sys) diag_cnt <= diag_cnt + 1'b1;
 wire [1:0]  diag_ph = diag_cnt[26:25];
+
+// DIAGNOSTIC: core raster heartbeat. The beacon could not previously tell
+// "core halted in reset" apart from "core running, but no picture reaching
+// the monitor" - both look like a black screen. This counts vblank rising
+// edges in the core's own clock domain, so:
+//   advancing ~60/s (+~114 per beacon sample) = the core IS running
+//   frozen                                     = the core is halted/reset
+// Shown in slot E0, which used to carry dbg_blk0 - that counter is proven
+// to be exactly 0 (36/36 samples), so the slot was dead weight.
+reg        vbl_d   = 1'b0;
+reg [15:0] vbl_cnt = 16'd0;
+always @(posedge clk_sys) begin
+    vbl_d <= vblank;
+    if (vblank && !vbl_d) vbl_cnt <= vbl_cnt + 16'd1;
+end
 // E1 repurposed: live AUTO_REFRESH issue counter (sweep is disabled).
 // A DIFFERENT xE1 value on every beacon line = refresh commands are being
 // issued (~133k/s, wraps ~2x/s); frozen x0000 qE1 = the branch never fires.
 wire [15:0] diag_x = !chk_done_s     ? spw_count_s[23:8] :
-                     diag_ph == 2'd0 ? dbg_blk0_s :
-                     diag_ph == 2'd1 ? rw_lat_s :              // E1 = refreshes per 104.9ms window
-                     diag_ph == 2'd2 ? dbg_blk1_s : spw_count_s[23:8];
+                     diag_ph == 2'd0 ? vbl_cnt :              // E0 = core vblank count
+                     diag_ph == 2'd1 ? allff_lo_l :               // E1 = all-FF, read half (16384=dead)
+                     diag_ph == 2'd2 ? allff_hi_l :               // E2 = all-FF, UNTOUCHED half
+                                       {kick_n[3:0], pass_n[3:0], hwin[21:14]}; // E3 = kicks/passes/halt
 wire [7:0]  diag_q = !chk_done_s     ? spw_count_s[7:0] :
                      diag_ph == 2'd0 ? 8'hE0 :
                      diag_ph == 2'd1 ? 8'hE1 :

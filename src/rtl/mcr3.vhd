@@ -159,6 +159,8 @@ port(
  output_4       : out std_logic_vector( 7 downto 0);
  mcr2p5         : in  std_logic;
  hcntout        : out std_logic_vector( 9 downto 0);
+ vcntout        : out std_logic_vector( 9 downto 0);  -- 2026-07-23 export for boot-bug diag (same pattern as mcr1 patch)
+ cpu_halt_n     : out std_logic;                       -- 2026-07-23 T80 HALT export (wedge watchdog)
 
  cpu_rom_addr   : out std_logic_vector(15 downto 0);
  cpu_rom_do     : in std_logic_vector(7 downto 0);
@@ -347,6 +349,7 @@ begin
 			if pix_ena = '1' then
 		
 				hcntout <= hcnt;
+				vcntout <= vcnt;
 				hcnt <= hcnt + 1;
 				if hcnt = 633 then
 					hcnt <= (others=>'0');
@@ -707,7 +710,7 @@ port map(
   RD_n    => cpu_rd_n,
   WR_n    => cpu_wr_n,
   RFSH_n  => open,
-  HALT_n  => open,
+  HALT_n  => cpu_halt_n,
   BUSAK_n => open,
   A       => cpu_addr,
   DI      => cpu_di,
