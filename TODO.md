@@ -236,6 +236,18 @@ budget exists anymore. See the Shield PCB section.
   floating 1-bit nets - even on clocks (the "90deg changed nothing"
   phantom); (4) windowed rates only, full-width counters only.
 
+- **HDMI dropouts — TWO causes (measured 2026-07-24 on a real monitor).**
+  (1) Audio/ACR data islands, the major one: a DVI_MODE(1) build (no data
+  islands, silent) made cutouts MUCH rarer. Audit the audio integration vs
+  NESTang's (sample rate into the framebuffer, ACR CTS/N values).
+  (2) A time-correlated residual: dropouts resume "a while in" (thermal
+  drift); prime suspects the DDR3 wr-FIFO hold margins (+0.001 ns at
+  nominal, negative on some placement rolls) or TMDS analog margin.
+  Also noted: no picture during early boot (DDR3 calib + watchdog reload
+  latency) — believed benign, unconfirmed. **FLASH currently holds the
+  SILENT DVI test build**; restore sound with:
+  `openFPGALoader -b tangconsole -f --verify bitstreams/console60k_mcr3_tapper_sprites_working.fs`
+
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for
   a future board rev.** Core is vendored + ready but moved to
