@@ -217,22 +217,24 @@ budget exists anymore. See the Shield PCB section.
 
 ## Cores / ports
 
-- **MCR-3 Tapper sprites — MODULE EXONERATED (2026-07-24, retention test);
-  the bug is OUR controller's clocking.** nand2mario's sdram_cl2_2ch
-  (vendored unmodified from snestang, written for this exact Winbond
-  W9825G6KH module) retains data with ZERO errors at 100s of idle age on
-  the same board+socket where sdram_gw reads 100% dead - measured with
-  `mcr2_console60k/diag/sdram_retention_top.sv` (build_retention.tcl;
-  beacon: FB x<errs> q<pass>). The decisive difference: snestang drives
-  the SDRAM pin clock from a 225-DEGREE-SHIFTED PLL output directly
-  (`assign O_sdram_clk = fclk_p`), sdram_gw forwards 0 deg via ODDR.
-  The earlier "module fails retention" conclusion (commit ca191ef) is
-  RETRACTED - all its measurements stand, only the attribution was wrong.
-  Next: retention harness x sdram_gw x 225-deg clk_fwd (the port already
-  exists) - if it passes, one PLL phase fixes MCR-3 sprites; if reads
-  misalign, adjust sdram_gw's capture cycle to match. Note the harness
-  ack/data race: cl2_2ch acks at ACCEPT, data lands ~5 cycles later.
-  Boot bug remains FIXED (HALT watchdog). HDMI dropouts still open.
+- **MCR-3 Tapper sprites — FIXED 2026-07-24 (commit 3dbe824): the SDRAM
+  pin clock needed a 225-degree phase shift.** Full attract mode verified
+  on screen (bartender/patrons/mugs) via HDMI capture; array-health sweep
+  reads allff=47 vs 51 for a perfect image. sdram_gw is pure-upstream
+  again; the fix is one PLL output (gowin_pll_core80 CLKOUT3 @225deg ->
+  clk_fwd). Flash holds the working build; also archived as
+  bitstreams/console60k_mcr3_tapper_sprites_working.fs.
+  Cleanup still owed: retire the diagnostic beacon slots/sweep/watchdog
+  instrumentation to a maintainable minimum (keep the HALT watchdog and a
+  slow array-health sweep), then resume the v5 plan (Phase 2:
+  everything-from-SD; Phase 3: backport MCR-1/2 - NOTE those cores use the
+  same module via other paths in future work: apply the 225-deg discipline
+  anywhere the Tang SDRAM module is used).
+  STANDING LESSONS (cost days): (1) JTAG SRAM loads fail silently ~1/3 of
+  the time - confirm every load with a per-build beacon marker; (2) flash
+  writes lie without -f --verify; (3) Gowin use-before-declaration makes
+  floating 1-bit nets - even on clocks (the "90deg changed nothing"
+  phantom); (4) windowed rates only, full-width counters only.
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for

@@ -165,6 +165,12 @@ against `src/rtl/`. That's why the script writes to multiple dirs.
 (`src/roms/*.hex` is a stale Satan's Hollow set from the initial port — do
 not point new code at it.)
 
+**openFPGALoader on this board**: SRAM loads fail SILENTLY ~1/3 of the
+time ("DONE" prints regardless) - confirm every load took via a per-build
+beacon marker before trusting results. Flash writes corrupt without
+verification - always `-f --verify`, retry until clean (first attempt
+usually fails just past byte 0x30000).
+
 Prebuilt flashable images are kept in `bitstreams/` (e.g.
 `console60k_tron.fs`, `console60k_domino.fs`) so switching games on the
 board is just a reflash, no rebuild. Regenerate them after RTL changes.
@@ -248,6 +254,20 @@ Residual faint shimmer is a known limit of the line-buffer approach on the
 16 + core RAM/line buffer ~8). Satan's Hollow's 48 KB CPU ROM forces dropping
 the bg tile ROMs. `dpram` in ROM mode reads only port A; the `dl_*` download
 bus is inert in these standalone builds.
+
+### Tang SDRAM module (J9): pin clock MUST be phase-shifted ~225 deg
+The module (Winbond W9825G6KH) is fine; a 0-deg forwarded SDRAM_CLK puts
+the chip's command sampling on the exact instant commands change, and the
+margin drifts with temperature/activity. Symptom: data "decays" to all-FF
+within ~30-100 s of idle regardless of refresh (v5's white sprite boxes;
+two handoffs of wrong theories). Every nand2mario design ships this
+discipline (snestang: `assign O_sdram_clk = fclk_p` at ~225 deg). Ours:
+`gowin_pll_core80` CLKOUT3 = 80 MHz @225 deg (PE 6+2/8) -> `sdram_gw`'s
+`clk_fwd`. Keep `sdram_gw`'s read states at upstream values (READ1=2,
+READ1b=3, CL2) - moving them past RAS1 breaks its oe_latch clearing.
+Retention harnesses to re-verify any change:
+`mcr2_console60k/diag/build_retention.tcl` (nand2mario reference) and
+`build_gwret.tcl` (sdram_gw), write-once-verify-every-30s over UART.
 
 ### Buttons / diagnostics
 25K: S1 = reset, S2 = color-bar test pattern + Coin 1.
