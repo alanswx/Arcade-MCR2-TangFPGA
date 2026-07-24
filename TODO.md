@@ -217,25 +217,22 @@ budget exists anymore. See the Shield PCB section.
 
 ## Cores / ports
 
-- **MCR-3 Tapper sprites — BLOCKED ON HARDWARE: the Tang SDRAM module
-  fails row-retention semantics (measured 2026-07-24; full evidence in
-  commit ca191ef).** Sprite data ages out in ~30-100s no matter what:
-  AUTO_REFRESH at spec rate, explicit ACTIVE+PRECHARGE refresh, and even
-  continuous reads of every row every 13us all leave the aging curve
-  bit-identical - the last being physically impossible for real SDRAM
-  (every ACTIVATE restores its row). Writes DO restore data at any age.
-  Rows die atomically (whole-word FF, 1 partial in 16k). Interface timing
-  exonerated (CL3, 90-deg pin clock: no change). Bench next: multimeter on
-  module CKE/VCC, swap in a second module, read the chip marking.
-  Strategic fallback: move the sprite ROM into the proven DDR3 (extend the
-  gbatang framebuffer arbiter with a read port) - also the right shape for
-  Phase 2. NOTE for whoever picks this up: v6's refresh-starvation theory,
-  "reads destroy", "activity keeps alive", and the "resurrection" were ALL
-  measurement artifacts - see ca191ef before trusting any older analysis.
-  Boot bug is FIXED separately (HALT watchdog, kick_n=1 typical, <10s cold
-  boot). HDMI drops ~1 frame/15s: legal-VCO PLL tried and reverted (no
-  effect); next suspects are the MS2109 capture card itself and the DDR3
-  wr-FIFO hold margins (~0.001ns, occasionally negative on placement rolls).
+- **MCR-3 Tapper sprites — MODULE EXONERATED (2026-07-24, retention test);
+  the bug is OUR controller's clocking.** nand2mario's sdram_cl2_2ch
+  (vendored unmodified from snestang, written for this exact Winbond
+  W9825G6KH module) retains data with ZERO errors at 100s of idle age on
+  the same board+socket where sdram_gw reads 100% dead - measured with
+  `mcr2_console60k/diag/sdram_retention_top.sv` (build_retention.tcl;
+  beacon: FB x<errs> q<pass>). The decisive difference: snestang drives
+  the SDRAM pin clock from a 225-DEGREE-SHIFTED PLL output directly
+  (`assign O_sdram_clk = fclk_p`), sdram_gw forwards 0 deg via ODDR.
+  The earlier "module fails retention" conclusion (commit ca191ef) is
+  RETRACTED - all its measurements stand, only the attribution was wrong.
+  Next: retention harness x sdram_gw x 225-deg clk_fwd (the port already
+  exists) - if it passes, one PLL phase fixes MCR-3 sprites; if reads
+  misalign, adjust sdram_gw's capture cycle to match. Note the harness
+  ack/data race: cl2_2ch acks at ACCEPT, data lands ~5 cycles later.
+  Boot bug remains FIXED (HALT watchdog). HDMI dropouts still open.
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for
