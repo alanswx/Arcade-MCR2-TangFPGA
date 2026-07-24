@@ -217,34 +217,25 @@ budget exists anymore. See the Shield PCB section.
 
 ## Cores / ports
 
-- **MCR-3 Tapper sprites — ACTIVE. `handoff_v6_sdram_refresh.md`'s root
-  cause is DISPROVED; do not act on it.** v6 concluded "AUTO_REFRESH runs at
-  ~2,325/s instead of ~133,000/s (measured)". That measurement is invalid:
-  `dbg_refresh` is 16-bit and the beacon's E1 slot only appears every ~1.9 s,
-  so at 133 k/s the counter wraps ~4x between samples and the delta is noise.
-  Proof it was never real — re-scaling the counter by 256 left the observed
-  rate unchanged at ~2,451/s; a genuine measurement must fall 256x.
-  Re-measured 2026-07-22 with a **windowed** counter (refreshes latched per
-  fixed 2^23-cycle window, cannot wrap, added to the MCR-3 top): **~146,000
-  refresh/s, i.e. all 8192 rows every 55.9 ms, inside the 64 ms JEDEC
-  limit.** Refresh is healthy. Also measured, and these are trustworthy
-  (a true zero cannot alias): `dbg_blk0` = exactly 0 on 36/36 samples, and
-  `dbg_blk1` ~ 2.1/s — so **both** arbiter-gate hypotheses v6 offered are
-  dead too, and the loader is clean (`spw_count` = 0x0200 = exactly one
-  128 KB pass, then stops).
-  Next step: the fault is in the sprite **data path**, not retention. The
-  probe cells read `FFFFFFFF`, but one run showed `CFCFCFCF` repeated —
-  `CF` is the *last* of the 16 pattern bytes appearing in all four lanes,
-  which reads as every pattern write landing at one address with no
-  byte-lane masking. Instrument the port2 write path directly: latch the
-  address and `ds` of the last few pattern writes into the beacon and
-  confirm they differ per write. That separates "address collapses" from
-  "`ds` mask ignored" in a single build.
-  Method note: opening `/dev/ttyUSB1` toggles DTR and **reconfigures the
-  board**. Hold one persistent open with `HUPCL` cleared; any number taken
-  through a fresh serial open is suspect. Separately, the SD card errors for
-  ~20 s after every reconfiguration and then recovers on its own (v6 loose
-  end #1) — that is not a bad card.
+- **MCR-3 Tapper sprites — BLOCKED ON HARDWARE: the Tang SDRAM module
+  fails row-retention semantics (measured 2026-07-24; full evidence in
+  commit ca191ef).** Sprite data ages out in ~30-100s no matter what:
+  AUTO_REFRESH at spec rate, explicit ACTIVE+PRECHARGE refresh, and even
+  continuous reads of every row every 13us all leave the aging curve
+  bit-identical - the last being physically impossible for real SDRAM
+  (every ACTIVATE restores its row). Writes DO restore data at any age.
+  Rows die atomically (whole-word FF, 1 partial in 16k). Interface timing
+  exonerated (CL3, 90-deg pin clock: no change). Bench next: multimeter on
+  module CKE/VCC, swap in a second module, read the chip marking.
+  Strategic fallback: move the sprite ROM into the proven DDR3 (extend the
+  gbatang framebuffer arbiter with a read port) - also the right shape for
+  Phase 2. NOTE for whoever picks this up: v6's refresh-starvation theory,
+  "reads destroy", "activity keeps alive", and the "resurrection" were ALL
+  measurement artifacts - see ca191ef before trusting any older analysis.
+  Boot bug is FIXED separately (HALT watchdog, kick_n=1 typical, <10s cold
+  boot). HDMI drops ~1 frame/15s: legal-VCO PLL tried and reverted (no
+  effect); next suspects are the MS2109 capture card itself and the DDR3
+  wr-FIFO hold margins (~0.001ns, occasionally negative on placement rolls).
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for
