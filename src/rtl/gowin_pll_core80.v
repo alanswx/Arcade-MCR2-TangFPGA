@@ -112,11 +112,13 @@ defparam PLLA_inst.CLKOUT1_PE_FINE = 0;
 defparam PLLA_inst.CLKOUT2_PE_COARSE = 0;
 defparam PLLA_inst.CLKOUT2_PE_FINE = 0;
 // Phase: PE in VCO cycles (1.25ns @800MHz); ODIV3=10 -> period=10 VCO.
-// 2 coarse + 4/8 fine = 2.5 VCO = 3.125ns = 90 deg at 80 MHz. The pin clock
-// LAGS the command clock, so the chip samples commands mid-window instead
-// of exactly at their transition (the marginal-by-temperature 0-deg case).
-defparam PLLA_inst.CLKOUT3_PE_COARSE = 2;
-defparam PLLA_inst.CLKOUT3_PE_FINE = 4;
+// 225 deg = 6.25 VCO (6 coarse + 2/8 fine) - the discipline every nand2mario
+// SDRAM design uses (snestang: assign O_sdram_clk = fclk_p @225deg), and
+// PROVEN on this board 2026-07-24: pure-upstream sdram_gw + 225deg retains
+// data with 0 errors at 8+ minutes of age, where 0 deg lost everything in
+// ~30-100s and 90 deg was never validated end-to-end.
+defparam PLLA_inst.CLKOUT3_PE_COARSE = 6;
+defparam PLLA_inst.CLKOUT3_PE_FINE = 2;
 defparam PLLA_inst.CLKOUT4_PE_COARSE = 0;
 defparam PLLA_inst.CLKOUT4_PE_FINE = 0;
 defparam PLLA_inst.CLKOUT5_PE_COARSE = 0;

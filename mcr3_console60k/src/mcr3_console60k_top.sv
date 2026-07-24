@@ -112,6 +112,11 @@ assign hpd_en = 1'b1;   // enable the dock's HDMI path
 // so the SDRAM sprite read is a synchronous 1:2 crossing to the 40 MHz core.
 wire clk_sys;    // 40 MHz  (Core system clock, generates 20 MHz pixel enable)
 wire clk_sdram;  // 80 MHz  (SDRAM controller, synchronous 2x clk_sys)
+// 225-deg copy for the SDRAM_CLK pin (sdram_gw clk_fwd). NOTE: this wire was
+// referenced-but-undeclared for several builds - Gowin silently made it a
+// floating net (the CLAUDE.md gotcha, on a CLOCK) - which invalidated the
+// earlier "90 deg made no difference" experiment. Declared-before-use now.
+wire clk_sdram_ph;
 wire pll_locked;
 
 wire clk50_pll;  // PLL-buffered 50 MHz for the DDR3 controller/mDRP (clk_g).
@@ -121,6 +126,7 @@ gowin_pll_core80 pll_inst (
     .clkin(sys_clk),
     .clk_sys(clk_sys),
     .clk_sdram(clk_sdram),
+    .clk_sdram_ph(clk_sdram_ph),   // 225 deg - the proven SDRAM pin clock
     .clk_50(clk50_pll),
     .lock(pll_locked)
 );
@@ -404,7 +410,7 @@ always @(posedge clk_sdram) begin
     // ~30-100s; busy bus -> data stays alive. (One-word-per-row at 410us
     // was too quiet to help; the continuous fast sweeps were not.)
     scrub_tick <= scrub_tick + 15'd1;
-    if (ldrp_s2 && (&scrub_tick[4:0])) begin
+    if (1'b0) begin   // scrub retired: refresh works at 225deg
         p1_a_r   <= {7'b0, scrub_row, 9'd0};         // word 0 of each row
         p1_we_r  <= 1'b0;
         p1_req_r <= ~p1_req_r;
@@ -480,7 +486,7 @@ reg [7:0]  pass_n     = 8'd0;
 always @(posedge clk_sdram) begin
     ldrd_s1 <= ldr_done;
     ldrd_s2 <= ldrd_s1;
-    sp_addr_r <= chk_active ? {7'd0, chk_addr} : 22'd0;
+    sp_addr_r <= chk_active ? {7'd0, chk_addr} : {7'd0, core_sp_addr};
     if (!chk_active) chk_timer <= chk_timer + 34'd1;
     if ((ldrd_s1 && !ldrd_s2) || (!chk_active && chk_timer == 34'd8_589_000_000)) begin
         chk_active <= 1'b1;
@@ -651,9 +657,9 @@ always @(posedge clk_sys) begin
     end
 end
 
-// RAS_REFRESH: AUTO_REFRESH proven ineffective on this board (see sdram_gw).
-// RFRSH_CYCLES 150 = 533k refreshes/s = per-bank rows every ~61ms.
-sdram_gw #(.RFRSH_CYCLES(10'd150), .RAS_REFRESH(1'b1)) sdram (
+// Plain AUTO_REFRESH: refresh was NEVER the problem - the 0-deg pin clock
+// was (proven 2026-07-24: pure-upstream sdram_gw + 225deg = 0 errors).
+sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     .SDRAM_DQ(O_sdram_dq_io),
     .SDRAM_A(O_sdram_addr),
     .SDRAM_DQML(O_sdram_dqm[0]),
@@ -686,6 +692,9 @@ sdram_gw #(.RFRSH_CYCLES(10'd150), .RAS_REFRESH(1'b1)) sdram (
     // HALF/FULL experiment: engine disconnected (parked at 0) - only the
     // sweep touches the array. Mux REGISTERED: combinational chk mux into
     // the controller's addr compare was -0.148ns setup at 80MHz.
+    // ENGINE RECONNECTED (225-deg fix in). The periodic sweep still borrows
+    // the bus ~26ms every ~107s as an array-health monitor (E1 allff_lo
+    // should stay ~0 forever now); sprites glitch that instant only.
     .sp_addr(sp_addr_r),
     .sp_q(sp_q),
     .dbg_refresh(dbg_refresh),

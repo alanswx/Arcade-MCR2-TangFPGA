@@ -116,14 +116,7 @@ assign SDRAM_DQ = sd_dq_oe ? sd_dq_out : 16'bZ;
 localparam RASCAS_DELAY   = 3'd2;   // tRCD=20ns -> 2 cycles@<100MHz
 localparam BURST_LENGTH   = 3'b001; // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE    = 1'b0;   // 0=sequential, 1=interleaved
-// CL3 (2026-07-24): reads intermittently return all-FF for tens of seconds
-// and then recover, tracking activity/temperature - the classic signature of
-// sampling DQ right at the valid-window edge (FF = bus pulled up, nobody
-// driving). Confirmed non-destructive: data "resurrected" after 220s with
-// zero rewrites. CL3 + read states shifted +1 cycle moves capture 12.5ns
-// later. (This also retroactively explains the memtest passing for hours:
-// its constant activity held the thermal state - and the sampling - steady.)
-localparam CAS_LATENCY    = 3'd3;   // 2/3 allowed
+localparam CAS_LATENCY    = 3'd2;   // CL2, as nand2mario runs this module
 localparam OP_MODE        = 2'b00;  // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST = 1'b1;   // 0= write burst enabled, 1=only single access write
 
@@ -156,8 +149,9 @@ localparam STATE_RAS0      = 3'd0;
 localparam STATE_RAS1      = 3'd3;   // Second ACTIVE command after RAS0 + tRRD (15ns)
 localparam STATE_CAS0      = STATE_RAS0 + RASCAS_DELAY; // CAS phase - 2
 localparam STATE_CAS1      = STATE_RAS1 + RASCAS_DELAY; // CAS phase - 5
-localparam STATE_READ1     = 3'd3;   // CL3: one later than upstream's 2
-localparam STATE_READ1b    = 3'd4;   // CL3: one later than upstream's 3
+localparam STATE_READ1     = 3'd2;   // upstream value (moving these past
+localparam STATE_READ1b    = 3'd3;   // RAS1 breaks oe_latch clearing - use
+                                     // CAP_DELAY on the data path instead)
 localparam STATE_READ0     = 3'd6;
 localparam STATE_LAST      = 3'd6;
 
