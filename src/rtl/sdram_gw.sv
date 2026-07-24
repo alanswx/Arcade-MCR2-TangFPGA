@@ -32,7 +32,15 @@ module sdram_gw #(
 	// Cycles between auto-refreshes. Default 842 suits the memtest's 100 MHz
 	// clock; the MCR-3 build runs at 80 MHz and overrides to 600 (7.5us < the
 	// 7.81us tREF row interval). Sized per SDRAM clock so data is retained.
-	parameter [9:0] RFRSH_CYCLES = 10'd842
+	parameter [9:0] RFRSH_CYCLES = 10'd842,
+	// RAS-only refresh (2026-07-24): measured on the Tang SDRAM module, the
+	// array decays to all-FF in ~26s with NO access while AUTO_REFRESH issues
+	// at the correct ~133k/s - commands sent but ineffective. AUTO_REFRESH is
+	// the only command asserting nRAS and nCAS low together; reads/writes
+	// (proven-good patterns) never do. This mode refreshes via explicit
+	// ACTIVE(bank,row) + PRECHARGE-ALL instead. Needs 4x the command rate
+	// (per-bank rows): set RFRSH_CYCLES ~150 at 80MHz.
+	parameter       RAS_REFRESH  = 1'b0
 ) (
 
 	// interface to the MT48LC16M16 chip
@@ -51,6 +59,9 @@ module sdram_gw #(
 	// cpu/chipset interface
 	input             init_n,     // init signal after FPGA config to initialize RAM
 	input             clk,        // sdram clock
+	// Optional phase-shifted copy of clk for the SDRAM_CLK pin forwarder
+	// (see the ODDR at the bottom). Tie to clk when no shift is wanted.
+	input             clk_fwd,
 
 	input             port1_req,
 	output reg        port1_ack,
@@ -105,7 +116,14 @@ assign SDRAM_DQ = sd_dq_oe ? sd_dq_out : 16'bZ;
 localparam RASCAS_DELAY   = 3'd2;   // tRCD=20ns -> 2 cycles@<100MHz
 localparam BURST_LENGTH   = 3'b001; // 000=1, 001=2, 010=4, 011=8
 localparam ACCESS_TYPE    = 1'b0;   // 0=sequential, 1=interleaved
-localparam CAS_LATENCY    = 3'd2;   // 2/3 allowed
+// CL3 (2026-07-24): reads intermittently return all-FF for tens of seconds
+// and then recover, tracking activity/temperature - the classic signature of
+// sampling DQ right at the valid-window edge (FF = bus pulled up, nobody
+// driving). Confirmed non-destructive: data "resurrected" after 220s with
+// zero rewrites. CL3 + read states shifted +1 cycle moves capture 12.5ns
+// later. (This also retroactively explains the memtest passing for hours:
+// its constant activity held the thermal state - and the sampling - steady.)
+localparam CAS_LATENCY    = 3'd3;   // 2/3 allowed
 localparam OP_MODE        = 2'b00;  // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST = 1'b1;   // 0= write burst enabled, 1=only single access write
 
@@ -138,8 +156,8 @@ localparam STATE_RAS0      = 3'd0;
 localparam STATE_RAS1      = 3'd3;   // Second ACTIVE command after RAS0 + tRRD (15ns)
 localparam STATE_CAS0      = STATE_RAS0 + RASCAS_DELAY; // CAS phase - 2
 localparam STATE_CAS1      = STATE_RAS1 + RASCAS_DELAY; // CAS phase - 5
-localparam STATE_READ1     = 3'd2;
-localparam STATE_READ1b    = 3'd3;
+localparam STATE_READ1     = 3'd3;   // CL3: one later than upstream's 2
+localparam STATE_READ1b    = 3'd4;   // CL3: one later than upstream's 3
 localparam STATE_READ0     = 3'd6;
 localparam STATE_LAST      = 3'd6;
 
@@ -214,6 +232,8 @@ reg  [2:0] port[2];
 reg        refresh;
 reg [10:0] refresh_cnt;
 reg        need_refresh;
+reg [14:0] ref_cnt   = 15'd0;   // RAS_REFRESH: {row[12:0], bank[1:0]}
+reg        ref_phase = 1'b0;    // RAS_REFRESH: row open, precharge next slot
 
 // PORT1: bank 0,1
 always @(*) begin
@@ -312,7 +332,16 @@ always @(posedge clk) begin
 			{ oe_latch[1], we_latch[1] } <= 2'b00;
 			port[1] <= next_port[1];
 
-			if (next_port[1] != PORT_NONE) begin
+			if (RAS_REFRESH && ref_phase) begin
+				// close the refresh row opened last frame (RAS1->RAS1 = 7 cycles
+				// = 87.5ns >= tRAS). Nothing else is open: port0 idle, port1/2
+				// bursts auto-precharge. Pending port work waits one frame.
+				sd_cmd <= CMD_PRECHARGE;
+				SDRAM_A[10] <= 1'b1;
+				ref_phase <= 1'b0;
+				port[1] <= PORT_NONE;   // don't launch work this slot
+			end
+			else if (next_port[1] != PORT_NONE) begin
 				if (need_refresh) dbg_blk1 <= dbg_blk1 + 1'd1;
 				sd_cmd <= CMD_ACTIVE;
 				SDRAM_A <= addr_latch_next[1][22:10];
@@ -336,8 +365,16 @@ always @(posedge clk) begin
 			else if (need_refresh && !we_latch[0] && !oe_latch[0]) begin
 				refresh <= 1'b1;
 				refresh_cnt <= 0;
-				sd_cmd <= CMD_AUTO_REFRESH;
 				dbg_refresh <= dbg_refresh + 1'd1;
+				if (RAS_REFRESH) begin
+					sd_cmd    <= CMD_ACTIVE;
+					SDRAM_BA  <= ref_cnt[1:0];
+					SDRAM_A   <= ref_cnt[14:2];
+					ref_cnt   <= ref_cnt + 15'd1;
+					ref_phase <= 1'b1;
+				end else begin
+					sd_cmd <= CMD_AUTO_REFRESH;
+				end
 			end
 			else if (need_refresh) begin
 				dbg_blk0 <= dbg_blk0 + 1'd1;
@@ -414,7 +451,7 @@ ODDR sdramclk_ddr (
 	.D0(1'b1),
 	.D1(1'b0),
 	.TX(1'b0),
-	.CLK(clk)
+	.CLK(clk_fwd)
 );
 
 endmodule

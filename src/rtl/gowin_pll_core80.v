@@ -24,11 +24,11 @@ module gowin_pll_core80 (
     input  clkin,
     output clk_sys,
     output clk_sdram,
+    output clk_sdram_ph,  // 80 MHz, 90 deg LAG - SDRAM_CLK pin forwarder only
     output clk_50,
     output lock
 );
 
-wire clkout3_o;
 wire clkout4_o;
 wire clkout5_o;
 wire clkout6_o;
@@ -41,7 +41,7 @@ PLLA PLLA_inst (
     .CLKOUT0(clk_sdram), // 80 MHz
     .CLKOUT1(clk_sys),   // 40 MHz
     .CLKOUT2(clk_50),    // 50 MHz
-    .CLKOUT3(clkout3_o),
+    .CLKOUT3(clk_sdram_ph),  // 80 MHz +90deg for the SDRAM pin clock
     .CLKOUT4(clkout4_o),
     .CLKOUT5(clkout5_o),
     .CLKOUT6(clkout6_o),
@@ -74,7 +74,7 @@ defparam PLLA_inst.ODIV0_SEL = 10;   // clk_sdram = 800/10 = 80 MHz
 defparam PLLA_inst.ODIV0_FRAC_SEL = 0;
 defparam PLLA_inst.ODIV1_SEL = 20;   // clk_sys   = 800/20 = 40 MHz
 defparam PLLA_inst.ODIV2_SEL = 16;   // clk_50    = 800/16 = 50 MHz
-defparam PLLA_inst.ODIV3_SEL = 8;
+defparam PLLA_inst.ODIV3_SEL = 10;   // 800/10 = 80 MHz, same as clk_sdram
 defparam PLLA_inst.ODIV4_SEL = 8;
 defparam PLLA_inst.ODIV5_SEL = 8;
 defparam PLLA_inst.ODIV6_SEL = 8;
@@ -83,7 +83,7 @@ defparam PLLA_inst.MDIV_FRAC_SEL = 0;
 defparam PLLA_inst.CLKOUT0_EN = "TRUE";
 defparam PLLA_inst.CLKOUT1_EN = "TRUE";
 defparam PLLA_inst.CLKOUT2_EN = "TRUE";
-defparam PLLA_inst.CLKOUT3_EN = "FALSE";
+defparam PLLA_inst.CLKOUT3_EN = "TRUE";   // 90-deg SDRAM pin clock
 defparam PLLA_inst.CLKOUT4_EN = "FALSE";
 defparam PLLA_inst.CLKOUT5_EN = "FALSE";
 defparam PLLA_inst.CLKOUT6_EN = "FALSE";
@@ -111,8 +111,12 @@ defparam PLLA_inst.CLKOUT1_PE_COARSE = 0;
 defparam PLLA_inst.CLKOUT1_PE_FINE = 0;
 defparam PLLA_inst.CLKOUT2_PE_COARSE = 0;
 defparam PLLA_inst.CLKOUT2_PE_FINE = 0;
-defparam PLLA_inst.CLKOUT3_PE_COARSE = 0;
-defparam PLLA_inst.CLKOUT3_PE_FINE = 0;
+// Phase: PE in VCO cycles (1.25ns @800MHz); ODIV3=10 -> period=10 VCO.
+// 2 coarse + 4/8 fine = 2.5 VCO = 3.125ns = 90 deg at 80 MHz. The pin clock
+// LAGS the command clock, so the chip samples commands mid-window instead
+// of exactly at their transition (the marginal-by-temperature 0-deg case).
+defparam PLLA_inst.CLKOUT3_PE_COARSE = 2;
+defparam PLLA_inst.CLKOUT3_PE_FINE = 4;
 defparam PLLA_inst.CLKOUT4_PE_COARSE = 0;
 defparam PLLA_inst.CLKOUT4_PE_FINE = 0;
 defparam PLLA_inst.CLKOUT5_PE_COARSE = 0;

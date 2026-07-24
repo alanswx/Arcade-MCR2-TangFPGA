@@ -377,6 +377,8 @@ reg        ldrp_s1 = 1'b0, ldrp_s2 = 1'b0;  // ldr_done sync for the pattern wri
 reg [4:0]  pat_step = 5'd31;                // 31 = idle, 0..15 = write steps
 reg [4:0]  pat_wait = 5'd0;
 reg        p1_req_r = 1'b0, p1_we_r = 1'b0;
+reg [14:0] scrub_tick = 15'd0;   // 2^15 @80MHz = 410us per scrub read
+reg [6:0]  scrub_row  = 7'd0;    // 128 rows cover the whole 128KB
 reg [23:1] p1_a_r = 23'd0;
 reg [1:0]  p1_ds_r = 2'b00;
 reg [15:0] p1_d_r = 16'd0;
@@ -388,6 +390,26 @@ reg        spq_nonff = 1'b0;
 always @(posedge clk_sdram) begin
     dl_wr_s1 <= dl_wr;
     dl_wr_s2 <= dl_wr_s1;
+    // SCRUB REFRESH (2026-07-24): both AUTO_REFRESH and RAS-only refresh are
+    // ineffective on this module (measured: data decays in ~30-100s under
+    // either, while rows kept alive by READS survive - the fast sweeps were
+    // inadvertently scrub-refreshing). So refresh by the proven mechanism:
+    // READ one word from each of the sprite data's 128 rows (bank 2,
+    // addr[16:10]) in rotation via the idle port2 - one read per ~410us =
+    // every row per ~52ms, negligible bandwidth. Gated on ldr_done so the
+    // loader owns port2 during loads.
+    // LOUD scrub (2026-07-24): one read per 32 cycles (~2.5M/s), rotating
+    // the 128 rows every ~13us. Tests - and if it holds, exploits - the
+    // measured activity-dependence: quiet bus -> reads go all-FF within
+    // ~30-100s; busy bus -> data stays alive. (One-word-per-row at 410us
+    // was too quiet to help; the continuous fast sweeps were not.)
+    scrub_tick <= scrub_tick + 15'd1;
+    if (ldrp_s2 && (&scrub_tick[4:0])) begin
+        p1_a_r   <= {7'b0, scrub_row, 9'd0};         // word 0 of each row
+        p1_we_r  <= 1'b0;
+        p1_req_r <= ~p1_req_r;
+        scrub_row <= scrub_row + 7'd1;
+    end
     if (dl_wr_s1 && !dl_wr_s2) begin        // rising edge of a new dl byte
         p1_a_r    <= {7'b0, dl_addr[14:0], dl_addr[16]};
         p1_ds_r   <= {dl_addr[15], ~dl_addr[15]};
@@ -446,23 +468,30 @@ reg [15:0] chk_hoff  = 16'd0;  // words with both DQMH lanes 0xFF (not all-FF)
 // every 4th pass reads the full 32K to check the UNTOUCHED upper half.
 //   read-half dies, untouched half lives  -> reads are destructive
 //   both halves die                       -> time-based destroyer
-reg [30:0] chk_timer  = 31'd0;
+reg [21:0] sp_addr_r  = 22'd0;   // registered sp_addr source (timing)
+reg [33:0] chk_timer  = 34'd0;  // 107s cadence: separates read-count damage from time damage
 reg [15:0] allff_lo_l = 16'hDEAD, allff_hi_l = 16'hDEAD;
 reg [15:0] allff_lo   = 16'd0,    allff_hi   = 16'd0;
+reg [15:0] partff     = 16'd0;   // words with SOME FF byte but not all
+reg [15:0] remis      = 16'd0;   // same-address double-read disagreements
+reg [31:0] chk_first  = 32'hBADBAD;
 reg        chk_full   = 1'b0;
 reg [7:0]  pass_n     = 8'd0;
 always @(posedge clk_sdram) begin
     ldrd_s1 <= ldr_done;
     ldrd_s2 <= ldrd_s1;
-    if (!chk_active) chk_timer <= chk_timer + 31'd1;
-    if ((ldrd_s1 && !ldrd_s2) || (!chk_active && chk_timer[30:0] == 31'd2_147_000_000)) begin
+    sp_addr_r <= chk_active ? {7'd0, chk_addr} : 22'd0;
+    if (!chk_active) chk_timer <= chk_timer + 34'd1;
+    if ((ldrd_s1 && !ldrd_s2) || (!chk_active && chk_timer == 34'd8_589_000_000)) begin
         chk_active <= 1'b1;
         chk_full   <= (pass_n[1:0] == 2'd3);   // every 4th pass: full array
-        chk_timer  <= 31'd0;
+        chk_timer  <= 34'd0;
         chk_addr   <= 15'd0;
         chk_dwell  <= 6'd0;
         allff_lo   <= 16'd0;
         allff_hi   <= 16'd0;
+        partff     <= 16'd0;
+        remis      <= 16'd0;
     end else if (chk_active) begin
         chk_dwell <= chk_dwell + 6'd1;
         if (chk_dwell == 6'd63) begin
@@ -470,6 +499,17 @@ always @(posedge clk_sdram) begin
                 if (chk_addr[14]) allff_hi <= allff_hi + 16'd1;
                 else              allff_lo <= allff_lo + 16'd1;
             end
+            // decay-vs-transaction discriminators: cell decay makes MANY
+            // partially-FF words long before whole words die; transaction
+            // failure returns FF for the whole 32-bit word atomically.
+            // Double-read: dwell 0-31 = first read, 32-63 = re-read same
+            // address; a flickering word (FF once, data once) = transaction.
+            else if (sp_q[31:24]==8'hFF || sp_q[23:16]==8'hFF ||
+                     sp_q[15:8]==8'hFF  || sp_q[7:0]==8'hFF)
+                partff <= partff + 16'd1;
+            if (chk_dwell == 6'd31) chk_first <= sp_q;   // snapshot mid-dwell
+            if (sp_q != chk_first && chk_dwell == 6'd63 && chk_first != 32'hBADBAD)
+                remis <= remis + 16'd1;
             chk_addr <= chk_addr + 15'd1;
             if (chk_addr == (chk_full ? 15'h7FFF : 15'h3FFF)) begin
                 chk_active <= 1'b0;
@@ -611,7 +651,9 @@ always @(posedge clk_sys) begin
     end
 end
 
-sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
+// RAS_REFRESH: AUTO_REFRESH proven ineffective on this board (see sdram_gw).
+// RFRSH_CYCLES 150 = 533k refreshes/s = per-bank rows every ~61ms.
+sdram_gw #(.RFRSH_CYCLES(10'd150), .RAS_REFRESH(1'b1)) sdram (
     .SDRAM_DQ(O_sdram_dq_io),
     .SDRAM_A(O_sdram_addr),
     .SDRAM_DQML(O_sdram_dqm[0]),
@@ -624,7 +666,7 @@ sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     .SDRAM_CKE(),                 // no board pin; module ties CKE high
     .SDRAM_CLK(O_sdram_clk),
     .init_n(~sdram_rst),
-    .clk(clk_sdram),
+    .clk(clk_sdram), .clk_fwd(clk_sdram_ph),
     // port1 unused (its bank group does not reach the sprite read)
     .port1_req(1'b0), .port1_ack(), .port1_we(1'b0),
     .port1_a(23'd0), .port1_ds(2'b00), .port1_d(16'd0), .port1_q(),
@@ -642,8 +684,9 @@ sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     // While a sweep pass runs (~26ms every ~27s) it borrows the bus; the
     // game's sprites glitch for that instant, which is fine for a diag build.
     // HALF/FULL experiment: engine disconnected (parked at 0) - only the
-    // sweep touches the array, and only its lower half on most passes.
-    .sp_addr(chk_active ? {7'd0, chk_addr} : 22'd0),
+    // sweep touches the array. Mux REGISTERED: combinational chk mux into
+    // the controller's addr compare was -0.148ns setup at 80MHz.
+    .sp_addr(sp_addr_r),
     .sp_q(sp_q),
     .dbg_refresh(dbg_refresh),
     .dbg_blk0(dbg_blk0), .dbg_blk1(dbg_blk1)
@@ -1238,12 +1281,12 @@ end
 wire [15:0] diag_x = !chk_done_s     ? spw_count_s[23:8] :
                      diag_ph == 2'd0 ? vbl_cnt :              // E0 = core vblank count
                      diag_ph == 2'd1 ? allff_lo_l :               // E1 = all-FF, read half (16384=dead)
-                     diag_ph == 2'd2 ? allff_hi_l :               // E2 = all-FF, UNTOUCHED half
-                                       {kick_n[3:0], pass_n[3:0], hwin[21:14]}; // E3 = kicks/passes/halt
+                     diag_ph == 2'd2 ? partff :                   // E4-tag = partial-FF words (decay makes many; transaction failure ~none)
+                                       remis;                      // E3 = double-read disagreements (transaction flicker)
 wire [7:0]  diag_q = !chk_done_s     ? spw_count_s[7:0] :
                      diag_ph == 2'd0 ? 8'hE0 :
                      diag_ph == 2'd1 ? 8'hE1 :
-                     diag_ph == 2'd2 ? 8'hE2 : 8'hE3;
+                     diag_ph == 2'd2 ? 8'hE4 : 8'hE3;   // E4 = LOAD-TOOK marker (tag never used before)
 
 // DIAGNOSTIC: the one-shot SDRAM dump borrows the UART pin while it runs
 wire beacon_txd;
