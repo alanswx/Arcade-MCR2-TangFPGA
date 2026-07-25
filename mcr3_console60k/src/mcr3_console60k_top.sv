@@ -875,6 +875,17 @@ reg [7:0] input_2;
 reg [7:0] input_3;
 reg [7:0] input_4;
 
+// Discs of Tron aim dial: MAME marks it PORT_REVERSE; the Tron convention
+// from the mcr2 top applies (pad X/Y buttons rotate; swap minus/plus if
+// aim feels inverted on hardware). IP1[6:0] = dial, bit7 unused (reads 1).
+wire [7:0] spin_dot;
+spinner #(.INC_NORMAL(20), .INC_FAST(40), .INC_SPINNER(20)) sp_dot (
+    .clk(clk_sys), .reset(core_reset),
+    .minus(m_aimdn), .plus(m_aimup), .fast(1'b0), .strobe(vblank),
+    .spin_in(9'd0),
+    .spin_out(spin_dot)
+);
+
 always @(*) begin
     // IP0 is identical across the 91490 games (MAME mcr.cpp):
     //   ~{service,3'b0,start2,start1,1'b0,coin1}
@@ -883,8 +894,8 @@ always @(*) begin
     3'd2: begin
         // Discs of Tron (MAME 0.265 mcr.cpp): FIRE is IP0 bit 4!
         input_0 = ~{ m_service, 2'b00, m_pour, m_start2, m_start1, 1'b0, m_coin1 };
-        // IP1 = 7-bit aim dial - not wired yet (spinner.sv TODO); rests at 0
-        input_1 = 8'h80;   // bit7 unused active-low reads 1... dial value 0
+        // IP1 = 7-bit aim dial via spinner.sv (aim buttons still work on IP2)
+        input_1 = {1'b1, spin_dot[6:0]};
         // IP2: ~{cab(upright=1), btn2, aimUp, aimDown, down, up, right, left}
         input_2 = ~{ 1'b0, m_btn2, m_aimup, m_aimdn, m_down, m_up, m_right, m_left };
         input_3 = 8'hFF;   // coin meters 1, rest unused
