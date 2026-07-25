@@ -4,6 +4,57 @@ Single list of known gaps. Detail lives in the linked docs; this is the
 index so nothing hides in a §6 somewhere. Roughly ordered by "blocks the
 next real milestone" within each section.
 
+
+## ROADMAP — the MCR jukebox (agreed 2026-07-24, in priority order)
+
+1. **HDMI dropout fix.** Mechanism cornered: audio data islands, 48 kHz
+   divider actually emits 48,027 Hz vs ACR constants claiming 48,000 →
+   sinks periodically resync. The 32 kHz quick-try killed sync because ONLY
+   the divider changed — a correct fix sets rate + ACR N/CTS consistently
+   through the hdl-util hdmi instantiation (N=4096 for 32 k / 6144 for 48 k),
+   or copies whatever current nestang does here (refs/nestang vendorable).
+   Evidence + revert details: commits 2bee7ea/2424e0c, and the two-cause
+   entry below (thermal residual is secondary).
+
+2. **All cores load ROMs from the SD card (Phase 2, "everything-from-SD").**
+   CPU/sound/bg for every game stream from SD at boot instead of baked
+   BSRAM; sprites already do (MCR-3). Unblocked by the 225-deg SDRAM fix.
+   Gate: SD format v2 (docs/sd_card_layout_v2.md — region tables replace
+   fixed 128 KB slots). Applies to mcr1/mcr2/mcr3 tops; hold-in-reset-until-
+   all-regions-written is already the boot contract (see the boot kick note).
+
+3. **Add MCR titles until the series is complete.** Next: Timber, Discs of
+   Tron (MCR-3, same core as Tapper); then the MCR3Scroll games (Spy Hunter,
+   Crater Raider, Journey) per docs/mcr_core_roadmap.md; MCR3Mono stays
+   parked for a board rev (future/README.md). Also: MCR-1 (Kick/Solar Fox)
+   is built but never hardware-verified — verify while at it. Remember the
+   Tapper lesson: bg ROM plane order bg0->gfx1_1 for EVERY new game.
+
+4. **Core switching (multi-FAMILY).** Games within a family already switch
+   at runtime via the OSD. Switching between family cores = Gowin multiboot:
+   one core per SPI-flash slot + multiboot jump. To verify first: flash size
+   (2.48 MB/.bin per core; how many slots fit) and multiboot address config
+   (build.tcl already sets -multi_boot 1). Design in
+   docs/sd_card_layout_v2.md ("cores in flash, ROMs on SD" — option 1).
+
+5. **Persist the chosen core across power cycles.** Extend the existing
+   MCRPREF sector (2047 — today it stores the last game slot within a
+   family) with a CORE/family id. Every core checks the pref early at boot:
+   if it isn't the saved core, multiboot-jump to the right flash slot; else
+   boot normally into the saved game. Cabinet comes up exactly where the
+   owner left it.
+
+6. **Cabinet-button core/game switching, consistent across ALL games.**
+   USB Select+Start stays, but a real cabinet needs the ORIGINAL controls to
+   open the menu. The chord must use inputs that exist on EVERY MCR harness
+   regardless of game — per docs/mcr_game_input_matrix.md the safe universal
+   set is the coin-door group (Coin 1 + Service/Test switches), NOT player
+   panel buttons (those vary per game). Proposal: long-hold Service (or
+   Service+Coin1) -> OSD opens; navigation via a fixed pair present
+   everywhere (P1 Start / Coin buttons). Wire through the shield's 74HC165
+   chain (docs/shield_j10_pinout.md); must behave identically in all six+
+   input maps so muscle memory transfers between games.
+
 ---
 
 ## Cocktail mode — unaddressed across every game
