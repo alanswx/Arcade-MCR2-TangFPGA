@@ -35,14 +35,22 @@ next real milestone" within each section.
    is built but never hardware-verified — verify while at it. Remember the
    Tapper lesson: bg ROM plane order bg0->gfx1_1 for EVERY new game.
 
-4. **Core switching (multi-FAMILY).** Games within a family already switch
+4. **Core switching (multi-FAMILY).** VERIFIED 2026-07-24: the SPI flash
+   is 16 MB (JEDEC 0B 40 18) -> SIX 2.48 MB core slots fit. Remaining: the
+   Gowin multiboot mechanics (the .fs header says "MultiBootMode: Single"
+   even with -multi_boot 1 - the option needs investigating; likely needs
+   the IDE's multiboot address settings or a golden+jump image layout).
+   Then: Games within a family already switch
    at runtime via the OSD. Switching between family cores = Gowin multiboot:
    one core per SPI-flash slot + multiboot jump. To verify first: flash size
    (2.48 MB/.bin per core; how many slots fit) and multiboot address config
    (build.tcl already sets -multi_boot 1). Design in
    docs/sd_card_layout_v2.md ("cores in flash, ROMs on SD" — option 1).
 
-5. **Persist the chosen core across power cycles.** Extend the existing
+5. **Persist the chosen core across power cycles.** GROUNDWORK IN
+   2026-07-24: prefs sector byte 9 now records the running FAMILY on every
+   save, and the loader reads it back (pref_core) - wired and building,
+   unused until item 4 provides the jump mechanism. Remaining: Extend the existing
    MCRPREF sector (2047 — today it stores the last game slot within a
    family) with a CORE/family id. Every core checks the pref early at boot:
    if it isn't the saved core, multiboot-jump to the right flash slot; else

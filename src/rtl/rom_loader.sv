@@ -93,6 +93,8 @@ reg [26:0] watchdog;     // hard upper bound on the whole load (~1.7s @40MHz)
 reg [63:0] hdr;
 reg [7:0]  slot_cnt;     // header byte 8: number of slots in the pack
 reg [7:0]  pref_slot;    // prefs sector byte 8: last-selected slot
+reg [7:0]  pref_core;    // prefs sector byte 9: last-running core/family
+                         // (read for item-4 multiboot; write side done)
 reg [8:0]  hdr_cnt;
 reg [15:0] sect_left_hi;   // sectors remaining in this slot (0..256)
 // v2 superblock parsing (within the single header-sector stream)
@@ -122,6 +124,12 @@ function [7:0] pref_byte(input [9:0] i);
     10'd6:   pref_byte = 8'h46;   // F
     10'd7:   pref_byte = 8'h31;   // 1
     10'd8:   pref_byte = {4'd0, cur_slot};
+    10'd9:   pref_byte = FAMILY;      // roadmap item 5: which CORE was
+                                      // running when the pref was saved.
+                                      // Multiboot (item 4) will read this
+                                      // at boot and jump to that core's
+                                      // flash slot; until then it is
+                                      // recorded but unused.
     default: pref_byte = 8'h00;
     endcase
 endfunction
@@ -187,6 +195,7 @@ always @(posedge clk) begin
                 if (sd_dout_valid) begin
                     if (hdr_cnt < 9'd8) hdr <= {hdr[55:0], sd_dout};
                     if (hdr_cnt == 9'd8) pref_slot <= sd_dout;
+                    if (hdr_cnt == 9'd9) pref_core <= sd_dout;   // saved core id
                     hdr_cnt <= hdr_cnt + 9'd1;
                 end
                 if (sd_rd_done) st <= L_PREFCHK;
