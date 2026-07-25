@@ -1,19 +1,23 @@
 # Bally Midway MCR2 Arcade Core for Gowin Tang FPGAs
 
-Standalone port of the Bally Midway MCR-2 arcade hardware (Tron, Domino
-Man, Satan's Hollow, Wacko, Kozmik Kroozr, Two Tigers) for Sipeed Tang
-FPGA boards — no MiSTer/HPS required. The flagship target is the **Tang
-Console 60K**: all six games in one bitstream, selected at runtime from an
-on-screen menu, with ROMs loaded from a microSD card.
+Standalone port of the Bally Midway MCR arcade families for Sipeed Tang
+FPGA boards — no MiSTer/HPS required. **MCR-2** (Tron, Domino Man,
+Satan's Hollow, Wacko, Kozmik Kroozr, Two Tigers), **MCR-3/91490**
+(Tapper — hardware-verified — plus Timber and Discs of Tron), and
+**MCR-1** (Kick, Kickman, Solar Fox; builds, unverified). The flagship
+target is the **Tang Console 60K**: each family's games in one bitstream,
+selected at runtime from an on-screen menu, ROMs loaded from a single
+microSD card shared by every family (pack format v2). The roadmap toward
+the full-series multi-core jukebox is at the top of TODO.md.
 
 | Board | Status |
 |---|---|
-| **Tang Console 60K** (GW5AT-60) | All six games + OSD menu; 720p HDMI with audio (DDR3 framebuffer); analog RGB at 31/15 kHz for real cabinets; USB gamepad; SD ROM loading |
+| **Tang Console 60K** (GW5AT-60) | MCR-2: all six games + OSD menu. MCR-3: Tapper working (SDRAM sprites), Timber/DoT staged. 720p HDMI with audio (DDR3 framebuffer); analog RGB at 31/15 kHz for real cabinets; USB gamepad; SD ROM loading; <10 s watchdog-guarded cold boot |
 | Tang Primer 25K (GW5A-25) | Domino Man over HDMI (single game per build, BSRAM-limited) |
 | Tang Console 138K (GW5AST-138) | Stale — needs the 60K backport |
 
-New here? Read [handoff_v4_60k_multicore.md](handoff_v4_60k_multicore.md)
-for the current platform state and family runway.
+New here? Read [handoff_v7_jukebox.md](handoff_v7_jukebox.md) for the
+current platform state and runway.
 
 Deeper docs: build gotchas and architecture notes in [CLAUDE.md](CLAUDE.md),
 open issues in [TODO.md](TODO.md), bench hookup in

@@ -355,9 +355,11 @@ budget exists anymore. See the Shield PCB section.
   `openFPGALoader -b tangconsole -f bitstreams/console60k_mcr1_kick.fs`.
   Open items: hardware bring-up (video/sound/controls); Kick spinner
   sensitivity + DIP defaults (input_3 = 0xFF placeholder) need tuning; OSD
-  text rotation direction on the rotated MCR-1 monitors is a guess; SD pack
-  switching for MCR-1 needs pack-format-v2 (make_rompack currently MCR-2
-  only). One maintenance debt: the MCR-1 top is a copy of the MCR-2 top -
+  text rotation direction on the rotated MCR-1 monitors is a guess.
+  ~~SD pack switching needs pack-format-v2~~ **RESOLVED 2026-07-24: pack
+  v2 is implemented and the MCR-1 top is wired for it (FAMILY=0); its
+  games are in mcr_pack_v2.img** - still needs the same hardware test as
+  everything else MCR-1. One maintenance debt: the MCR-1 top is a copy of the MCR-2 top -
   a future refactor to a unified family-ifdef top would remove the
   duplicated video/USB/SD/OSD infrastructure (deferred to protect the
   working MCR-2 build during its own hardware validation).

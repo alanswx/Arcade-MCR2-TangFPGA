@@ -79,9 +79,18 @@ between the three, prefs persist. **This phase is deliberately first: it
 forces all the multi-family packaging decisions while the RTL risk is
 near zero.**
 
-## Phase B — SDRAM module bring-up (the gate for all MCR-3)   [DONE — verified on hardware 2026-07-22]
+## Phase B — SDRAM module bring-up (the gate for all MCR-3)   [DONE 2026-07-22 — with a CRITICAL 2026-07-24 addendum]
 
-**Standalone memtest built (2026-07), not yet hardware-run.** The exact
+> **ADDENDUM (2026-07-24): the memtest PASSING was misleading.** Its
+> constant write-then-read activity masked the real fault: with the SDRAM
+> pin clock forwarded at 0 degrees, data retention collapses on an idle
+> bus (~30-100 s to all-FF regardless of refresh scheme). The fix — the
+> discipline every nand2mario design uses — is a ~225-degree phase-shifted
+> pin clock: `gowin_pll_core80` CLKOUT3 -> `sdram_gw.clk_fwd`. See the
+> CLAUDE.md "Tang SDRAM module" section and commit 3dbe824; re-verify any
+> change with `mcr2_console60k/diag/build_retention.tcl` / `build_gwret.tcl`.
+
+**Standalone memtest built (2026-07), since hardware-run.** The exact
 controller MCR-3 will use is vendored and Gowin-adapted:
 `src/rtl/sdram_gw.sv` = MiSTer MCR-3 `sdram.sv` with the Altera altddio_out
 SDRAM_CLK forwarder replaced by a Gowin ODDR and the `inout reg SDRAM_DQ`
@@ -117,7 +126,15 @@ Remaining Phase B (now carried into the MCR-3 board build):
    (MiSTer's `rom_download` wiring in `Arcade-MCR3.sv` is the template).
    Pack v2 carries per-slot sizes.
 
-## Phase C — MCR-3 core: Tapper, Timber, Journey, Discs of Tron   [CORE READY]
+## Phase C — MCR-3 core: Tapper, Timber, Journey, Discs of Tron   [TAPPER WORKING ON HARDWARE 2026-07-24; Timber/DoT staged; Journey deferred]
+
+> **Status 2026-07-25:** Tapper fully verified on the Console 60K (sprites
+> from SDRAM at the 225-deg pin clock, colors verified vs reference).
+> Timber and Discs of Tron wired end-to-end from MAME 0.265 (specs, input
+> maps, OSD slots, pack-v2 entries; DoT aim dial via spinner.sv) — first
+> boot awaits the v2 card. Journey DEFERRED: it is mcr_91475 (not 91490),
+> the vendored core has no mod support, and it needs the wave-audio port.
+> Everything below remains the design record for that integration.
 
 **The core is vendored and platform-adapted (2026-07):** `src/rtl/mcr3.vhd`
 patched exactly like mcr1/mcr2 (bg dprams get INIT_FILE + explicit

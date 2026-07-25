@@ -4,19 +4,21 @@ Bally Midway MCR2 arcade core (MiSTer/Cyclone V origin) ported to Sipeed Tang
 Gowin FPGA boards as standalone, hardcoded builds (no HPS/ARM download bus —
 ROMs are baked into BSRAM via `INIT_FILE` hex tables).
 
-Current game: **Domino Man** (default). Satan's Hollow also supported (no
-background tiles on the 25K — ROM budget). The 60K top carries the
-MAME-verified Domino Man input map (Button 1 = IP0 bit 4, 4-way stick =
-IP1[3:0], DIP IP3 = 0x3E for upright — 0xFF means cocktail!); the 25K top
-still has the Satan's Hollow map.
+Games: **MCR-2** — all six (Domino Man default on the 25K; the 60K holds
+the whole family behind its OSD). **MCR-3 (91490)** — Tapper (hardware-
+verified), Timber, Discs of Tron. **MCR-1** — Kick/Kickman/Solar Fox
+(builds, not hardware-verified). One pack-v2 SD card carries every game
+for every family (`tools/make_pack_v2.py`); the product roadmap toward
+the full-series multi-core jukebox is at the top of `TODO.md`.
 
 ## Board projects
 
 | Dir | Board | FPGA | Status |
 |---|---|---|---|
-| `mcr1_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds** — MCR-1 core (Kick/Kickman/Solar Fox); baked-ROM boot + OSD; shares the 60K platform. SD pack switching pending pack-v2. Not yet hardware-tested |
+| `mcr1_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds** — MCR-1 core (Kick/Kickman/Solar Fox); baked-ROM boot + OSD; pack-v2 SD loading wired (FAMILY=0). Not yet hardware-tested |
 | `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract mode over HDMI, 56/56 BSRAM, timing met |
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games compiled in, OSD menu (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap |
+| `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — Tapper verified on hardware (sprites from the Tang SDRAM module at 225-deg pin clock, colors verified vs reference); Timber + Discs of Tron added (await v2-card test); HALT-watchdog boot (<10 s cold); pack-v2 full-from-SD wired |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K |
 
 Shared, platform-independent code lives in `src/`:
@@ -304,9 +306,16 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
   update) this before starting anything; per-doc "open items" sections feed
   into it.
 
-- `handoff_v4_60k_multicore.md` — **most current handoff**: the 60K
-  multi-core platform state, family porting status, hardware-verification
-  table, and immediate next steps. Start here.
+- `handoff_v7_jukebox.md` — **most current handoff**: platform state after
+  the MCR-3 bring-up marathon (SDRAM 225-deg fix, boot watchdog, pack v2,
+  Timber/DoT, roadmap progress). Start here.
+- `handoff_v6_sdram_refresh.md` / `handoff_v5_mcr3_sprites.md` —
+  historical MCR-3 sprite debugging. **v6's root cause (refresh
+  starvation) and v5's suspects were all DISPROVED** — the real fault was
+  the SDRAM pin-clock phase (see the 225-deg section above and commit
+  3dbe824). Kept for the record; do not act on their conclusions.
+- `handoff_v4_60k_multicore.md` — the 60K multi-core platform design and
+  family porting plan (still accurate for platform structure).
 - `handoff_v3_video_and_domino.md` — historical: the 25K HDMI pipeline
   deep-dive + Domino POC (its "paths forward" are all done).
 - `handoff_v2_design.md` — SDRAM/V2 plan, shield electrical spec, MCR

@@ -1,5 +1,13 @@
 # Walkthrough of Bally Midway MCR2 Multi-Board FPGA Port
 
+> **HISTORICAL (early-port era).** This describes the original 25K-first
+> BRAM-only port. The project has since grown far past it: MCR-3 with
+> SDRAM sprites, pack-v2 SD loading, DDR3-framebuffer HDMI, the OSD
+> jukebox, watchdog boot. For current state read `handoff_v7_jukebox.md`,
+> `CLAUDE.md`, and the roadmap at the top of `TODO.md`. Kept as the
+> record of the initial architecture; the `src/roms/` it mentions is
+> stale (see CLAUDE.md).
+
 This port converts the Cyclone V (MiSTer) Bally Midway MCR2 arcade core into a standalone, hardcoded core running on Gowin Aurora GW5A FPGAs. We support the **Tang Primer 25K**, **Tang Console 60K**, and **Tang Console 138K** boards concurrently.
 
 ---

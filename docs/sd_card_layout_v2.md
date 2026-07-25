@@ -150,6 +150,6 @@ configuration. If flash turns out too small, fall back to (2) and the
 - `src/rtl/rom_loader.sv` — the on-card contract (parameters are authority)
 - `tools/make_rompack.py`, `tools/make_sprite_pack.py`, `tools/write_rompack.py`
 - `src/rtl/osd.sv` — game list, `game_id`, `loaded_slot`
-- `handoff_v6_sdram_refresh.md` — the MCR-3 work this is blocked behind
-  (note: its refresh-starvation root cause has since been disproved; see
-  `TODO.md`)
+- `handoff_v7_jukebox.md` — platform state; the MCR-3 sprite work that
+  once blocked this format is DONE (the fault was the SDRAM pin-clock
+  phase, not refresh — v5/v6's conclusions are retracted)
