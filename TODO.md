@@ -27,7 +27,7 @@ next real milestone" within each section.
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries) - hardware test pending the v2
    card write on the Mac. DoT's aim DIAL not wired yet (aim uses its
-   dedicated IP2 buttons; spinner.sv integration is a refinement TODO).
+   dedicated IP2 buttons; spinner.sv WIRED 2026-07-24 - aim buttons rotate the dial; swap minus/plus if inverted on hardware).
    Remaining: Next: Timber, Discs of
    Tron (MCR-3, same core as Tapper); then the MCR3Scroll games (Spy Hunter,
    Crater Raider, Journey) per docs/mcr_core_roadmap.md; MCR3Mono stays
