@@ -850,8 +850,23 @@ wire m_down    = u_down  & ~u_sel & ~osd_active;
 wire m_pour    = u_btn_a & ~osd_active;
 wire m_start1  = u_sta   & ~osd_active;
 wire m_start2  = u_btn_x & ~osd_active;
-wire m_btn2    = u_btn_b & ~osd_active;   // Timber's second (chop) button
+wire m_btn2    = u_btn_b & ~osd_active;   // Timber chop 2 / DoT deflector
+wire m_aimup   = u_btn_y & ~osd_active;   // DoT aim up
+wire m_aimdn   = u_btn_x & ~osd_active;   // DoT aim down (start2 unavailable in DoT)
 wire m_coin1   = (u_sel & ~osd_active) | key_s2;
+// Cabinet-side OSD chord (roadmap item 6): hold the physical coin key
+// (AB13 on the bench; the shield's coin-door Service line later) for ~3 s
+// to open the game-select menu - identical in every family top. Note: on
+// the bench the first 3 s of the hold DO insert a coin (the key doubles as
+// Coin 1); the shield build will source this from Service instead, which
+// feeds no credits.
+reg [26:0] menu_hold_cnt = 27'd0;
+wire       menu_hold = (menu_hold_cnt == 27'd120_000_000);   // 3 s @40 MHz
+always @(posedge clk_sys) begin
+    if (!key_s2)                 menu_hold_cnt <= 27'd0;
+    else if (!menu_hold)         menu_hold_cnt <= menu_hold_cnt + 27'd1;
+end
+
 wire m_service = 1'b0;
 
 reg [7:0] input_0;
@@ -865,6 +880,15 @@ always @(*) begin
     //   ~{service,3'b0,start2,start1,1'b0,coin1}
     input_0 = ~{ m_service, 3'b000, m_start2, m_start1, 1'b0, m_coin1 };
     case (game_id)
+    3'd2: begin
+        // Discs of Tron (MAME 0.265 mcr.cpp): FIRE is IP0 bit 4!
+        input_0 = ~{ m_service, 2'b00, m_pour, m_start2, m_start1, 1'b0, m_coin1 };
+        // IP1 = 7-bit aim dial - not wired yet (spinner.sv TODO); rests at 0
+        input_1 = 8'h80;   // bit7 unused active-low reads 1... dial value 0
+        // IP2: ~{cab(upright=1), btn2, aimUp, aimDown, down, up, right, left}
+        input_2 = ~{ 1'b0, m_btn2, m_aimup, m_aimdn, m_down, m_up, m_right, m_left };
+        input_3 = 8'hFF;   // coin meters 1, rest unused
+    end
     3'd1: begin
         // Timber (MAME 0.265 mcr.cpp INPUT_PORTS timber):
         //   IP1/IP2 = ~{2'b0, btn2, btn1, up, down, left, right} (4-way)
@@ -980,11 +1004,12 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(GAME_DEFAULT),
-    .NUM_GAMES(4'd2),
+    .NUM_GAMES(4'd3),
     .ROT_MASK(6'b000000),     // Tapper is ROT0 - no OSD text rotation
     .TITLE("    MCR3 GAME SELECT    "),
     .NAME0("   TAPPER               "),
-    .NAME1("   TIMBER               ")
+    .NAME1("   TIMBER               "),
+    .NAME2("   DISCS OF TRON        ")
 ) osd_inst (
     .clk(clk_sys),
     .rst(core_reset_raw),
@@ -997,7 +1022,7 @@ osd #(
     .rgb_out(osd_rgb),
     .btn_up(u_up), .btn_down(u_down),
     .btn_a(u_btn_a), .btn_b(u_btn_b),
-    .btn_sel(u_sel), .btn_sta(u_sta),
+    .btn_sel(u_sel), .btn_sta(u_sta), .btn_menu_hold(menu_hold),
     .game_id(game_id),
     .load_slot(game_slot),
     .loader_restart(osd_restart),

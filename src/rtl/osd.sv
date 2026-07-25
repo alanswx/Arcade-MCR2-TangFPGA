@@ -58,6 +58,12 @@ module osd #(
     input             btn_b,
     input             btn_sel,
     input             btn_sta,
+    // Cabinet-side menu chord (roadmap item 6): a LONG-HOLD signal from the
+    // coin-door group - the only inputs present identically on every MCR
+    // harness (docs/mcr_game_input_matrix.md). Bench: 3s hold of the coin
+    // key; shield: the 74HC165 Service line. Must behave the same in every
+    // family top so cabinet muscle memory transfers between games.
+    input             btn_menu_hold,
 
     // Game selection / loader handshake
     output reg [2:0]  game_id,        // game the core is running
@@ -98,7 +104,7 @@ reg vbl_q = 1'b1;
 always @(posedge clk) vbl_q <= vblank;
 wire frame_tick = vblank & ~vbl_q;
 
-wire combo = btn_sel & btn_sta;
+wire combo = (btn_sel & btn_sta) | btn_menu_hold;
 
 reg p_up = 0, p_dn = 0, p_a = 0, p_b = 0, p_combo = 0;
 reg [5:0] rpt_cnt = 0;

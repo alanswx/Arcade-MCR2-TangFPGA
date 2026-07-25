@@ -54,7 +54,7 @@ def main():
     # tron(1), wacko(2), kroozr(3), twotiger(4), domino(5); mcr3 = tapper(0).
     ROSTER = ["kick", "solarfox", "kickman",
               "shollow", "tron", "wacko", "kroozr", "twotiger", "domino",
-              "tapper", "timber"]
+              "tapper", "timber", "dotron"]
     for game in ROSTER:
         spec = GAME_SPECS[game]
         fam = FAM_ID[spec.get("family", "mcr2")]

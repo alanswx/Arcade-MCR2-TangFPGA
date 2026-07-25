@@ -90,6 +90,24 @@ GAME_SPECS = {
     # Tapper (main set): 56KB CPU (4 ROMs, last is 8KB), 16KB sound (4x4KB),
     # 32KB bg (2x16KB planes), 128KB sprites (8x16KB -> SDRAM, not baked).
     # bg plane order follows the MRA: bg_1(6f) -> gfx1_1, bg_0(5f) -> gfx1_2.
+    # Discs of Tron, upright set (mcr_91490, ROT0). Old-MAME file names in
+    # our zip, mapped positionally to MAME 0.265's dotron set (.1c=pg0,
+    # .2c=pg1, .3c=pg2, .4c=pg3). bg planes load loc-bg2.6f FIRST (per
+    # MAME), sprites in MAME order g,h,e,f,c,d,a,b (64K, padded). Sound
+    # 4x4K -> 16K. The aim DIAL (IP1) is not wired yet - aim uses the
+    # dedicated IP2 aim up/down buttons; spinner.sv integration is a TODO.
+    "dotron": dict(
+        family="mcr3",
+        define="GAME_DOTRON",
+        zip_path="roms/dotron.zip",
+        main_files=["loc-pg0.1c", "loc-pg1.2c", "loc-pg2.3c", "loc-pg1.4c"],
+        snd_files=["sound0.a7", "sound1.a8", "sound2.a9", "sound3.a10"],
+        snd_pad_to=16 * 1024,
+        gfx1_1_file="loc-bg2.6f",
+        gfx1_2_file="loc-bg1.5f",
+        gfx2_files=["loc-g.cp4", "loc-h.cp3", "loc-e.cp6", "loc-f.cp5",
+                    "loc-c.cp8", "loc-d.cp7", "loc-a.cp0", "loc-b.cp9"],
+    ),
     # Timber (1984, mcr_91490 = the Tapper board, ROT0). MAME loads gfx1 as
     # timbg1 at 0x0000 then timbg0 at 0x4000 - REVERSED vs tapper. Follow
     # MAME's per-game load order, not a fixed bg0-first convention (the

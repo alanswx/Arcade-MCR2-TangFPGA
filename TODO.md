@@ -23,7 +23,12 @@ next real milestone" within each section.
    fixed 128 KB slots). Applies to mcr1/mcr2/mcr3 tops; hold-in-reset-until-
    all-regions-written is already the boot contract (see the boot kick note).
 
-3. **Add MCR titles until the series is complete.** Next: Timber, Discs of
+3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
+   Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
+   input maps, OSD slots 1/2, pack entries) - hardware test pending the v2
+   card write on the Mac. DoT's aim DIAL not wired yet (aim uses its
+   dedicated IP2 buttons; spinner.sv integration is a refinement TODO).
+   Remaining: Next: Timber, Discs of
    Tron (MCR-3, same core as Tapper); then the MCR3Scroll games (Spy Hunter,
    Crater Raider, Journey) per docs/mcr_core_roadmap.md; MCR3Mono stays
    parked for a board rev (future/README.md). Also: MCR-1 (Kick/Solar Fox)
@@ -45,6 +50,10 @@ next real milestone" within each section.
    owner left it.
 
 6. **Cabinet-button core/game switching, consistent across ALL games.**
+   GROUNDWORK IN 2026-07-24: hold the physical coin key (AB13) ~3 s to open
+   the OSD - implemented identically in all three family tops + osd.sv
+   (btn_menu_hold). On the shield this signal moves to the 74HC165 Service
+   line (no credit side-effect). Untested on hardware. Remaining:
    USB Select+Start stays, but a real cabinet needs the ORIGINAL controls to
    open the menu. The chord must use inputs that exist on EVERY MCR harness
    regardless of game — per docs/mcr_game_input_matrix.md the safe universal

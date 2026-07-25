@@ -373,6 +373,19 @@ wire m_b       = u_btn_b & ~osd_active;
 wire m_start1  = u_sta   & ~osd_active;
 wire m_start2  = u_btn_x & ~osd_active;
 wire m_coin1   = (u_sel & ~osd_active) | key_s2;
+// Cabinet-side OSD chord (roadmap item 6): hold the physical coin key
+// (AB13 on the bench; the shield's coin-door Service line later) for ~3 s
+// to open the game-select menu - identical in every family top. Note: on
+// the bench the first 3 s of the hold DO insert a coin (the key doubles as
+// Coin 1); the shield build will source this from Service instead, which
+// feeds no credits.
+reg [26:0] menu_hold_cnt = 27'd0;
+wire       menu_hold = (menu_hold_cnt == 27'd120_000_000);   // 3 s @40 MHz
+always @(posedge clk_sys) begin
+    if (!key_s2)                 menu_hold_cnt <= 27'd0;
+    else if (!menu_hold)         menu_hold_cnt <= menu_hold_cnt + 27'd1;
+end
+
 wire m_service = 1'b0;
 
 reg [7:0] input_0;
@@ -531,7 +544,7 @@ osd #(
     .rgb_out(osd_rgb),
     .btn_up(u_up), .btn_down(u_down),
     .btn_a(u_btn_a), .btn_b(u_btn_b),
-    .btn_sel(u_sel), .btn_sta(u_sta),
+    .btn_sel(u_sel), .btn_sta(u_sta), .btn_menu_hold(menu_hold),
     .game_id(game_id),
     .load_slot(game_slot),
     .loader_restart(osd_restart),
