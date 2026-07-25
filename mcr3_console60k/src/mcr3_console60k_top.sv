@@ -850,6 +850,7 @@ wire m_down    = u_down  & ~u_sel & ~osd_active;
 wire m_pour    = u_btn_a & ~osd_active;
 wire m_start1  = u_sta   & ~osd_active;
 wire m_start2  = u_btn_x & ~osd_active;
+wire m_btn2    = u_btn_b & ~osd_active;   // Timber's second (chop) button
 wire m_coin1   = (u_sel & ~osd_active) | key_s2;
 wire m_service = 1'b0;
 
@@ -860,14 +861,26 @@ reg [7:0] input_3;
 reg [7:0] input_4;
 
 always @(*) begin
-    // Verified against MiSTer Arcade-MCR3 (mod_tapper) + Tapper MRA:
-    //   IP0 = ~{service,3'b0,start2,start1,1'b0,coin1}
-    //   IP1 = IP2 = ~{3'b0,pour,up,down,left,right}   (controls read from BOTH)
-    //   IP3 = DIP = 0xFF (MRA default "FF 00" -> sw[0]=FF: upright, demo snd on)
+    // IP0 is identical across the 91490 games (MAME mcr.cpp):
+    //   ~{service,3'b0,start2,start1,1'b0,coin1}
     input_0 = ~{ m_service, 3'b000, m_start2, m_start1, 1'b0, m_coin1 };
-    input_1 = ~{ 3'b000, m_pour, m_up, m_down, m_left, m_right };
-    input_2 = ~{ 3'b000, m_pour, m_up, m_down, m_left, m_right };
-    input_3 = 8'hFF;   // sw[0] per MRA default
+    case (game_id)
+    3'd1: begin
+        // Timber (MAME 0.265 mcr.cpp INPUT_PORTS timber):
+        //   IP1/IP2 = ~{2'b0, btn2, btn1, up, down, left, right} (4-way)
+        //   IP3 DIP: 0xFB = upright, coin meters 1, demo sounds ON (bit2=0)
+        input_1 = ~{ 2'b00, m_btn2, m_pour, m_up, m_down, m_left, m_right };
+        input_2 = ~{ 2'b00, m_btn2, m_pour, m_up, m_down, m_left, m_right };
+        input_3 = 8'hFB;
+    end
+    default: begin
+        // Tapper (verified vs MiSTer mod_tapper + MRA):
+        //   IP1 = IP2 = ~{3'b0,pour,up,down,left,right}; IP3 = 0xFF
+        input_1 = ~{ 3'b000, m_pour, m_up, m_down, m_left, m_right };
+        input_2 = ~{ 3'b000, m_pour, m_up, m_down, m_left, m_right };
+        input_3 = 8'hFF;
+    end
+    endcase
     input_4 = 8'hFF;
 end
 
@@ -967,10 +980,11 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(GAME_DEFAULT),
-    .NUM_GAMES(4'd1),
+    .NUM_GAMES(4'd2),
     .ROT_MASK(6'b000000),     // Tapper is ROT0 - no OSD text rotation
     .TITLE("    MCR3 GAME SELECT    "),
-    .NAME0("   TAPPER               ")
+    .NAME0("   TAPPER               "),
+    .NAME1("   TIMBER               ")
 ) osd_inst (
     .clk(clk_sys),
     .rst(core_reset_raw),

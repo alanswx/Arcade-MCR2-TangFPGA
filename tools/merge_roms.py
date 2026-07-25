@@ -90,6 +90,23 @@ GAME_SPECS = {
     # Tapper (main set): 56KB CPU (4 ROMs, last is 8KB), 16KB sound (4x4KB),
     # 32KB bg (2x16KB planes), 128KB sprites (8x16KB -> SDRAM, not baked).
     # bg plane order follows the MRA: bg_1(6f) -> gfx1_1, bg_0(5f) -> gfx1_2.
+    # Timber (1984, mcr_91490 = the Tapper board, ROT0). MAME loads gfx1 as
+    # timbg1 at 0x0000 then timbg0 at 0x4000 - REVERSED vs tapper. Follow
+    # MAME's per-game load order, not a fixed bg0-first convention (the
+    # tapper color bug was assuming one). Sprites in MAME's pair-swapped
+    # order (fg1,fg0,fg3,fg2,...), 128 KB. Sound 3x4K padded to 16K.
+    "timber": dict(
+        family="mcr3",
+        define="GAME_TIMBER",
+        zip_path="roms/timber.zip",
+        main_files=["timpg0.bin", "timpg1.bin", "timpg2.bin", "timpg3.bin"],
+        snd_files=["tima7.bin", "tima8.bin", "tima9.bin"],
+        snd_pad_to=16 * 1024,
+        gfx1_1_file="timbg1.bin",
+        gfx1_2_file="timbg0.bin",
+        gfx2_files=["timfg1.bin", "timfg0.bin", "timfg3.bin", "timfg2.bin",
+                    "timfg5.bin", "timfg4.bin", "timfg7.bin", "timfg6.bin"],
+    ),
     "tapper": dict(
         family="mcr3",
         define="GAME_TAPPER",
