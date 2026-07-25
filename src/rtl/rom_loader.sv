@@ -26,7 +26,10 @@ module rom_loader #(
     // (~3.4 s), and a card-less board only boots off baked BSRAM ROMs once
     // `error` asserts - so the default stays low to keep that path fast.
     // Boards that must have the card (MCR-3: sprites live there) raise it.
-    parameter [2:0]  MAX_RETRY   = 3'd3
+    parameter [2:0]  MAX_RETRY   = 3'd3,
+    // Which family's entries this core loads from a v2 pack
+    // (0=mcr1, 1=mcr2, 2=mcr3)
+    parameter [7:0]  FAMILY      = 8'd1
 )(
     input             clk,
     input             rst,
@@ -58,7 +61,8 @@ module rom_loader #(
     input             sd_wr_done,
 
     // ROM download bus (see map above)
-    output reg [16:0] dl_addr,
+    output reg [17:0] dl_addr,   // 18-bit: v2 payloads up to 256 KB
+    output reg        v2_mode,   // 1 = MCRPACK2 pack detected
     output reg [7:0]  dl_data,
     output reg        dl_wr,
 
@@ -81,6 +85,7 @@ localparam [3:0]
 
 // "MCRPACK1" / "MCRPREF1"
 localparam [63:0] MAGIC      = 64'h4D_43_52_50_41_43_4B_31;
+localparam [63:0] MAGIC_V2   = 64'h4D_43_52_50_41_43_4B_32;   // "MCRPACK2"
 localparam [63:0] MAGIC_PREF = 64'h4D_43_52_50_52_45_46_31;
 
 reg [3:0]  st;
@@ -89,9 +94,17 @@ reg [63:0] hdr;
 reg [7:0]  slot_cnt;     // header byte 8: number of slots in the pack
 reg [7:0]  pref_slot;    // prefs sector byte 8: last-selected slot
 reg [8:0]  hdr_cnt;
-reg [8:0]  sect_left_hi;   // sectors remaining in this slot (0..256)
+reg [15:0] sect_left_hi;   // sectors remaining in this slot (0..256)
+// v2 superblock parsing (within the single header-sector stream)
+reg        is_v2;
+reg [3:0]  ent_b;
+reg [7:0]  ent_fam, ent_typ, ent_slot;
+reg [31:0] ent_lba, ent_cnt;
+reg        v2_found;
+reg [31:0] v2_lba;
+reg [15:0] v2_cnt;
 reg [31:0] sector;
-reg [16:0] addr;
+reg [17:0] addr;
 reg        save_pend;
 reg [9:0]  save_idx;
 reg [2:0]  retry_cnt;    // transient failures so far
@@ -124,8 +137,11 @@ always @(posedge clk) begin
         st         <= L_WAIT;
         done       <= 1'b0;
         error      <= 1'b0;
-        addr       <= 17'd0;
+        addr       <= 18'd0;
         hdr_cnt    <= 9'd0;
+        is_v2      <= 1'b0;
+        v2_mode    <= 1'b0;
+        v2_found   <= 1'b0;
         hdr        <= 64'd0;
         watchdog   <= 27'd0;
         save_pend  <= 1'b0;
@@ -194,7 +210,32 @@ always @(posedge clk) begin
             else begin
                 if (sd_dout_valid) begin
                     if (hdr_cnt < 9'd8) hdr <= {hdr[55:0], sd_dout};
-                    if (hdr_cnt == 9'd8) slot_cnt <= sd_dout;
+                    if (hdr_cnt == 9'd7) is_v2 <= ({hdr[47:0], sd_dout} == MAGIC_V2[55:0]);
+                    if (hdr_cnt == 9'd8) slot_cnt <= sd_dout;   // v1 slot count / v2 entry count
+                    // v2: 16-byte mini-entries from byte 16 onward
+                    if (hdr_cnt >= 9'd16) begin
+                        ent_b <= ent_b + 4'd1;   // wraps 0..15 per entry
+                        case (ent_b)
+                        4'd0:  ent_fam  <= sd_dout;
+                        4'd1:  ent_typ  <= sd_dout;
+                        4'd2:  ent_slot <= sd_dout;
+                        4'd4:  ent_lba[7:0]    <= sd_dout;
+                        4'd5:  ent_lba[15:8]   <= sd_dout;
+                        4'd6:  ent_lba[23:16]  <= sd_dout;
+                        4'd7:  ent_lba[31:24]  <= sd_dout;
+                        4'd8:  ent_cnt[7:0]    <= sd_dout;
+                        4'd9:  ent_cnt[15:8]   <= sd_dout;
+                        4'd10: ent_cnt[23:16]  <= sd_dout;
+                        4'd11: ent_cnt[31:24]  <= sd_dout;
+                        4'd15: if (!v2_found && ent_fam == FAMILY && ent_typ == 8'd0
+                                   && ent_slot == {4'd0, cur_slot}) begin
+                                   v2_found <= 1'b1;
+                                   v2_lba   <= ent_lba;
+                                   v2_cnt   <= ent_cnt[15:0];
+                               end
+                        default: ;
+                        endcase
+                    end else ent_b <= 4'd0;
                     hdr_cnt <= hdr_cnt + 9'd1;
                 end
                 if (sd_rd_done) st <= L_HDRCHK;
@@ -202,22 +243,32 @@ always @(posedge clk) begin
         end
 
         L_HDRCHK: begin
-            if (hdr != MAGIC) begin
+            if (is_v2 && hdr == MAGIC_V2) begin
+                v2_mode <= 1'b1;
+                if (!v2_found) st <= L_ERR;   // no entry for (FAMILY, slot)
+                else begin
+                    sector       <= v2_lba;
+                    sect_left_hi <= v2_cnt;
+                    addr         <= 18'd0;
+                    st           <= L_NEXT;
+                end
+            end else if (hdr != MAGIC) begin
                 st <= L_ERR;            // blank or foreign card
             end else if ({4'd0, cur_slot} >= slot_cnt) begin
                 st <= L_ERR;            // pack has no such slot - loading it
                                         // would stream zeros over the ROMs
             end else begin
+                v2_mode      <= 1'b0;
                 sector       <= PACK_BASE + 32'd1 + (cur_slot * SLOT_SECTORS);
-                sect_left_hi <= 9'(SLOT_SECTORS);
-                addr         <= 17'd0;
+                sect_left_hi <= 16'(SLOT_SECTORS);
+                addr         <= 18'd0;
                 st           <= L_NEXT;
             end
         end
 
         // request the next sector of the payload
         L_NEXT: begin
-            if (sect_left_hi == 9'd0) begin
+            if (sect_left_hi == 16'd0) begin
                 st   <= L_DONE;
                 done <= 1'b1;
             end else begin
@@ -235,11 +286,11 @@ always @(posedge clk) begin
                     dl_addr <= addr;
                     dl_data <= sd_dout;
                     dl_wr   <= 1'b1;
-                    addr    <= addr + 17'd1;
+                    addr    <= addr + 18'd1;
                 end
                 if (sd_rd_done) begin
                     sector       <= sector + 32'd1;
-                    sect_left_hi <= sect_left_hi - 9'd1;
+                    sect_left_hi <= sect_left_hi - 16'd1;
                     st           <= L_NEXT;
                 end
             end
@@ -294,7 +345,9 @@ always @(posedge clk) begin
                 watchdog   <= 27'd0;
                 hdr_cnt    <= 9'd0;
                 hdr        <= 64'd0;
-                addr       <= 17'd0;
+                addr       <= 18'd0;
+                is_v2      <= 1'b0;
+                v2_found   <= 1'b0;
                 st         <= L_WAIT;
             end
         end

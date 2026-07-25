@@ -190,7 +190,7 @@ wire [7:0]  sd_dout;
 wire [31:0] sd_sector;
 wire        sd_wr_start, sd_wr_next, sd_wr_done;
 wire [7:0]  sd_wr_din;
-wire [16:0] dl_addr;
+wire [17:0] dl_addr;   // widened for pack v2 (loader port)
 wire [7:0]  dl_data;
 wire        dl_wr;
 wire        ldr_done, ldr_error, ldr_saved;
@@ -211,7 +211,7 @@ sd_reader #(.CLK_HZ(40_000_000)) sd (
     .sclk(sd_clk), .mosi(sd_cmd), .miso(sd_dat0), .cs_n(sd_dat3)
 );
 
-rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
+rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .FAMILY(8'd0)) loader (
     .clk(clk_sys), .rst(core_reset_raw | osd_restart),
     .slot(game_slot),
     // Boot consults the SD-saved preference; an OSD-commanded reload
@@ -225,7 +225,7 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256)) loader (
     .sd_wr_start(sd_wr_start), .sd_wr_din(sd_wr_din),
     .sd_wr_next(sd_wr_next), .sd_wr_done(sd_wr_done),
     .dl_addr(dl_addr), .dl_data(dl_data), .dl_wr(dl_wr),
-    .done(ldr_done), .error(ldr_error)
+    .v2_mode(), .done(ldr_done), .error(ldr_error)
 );
 
 // Download decode for the two ROMs that live here (the gfx ROMs decode

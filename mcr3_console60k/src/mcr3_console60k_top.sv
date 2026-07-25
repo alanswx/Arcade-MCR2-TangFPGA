@@ -279,9 +279,10 @@ wire [7:0]  sd_dout;
 wire [31:0] sd_sector;
 wire        sd_wr_start, sd_wr_next, sd_wr_done;
 wire [7:0]  sd_wr_din;
-wire [16:0] dl_addr;
+wire [17:0] dl_addr;   // 18-bit: v2 full-game payload (CPU+snd+bg+sprites)
 wire [7:0]  dl_data;
 wire        dl_wr;
+wire        dl_v2;     // loader detected a v2 pack (region map below)
 wire        ldr_done, ldr_error, ldr_saved;
 wire [3:0]  ldr_slot;      // slot actually loaded (SD-saved pref at boot)
 wire        osd_save;      // OSD: persist the selection to the prefs sector
@@ -307,7 +308,8 @@ sd_reader #(.CLK_HZ(40_000_000)) sd (
 
 // MAX_RETRY raised: MCR-3 sprites live on the card, so a boot that gives up
 // early renders white/garbage sprites rather than degrading gracefully.
-rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7)) loader (
+rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7),
+             .FAMILY(8'd2)) loader (   // 2 = mcr3 entries in a v2 pack
     .clk(clk_sys), .rst(core_reset_raw | osd_restart),
     .slot(game_slot),
     // Boot consults the SD-saved preference; an OSD-commanded reload
@@ -320,7 +322,7 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7)) loader 
     .sd_dout(sd_dout), .sd_dout_valid(sd_dv), .sd_rd_done(sd_rd_done),
     .sd_wr_start(sd_wr_start), .sd_wr_din(sd_wr_din),
     .sd_wr_next(sd_wr_next), .sd_wr_done(sd_wr_done),
-    .dl_addr(dl_addr), .dl_data(dl_data), .dl_wr(dl_wr),
+    .dl_addr(dl_addr), .dl_data(dl_data), .dl_wr(dl_wr), .v2_mode(dl_v2),
     .done(ldr_done), .error(ldr_error)
 );
 
@@ -329,8 +331,23 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7)) loader 
 // to SDRAM below. So the CPU/sound dl-write ports are held off here (a sprite
 // byte at dl_addr < 0x10000 must NOT land in the CPU ROM), and the core's
 // dl_wr is tied low (its bg dl-decode must not overwrite the baked bg).
-wire cpu_rom_we = 1'b0;
-wire snd_rom_we = 1'b0;
+// v2 pack region map (v1 pack = sprites-only blob, all bytes to SDRAM):
+//   0x00000-0x0FFFF CPU 64K -> rom_cpu_inst
+//   0x10000-0x13FFF snd 16K -> rom_snd_inst
+//   0x14000-0x17FFF bg plane1 16K -> core dl (dl_addr[15:14]==00)
+//   0x18000-0x1BFFF bg plane2 16K -> core dl (dl_addr[15:14]==01)
+//   0x1C000-0x3BFFF sprites 128K  -> SDRAM port2 (offset -0x1C000)
+wire dl_cpu_rng = dl_v2 && (dl_addr[17:16] == 2'b00);
+wire dl_snd_rng = dl_v2 && (dl_addr[17:14] == 4'b0100);
+wire dl_bg1_rng = dl_v2 && (dl_addr[17:14] == 4'b0101);
+wire dl_bg2_rng = dl_v2 && (dl_addr[17:14] == 4'b0110);
+wire dl_sp_rng  = dl_v2 ? (dl_addr >= 18'h1C000) : 1'b1;  // v1: everything
+wire [16:0] dl_sp_off = dl_v2 ? (dl_addr[16:0] - 17'h1C000) : dl_addr[16:0];
+wire cpu_rom_we = dl_wr && dl_cpu_rng;
+wire snd_rom_we = dl_wr && dl_snd_rng;
+// core-facing dl bus: bg planes at the core's own decode addresses
+wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
+wire [15:0] core_dl_addr = {1'b0, dl_bg2_rng, dl_addr[13:0]};
 
 // ------------------------------------------------------------------------
 // Sprite SDRAM (Tang module, J9): read port to the core + write port from the
@@ -379,6 +396,8 @@ always @(posedge clk_sdram) begin
 end
 
 reg        dl_wr_s1 = 1'b0, dl_wr_s2 = 1'b0;
+reg        dl_sp_rng_s1 = 1'b0, dl_sp_rng_s2 = 1'b0;
+reg [16:0] dl_sp_off_s1 = 17'd0, dl_sp_off_s2 = 17'd0;
 reg        ldrp_s1 = 1'b0, ldrp_s2 = 1'b0;  // ldr_done sync for the pattern writer
 reg [4:0]  pat_step = 5'd31;                // 31 = idle, 0..15 = write steps
 reg [4:0]  pat_wait = 5'd0;
@@ -396,6 +415,8 @@ reg        spq_nonff = 1'b0;
 always @(posedge clk_sdram) begin
     dl_wr_s1 <= dl_wr;
     dl_wr_s2 <= dl_wr_s1;
+    dl_sp_rng_s1 <= dl_sp_rng;   dl_sp_rng_s2 <= dl_sp_rng_s1;
+    dl_sp_off_s1 <= dl_sp_off;   dl_sp_off_s2 <= dl_sp_off_s1;
     // SCRUB REFRESH (2026-07-24): both AUTO_REFRESH and RAS-only refresh are
     // ineffective on this module (measured: data decays in ~30-100s under
     // either, while rows kept alive by READS survive - the fast sweeps were
@@ -416,9 +437,9 @@ always @(posedge clk_sdram) begin
         p1_req_r <= ~p1_req_r;
         scrub_row <= scrub_row + 7'd1;
     end
-    if (dl_wr_s1 && !dl_wr_s2) begin        // rising edge of a new dl byte
-        p1_a_r    <= {7'b0, dl_addr[14:0], dl_addr[16]};
-        p1_ds_r   <= {dl_addr[15], ~dl_addr[15]};
+    if (dl_wr_s1 && !dl_wr_s2 && dl_sp_rng_s2) begin   // new SPRITE dl byte
+        p1_a_r    <= {7'b0, dl_sp_off_s2[14:0], dl_sp_off_s2[16]};
+        p1_ds_r   <= {dl_sp_off_s2[15], ~dl_sp_off_s2[15]};
         p1_d_r    <= {dl_data, dl_data};
         p1_we_r   <= 1'b1;
         p1_req_r  <= ~p1_req_r;             // launch (toggle req vs ack)
@@ -907,8 +928,8 @@ mcr3 mcr3_core (
 
     // Download bus (16-bit on MCR-3). Held OFF here: CPU/sound/bg are baked;
     // the SD pack feeds sprites straight to SDRAM (see the sprite loader below).
-    .dl_addr(dl_addr[15:0]),
-    .dl_wr(1'b0),
+    .dl_addr(core_dl_addr),
+    .dl_wr(core_dl_wr),
     .dl_data(dl_data),
     .dl_nvram_wr(1'b0),
     .dl_din(),

@@ -1,15 +1,18 @@
-# SD card layout v2 — design plan (DEFERRED, do not implement yet)
+# SD card layout v2 — IMPLEMENTED (2026-07-24)
 
-> **STATUS: PLAN ONLY. Do not change the on-card format, `rom_loader.sv`,
-> or any `make_*_pack.py` until MCR-3 Tapper renders sprites from the card
-> as it stands today.** The current card (Tapper sprite pack at sector 2048)
-> is the working reference for the SDRAM sprite bring-up; reformatting it
-> would destroy the one known-good input to that debug. Come back here
-> afterwards.
->
-> Written 2026-07-22 while debugging the MCR-3 sprite path. The motivating
-> bug (below) is real and already bites, but it has a zero-format-change
-> workaround, so it does not force this work early.
+> **STATUS: IMPLEMENTED 2026-07-24** (loader auto-detects v1/v2 by magic;
+> v1 cards keep working - verified on hardware). As-built format differs
+> from the original plan in one way: the RTL reads a compact 16-byte
+> MINI-ENTRY table inside the superblock sector itself
+> `{family, type, slot, pad, start_lba LE32, sector_count LE32, pad4}`
+> (max 31 entries), while the rich 64-byte entries with CRC live in the
+> following sectors for tools only. Tools: `tools/make_pack_v2.py` builds
+> `mcr_pack_v2.img` (all families, slots matching each OSD roster);
+> `tools/write_pack_v2.py` writes it at sector 2048 **on the Mac**.
+> Payload layouts per family are documented in make_pack_v2.py's header.
+> Remaining v2 work: CRC verification in the loader, per-region entries if
+> a game ever breaks the fixed family layouts, core-id in MCRPREF (roadmap
+> item 5).
 
 ## Why this doc exists
 
