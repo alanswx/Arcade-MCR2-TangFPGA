@@ -1320,7 +1320,7 @@ ddr3_framebuffer #(
     .HEIGHT(480),
     .COLOR_BITS(12),
     .PREFETCH_DELAY(44),
-    .DVI_MODE(0)          // full HDMI, as NESTang uses
+    .DVI_MODE(1)          // DROPOUT TEST: no data islands, NO AUDIO - if the monitor's periodic resyncs stop, the audio/ACR packets are the cause
 ) fb_inst (
     .hclk_dbg(fb_hclk),
     .clk_27(clk27),
