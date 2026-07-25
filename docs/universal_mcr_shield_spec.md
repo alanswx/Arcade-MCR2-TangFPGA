@@ -82,6 +82,16 @@ makes it fit:
 | Status LEDs | 4 | out | direct |
 | Mode/sync straps | 3 | in | solder jumpers |
 | **ALL cabinet inputs + both DIP banks** (J2, J3, J4, J5, J6/IP4, SW1, SW2 = 56 bits) | **3** | in | 7× 74AHC165 chain (5 V-tolerant inputs) |
+
+> **⚠ J2 NAMING CONFLICT (found in EE review 2026-07-24, see `EENotes.md` #2):**
+> this spec mixes two connector conventions. On the SSIO-family boards the
+> master pinout matrix has **J2 = video out** (§ above and
+> `docs/mcr_game_input_matrix.md`); the input tables below inherited the
+> MCR3-Mono convention where IP0/IP1 land on J2. Until the refdes/renumber
+> pass is done together with the EE (one pass, then frozen — the wiring
+> docs cite these names), read the input tables' "J2" as "the P1 input
+> connector per that cabinet family", and treat `docs/MCR_Master_Pinouts.pdf`
+> as the authority for any physical harness question.
 | **All outputs** (coin meters, lamps — mono drives output_5+output_6 = 16 bits) | 4 | out | 2× 74HC595 chain + ULN2803 |
 | Service button | 1 | in | direct (opens the OSD) |
 | Spares | 7 | — | |
