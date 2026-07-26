@@ -74,6 +74,304 @@ next real milestone" within each section.
 
 ---
 
+## ascal (MiSTer scaler) evaluation — `ascal_test60k/`
+
+**Status 2026-07-25: PROVEN ON HARDWARE.** A standalone bring-up rig
+(MCR-timed test pattern -> ascal -> DDR3 -> DVI 720p, plus the same pattern
+straight out the J10 VGA pins at 15/31 kHz) builds clean and displays.
+Beacon confirms ascal auto-detects 512x480 and generates its own 720p
+raster. Timing: 0 setup / 0 hold violations, all clocks pass.
+
+Costs measured on GW5AT-LV60 (PnR, whole rig incl. DDR3 IP + DVI):
+6359 logic (11%), 56/118 BSRAM (48%), 37/118 DSP. ascal alone at synthesis:
+3274 logic / 23 BSRAM / 51 DSP with all five interpolators; 2263 logic /
+25 DSP with bicubic+polyphase disabled (MASK=0x07) — BSRAM is unchanged
+either way, it is the OHRES-sized output line buffers.
+
+Open items:
+1. **Horizontal scale is 4x too small; image repeats every 512 output px.**
+   Vertical is perfect (480 -> 720). Captured and measured via the MiraBox
+   card, two window settings:
+     window 960  -> content 240 px    window 1280 -> content 320 px
+   Both equal 512 * window / **2048**, i.e. ascal scales as though the input
+   line were 2048 px wide, not 512. 2048 is ascal's DEFAULT `IHRES`.
+   RULED OUT by measurement, do not re-investigate:
+     - the Avalon->DDR3 bridge. Beacon counters `dB4 LB4` = 46080 write AND
+       46080 read 16-byte words per frame, exactly 512*480*3/16. Data volume
+       and addressing are provably correct in both directions.
+     - input detection: ascal's own `i_hdmax`/`i_vdmax` report 511/479.
+     - output raster: ascal's `o_vs` frame counter advances.
+   ALSO RULED OUT, by debug taps added to ascal.vhd and read over the
+   beacon (`GOWIN DEBUG PATCH`, still in the tree) — every geometry value
+   ascal actually uses is CORRECT:
+     i_hsize = 512   o_ihsize = 512   o_hsize = 960   o_hmax = 1119
+     i_hdown = 0     i_himax = 511    i_vdmax = 479
+   (`d20 L10` then `d3C L22` on the beacon.) So it is NOT the input
+   auto-detect, NOT the i_clk->o_clk `<ASYNC>` crossing of o_ihsize, and
+   NOT the output window.
+   AND ruled out by experiment — the picture is byte-identical across:
+     OHRES 2048 vs 2304 (MiSTer default) ... no change
+     FRAC  4 vs 8 (MiSTer ships 8) ........ no change
+     N_BURST 256 vs 2048 (MiSTer ships 2048) no change
+   That last one is the strange part: N_BURST changes the RAM line stride
+   (1536 -> 2048 bytes), which cannot leave the image untouched if the
+   reader is using it. Config is now MiSTer's shipped set (OHRES default,
+   FRAC=8, N_BURST=2048, N_DW=128) and the fault survives all of it.
+
+   Precise symptom, measured off the capture card: within the correct
+   160..1119 window the full 8-bar source renders into 240 px, then 272 px
+   of black, then renders AGAIN at 672..911. Period 512 output px (equal to
+   the SOURCE width, and invariant under every generic above); horizontal
+   rate exactly 4x too fast. Vertical is perfect.
+
+   **GHDL SIMULATION RESULT (2026-07-25) — ascal AND our configuration are
+   CORRECT.** `sim/tb_ascal.vhd` drives ascal_gw with the identical source
+   (512x480 bars, MCR timing) and identical output window (720p, hmin=160,
+   hmax=1119), but replaces the Avalon side with an IDEAL zero-wait memory.
+   Result, via `tools/ascal_sim_check.py`:
+       non-black runs: [(160, 1119, 960)]     <- ONE full-width image
+       colour bars at 160,281,401,521,641...  <- 120 px each = 64 * 1.875
+   i.e. pixel-exact correct scaling, auto-detect included (i_himax=511).
+   Sharp-bilinear edge blending is visible in the transition pixels, so the
+   interpolator works too. Reference output kept as sim/ascal_out_ideal.txt.
+
+   => The fault is NOT ascal, NOT the generics, NOT auto-detect, NOT the
+   output window. The ONLY thing differing between that passing sim and the
+   failing hardware is `ascal_avl_ddr3.sv` + the real Gowin DDR3 controller.
+   The earlier "bridge ruled out" note above is SUPERSEDED: matching word
+   COUNTS per frame proved only that the right VOLUME moved, not that the
+   right addresses or ordering did.
+
+   **BRIDGE ALSO CLEARED — in simulation AND on hardware.**
+   `sim/tb_ascal_bridge.vhd` puts a VHDL transcription of ascal_avl_ddr3
+   plus a Gowin-style DDR3 app model into the same harness. Renders
+   pixel-perfect at BOTH 12-cycle latency with light backpressure AND
+   40-cycle latency with 50% backpressure. So the bridge logic is right and
+   read latency/backpressure are not the gap.
+   Then on REAL hardware: `src/ascal/avl_ddr3_memtest.sv` +
+   `ascal_test60k/build_memtest.tcl` (top `ddr3_avltest_top.sv`) drive the
+   SAME bridge and SAME controller with an address-derived payload — so a
+   wrong ADDRESS fails as loudly as wrong DATA, which is what matching word
+   counts could never have caught. Beacon: **`d08 L..`** — 8 mismatches at
+   startup, then ZERO for 20+ s across thousands of full write/verify
+   passes, while the pass counter free-runs. The Avalon/DDR3 path is sound.
+
+   **CONCLUSION: GowinSynthesis miscompiles ascal.** Everything else is
+   eliminated by measurement: ascal + config correct (3 sims), bridge
+   correct (2 sims + hardware memtest), DDR3 path correct (hardware
+   memtest), geometry correct (debug taps). Consistent with this file
+   already having two PROVEN GowinSynthesis RAM-inference failures.
+   Note GowinSynthesis IGNORES both `syn_srlstyle` and `syn_ramstyle`
+   (verified: adding them changes neither SSRAM 21 nor register count 6483,
+   byte for byte), so upstream's three `ramstyle "logic"` guards - which
+   exist precisely to keep the horizontal pipeline out of RAM - are
+   SILENTLY INERT on this toolchain. ascal builds 21 distributed LUT-RAM
+   primitives (RAM16S4/RAM16SDP4) regardless; `o_hpixq` is a 7-deep queue
+   whose taps are all read at once, which a single-read-port LUT RAM cannot
+   provide. That remains the best-fitting mechanism (horizontal broken,
+   vertical fine - o_vpixq is only 4x24 bits and stays in registers) but is
+   NOT yet proven, since forcing the attribute had no effect.
+
+   **STEP 1 DONE 2026-07-25 — RAM INFERENCE IS *NOT* THE CAUSE.** Disproven,
+   do not retry. What was done and what it showed:
+     * `o_hpixq` split from `arr_pixq(2 TO 8)` into 7 discrete signals.
+       GowinSynthesis then inferred *BSRAM* instead (PA2122 returned) and the
+       register count FELL 6483->6003 - it infers memory from the 4-element
+       `arr_pix` arrays too, not just the shift chain.
+     * **`syn_keep` + `syn_preserve` DO work** where the style attributes do
+       not. They are a different lever: they forbid the net being optimised
+       away/merged at all. Applying them moved the signals into real
+       flip-flops - register count 6483 -> 6651 (o_hpixq) -> 6743
+       (o_hfrac/o_div/o_dir), PA2122 gone, 0 setup / 0 hold violations.
+     * With ALL FOUR guarded signals provably in registers, the hardware
+       picture is byte-identical: bars still 30 px, content still 160..399
+       and 672..911. So the fault is elsewhere.
+   Note SSRAM stayed at 21 (RAM16S4 x10, RAM16SDP4 x10) throughout, so those
+   LUT-RAMs belong to something else in ascal, not these four signals.
+   The patches are KEPT: they implement upstream's documented intent (the
+   `ramstyle "logic"` guards exist precisely to keep these out of RAM, and
+   Gowin ignores them), they cost ~260 registers, and timing is unaffected.
+
+   Reusable finding for ANY MiSTer core ported to Gowin: GowinSynthesis
+   1.9.11.03 silently ignores `ramstyle`, `syn_ramstyle` AND `syn_srlstyle`,
+   but honours `syn_keep` / `syn_preserve`. Use those to control inference.
+
+   **STEP 2 DONE — INTERNAL STATE PROVABLY DIVERGES.** `dbg_o_hacc` and
+   `dbg_o_dcpt` taps added to ascal.vhd, sampled at output (line 100, pixel
+   300) by IDENTICAL logic in `ascal_test60k_top.sv` and
+   `sim/tb_ascal_bridge.vhd`:
+       signal    GHDL (renders correctly)   hardware (broken)
+       o_hacc    1472                       ~1728-1791 (jittery)
+       o_dcpt    241                        124  (stable)
+   Same RTL, same data delivered to it, different internal state - the
+   destination counter advances at roughly HALF rate on hardware. This is
+   the horizontal copy/advance pipeline, not the memory path.
+
+   **SRL/LUT-RAM inference is NOT the mechanism either — disproven.**
+   syn_keep/syn_preserve were extended to every shift-register pipeline in
+   the output path: o_copyv, o_dcptv, o_dcptv_clr/inc (12-deep 1-bit chains
+   that gate the destination counter increment, and which upstream does NOT
+   guard because Quartus never RAMs them), o_hsv/o_vsv/o_dev/o_pev/o_end.
+   This DID take effect - SSRAM fell 21 -> 15 (RAM16SDP1 gone entirely,
+   RAM16S4 10->7, RAM16SDP4 10->8), registers rose 6743 -> 6930, 0 setup /
+   0 hold violations - and the picture and the probe values did NOT change
+   at all. Cumulatively ~450 registers were moved out of RAM across all the
+   guards with zero behavioural effect.
+
+   **MORE ELIMINATED 2026-07-25 (all built clean, all changed NOTHING):**
+     * Clock phase. `sim/tb_ascal_phase.vhd` reruns with avl_clk offset 90
+       deg from o_clk (hardware has two independent 74.25 MHz PLLs; the
+       original testbench made them phase-identical, masking every `<ASYNC>`
+       crossing). Still renders perfectly, and o_dcpt stays 241-242
+       regardless of phase - so the hardware's 124 is a real divergence, not
+       a testbench artefact.
+     * Explicit-width arithmetic in the sCOPY horizontal accumulator. The
+       theory was good: `(o_hacc_next - 2*o_hsize + 8*OHRESH) MOD 8*OHRESH`
+       peaks at 49151 (16 bits) but lands in `dif_v`, declared 15 bits,
+       whereas the VERTICAL twin uses hardcoded 16384/8192 and peaks at
+       32767 which FITS - neatly explaining horizontal-broken/vertical-fine.
+       Rewritten with wide explicit unsigned + mask (MOD by a power of two).
+       Picture and probe values bit-identical. Disproven.
+     * Burst bookkeeping. `o_hburst` = 1 on BOTH sim and hardware (correct
+       for N_BURST=2048: a 1536-byte line fits one 2048-byte burst).
+       NOTE the o_copylev comparison is INCONCLUSIVE as instrumented - the
+       hardware beacon samples it continuously while the sim prints one
+       instant at the probe point. To settle it, latch o_copylev at the
+       probe point on hardware the way o_dcpt already is.
+
+   `src/ascal/ascal.vhd` is now REGENERATED by `tools/patch_ascal_gowin.py`
+   from the upstream copy in refs/, carrying only the minimal patch set
+   (syn_srlstyle, without which PnR fails PA2122; plus debug taps) - 44
+   diverged lines, down from 176. That script also records every patch that
+   was tried and rejected, so nothing gets re-applied by accident.
+
+   **FAULT FULLY LOCALISED 2026-07-25.** With the probe latched at the SAME
+   raster point in both sim and hardware (line 100, pixel 300):
+       o_hburst           sim 1     hw 1     MATCH
+       {o_copylev,hbcpt}  sim 04    hw 04    MATCH
+       o_dcpt             sim 241   hw 124   DIVERGE
+   So burst fetching and the copy queue are identical - the copy FSM is NOT
+   starved (an earlier "starved queue" reading was an artefact of comparing a
+   continuous hardware sample against a single sim instant; it is now latched).
+   In sCOPY, o_dcpt_inc fires EVERY cycle once o_dshi hits 0, while the SOURCE
+   advances only on hcarry_v (Bresenham; carry rate should be 2*o_ihsize /
+   2*o_hsize = 1024/1920 = 53% for 512->960). Source consumed 4x too fast =>
+   hcarry_v asserting far too often => line ends early => o_dcpt only reaches
+   124. The fault is the `dif_v >= 4*OHRESH` carry decision and nothing else.
+   ALSO: the fault is MODE-INDEPENDENT - forcing nearest (mode 0), which
+   bypasses every interpolator but shares this advance logic, reproduces it
+   byte-identically. So the interpolator data path is innocent too.
+
+   **UNSIGNED REWRITE (2026-07-25) — ALSO DISPROVEN.** o_hacc/o_hacc_ini/
+   o_hacc_next converted from `natural RANGE 0 TO 4*OHRESH-1` to explicit
+   `unsigned(NBH4-1 DOWNTO 0)`, so every MOD by 4*/8*OHRESH became plain
+   wraparound and the `>= 4*OHRESH` carry test became one borrow bit.
+   Bit-identical by construction, analysed clean under GHDL, built clean
+   (0 setup / 0 hold, hclk 82.1 MHz). Hardware: o_dcpt still 124 vs the
+   sim's 241, picture byte-identical. REVERTED - the miscompile is not in
+   how the accumulator arithmetic is EXPRESSED, at either the expression or
+   the signal-type level.
+
+   **HARD-BAKED INPUT GEOMETRY (2026-07-25) — ALSO NO CHANGE.** iauto=0 with
+   himin/himax=0/511, vimin/vimax=0/479 pins the input window and removes the
+   whole auto-detect path (and its i_clk->o_clk <ASYNC> crossings). Picture
+   byte-identical. Reverted to iauto=1. The `iauto`/`himin`/`himax`/`vimin`/
+   `vimax` ports remain exposed on ascal_gw for cores that need overscan
+   cropped.
+
+   **PROOF IT IS GOWINSYNTHESIS (2026-07-25).** GHDL has its own synthesis
+   engine, so ascal was run through THAT and the result simulated - the
+   gate-level check Gowin's `pragma protect` encrypted .vg denies us:
+       ghdl synth --std=08 --out=verilog ascal_gw  -> 1 MB Verilog netlist
+   Simulated with verilator against the REAL mcr_testpattern.sv and REAL
+   ascal_avl_ddr3.sv (sim/vsynth/), 640x480 output window:
+       bars at 81-158,161-238,241-318,321-398,401-478,481-558,561-638
+       ~78-80 px each (expected 640/8 = 80), spanning the full window
+   PERFECT. So ascal's coding style survives a second, independent
+   inference engine (memory inference, FSM extraction, register mapping)
+   and the fault is SPECIFIC TO GOWINSYNTHESIS. This is the evidence to
+   send Gowin.
+
+   Attempting to USE that netlist as a workaround - feeding Gowin the
+   GHDL-generated Verilog instead of the VHDL, which bypasses its VHDL
+   front-end entirely (ascal_test60k/build_ghdlnl.tcl +
+   src/ascal_ghdlnl_top.sv + src/ascal/ascal_gw_synth.v) - hits a THIRD
+   GowinSynthesis defect: `ERROR (CK3001) : The CASI configuration of
+   'u_ascal/u_ascal/mult_122505_s3' is incorrect`, i.e. it mis-maps the
+   netlist's multipliers into cascaded DSP blocks. `syn_multstyle="logic"`
+   is ignored, like every other style attribute. Not pursued further.
+
+   TOOLING NOTE: verilator runs this netlist in ~2 SECONDS where iverilog
+   took over an hour without finishing, and GHDL behavioural takes ~30 min.
+   Use verilator for any future ascal work. Harness in sim/vsynth/.
+   Watch the frame rate: a 640x480 output raster free-runs at ~177 Hz while
+   the source is 60 Hz, so dump a LATE output frame (24+) or the
+   framebuffer has not been filled yet and everything reads black.
+
+   **BUG REPORT WRITTEN:** `docs/gowin_bug_report.md` - self-contained, for
+   submission to Gowin once the licence comes through. Covers all four
+   findings (silent horizontal miscompile, PA2122, CK3001, ignored
+   attributes) with upstream line numbers, measured evidence tables and a
+   minimal no-board repro for PA2122.
+
+   **WHERE THIS STOPS.** Every targeted hypothesis is exhausted. The fault
+   is a GowinSynthesis miscompile of ascal's horizontal Bresenham advance;
+   it survives every rephrasing of that logic, is mode-independent, and
+   cannot be chased further from RTL because the .vg netlist ships
+   `pragma protect` encrypted, blocking gate-level simulation.
+   REMAINING OPTIONS (need something outside this toolchain/IDE):
+     a. Try a different Gowin IDE version. Only V1.9.11.03 Education is
+        installed here; the bug may not exist in another release.
+     b. Synplify Pro instead of GowinSynthesis - not in the Education
+        edition, needs a licensed IDE.
+     c. Report to Gowin. The repro is small and specific: ascal's sCOPY
+        carry decision, correct in GHDL, wrong in hardware, with all inputs
+        to it proven identical by on-chip taps.
+
+   NEXT STEPS, in order of expected value:
+   1. **Clock-phase hypothesis (DONE - disproven, see above).** The testbench drives o_clk
+      and avl_clk from the same generator, so they are phase-IDENTICAL - and
+      that masks every `<ASYNC>` crossing inside ascal. On hardware they are
+      hclk (HDMI PLL) and clk_x1 (DDR3 controller PLL): both 74.25 MHz off
+      the same 27 MHz, but SEPARATE PLLs, so arbitrary fixed phase.
+      `sim/tb_ascal_phase.vhd` reruns the identical test with avl_clk offset
+      90 degrees. If the fault reproduces, this is a genuine CDC problem the
+      first three sims could never have caught, and the fix is structural:
+      run ascal's o_clk from clk_x1 and cross into the TMDS serialiser's
+      hclk domain through an explicit FIFO (what gbatang does), rather than
+      handing ascal two independent same-frequency clocks.
+   2. If phase is not it, tap further up the horizontal chain (o_copy state,
+      o_dshi, o_off) to find where 241 becomes 124.
+   2. Synplify Pro honours syn_ramstyle natively and would sidestep
+      GowinSynthesis entirely — but it is NOT in this Education-edition IDE
+      install (`~/IDE/bin` has GowinSynthesis only). Needs a licensed IDE.
+   3. Report upstream/Gowin. Minimal repro is small: a 7-deep array of
+      records with all taps read, plus `ramstyle "logic"`.
+
+   Also found by GHDL, worth reporting upstream: ascal has three `natural`
+   underflows that no synthesis tool range-checks — ascal.vhd:2247
+   (`o_pshift <= o_off(0)-1`), :2274 (`o_pshift <= o_pshift-1`) and :2250
+   (`o_ihsizem <= o_ihsize + o_off(0) - 2`). All are benign in hardware
+   (the values are only read under guards that make them non-negative), but
+   they abort GHDL. `sim/mk_ascal_sim.py` regenerates sim/ascal_sim.vhd with
+   exactly those three guards so the SYNTHESIS source stays untouched.
+2. **No HDMI audio.** The rig uses `src/dvi_tx/dvi_tx_ext.sv` (DVI only)
+   because ascal owns the output timing and hdl-util's `hdmi` module wants
+   to own it. Audio needs ascal -> line FIFO -> `hdmi.sv`.
+3. **Polyphase needs coefficients.** `poly_*` ports are exposed but tied
+   off; modes 0-3 work without them. Loading a MiSTer filter file needs a
+   small ROM + loader (256 entries: [H][V][H2][V2] x 16 phases x 4 taps,
+   10-bit signed).
+4. **Integrating into mcr2_console60k** replaces `ddr3_framebuffer`. BSRAM
+   is the binding constraint there (currently 94/118) — see the ROM->SDRAM
+   item, which is the lever if it does not fit.
+5. `ascal.vhd` carries ONE local patch (`syn_srlstyle`, marked "GOWIN PORT
+   PATCH") — GowinSynthesis ignores Quartus' `ramstyle` guards and packs
+   ascal's pipelines into SP/SPX9 block RAM with an unsupported write mode
+   (PA2122). Re-apply on any upstream refresh.
+
+---
+
 ## Cocktail mode — unaddressed across every game
 
 **Everything currently assumes an upright cabinet.** This is not one switch;
@@ -315,6 +613,25 @@ budget exists anymore. See the Shield PCB section.
   latency) — believed benign, unconfirmed. **FLASH currently holds the
   SILENT DVI test build**; restore sound with:
   `openFPGALoader -b tangconsole -f --verify bitstreams/console60k_mcr3_tapper_sprites_working.fs`
+
+- **Sprite "slight offset" report (2026-07-25, first v2-card session) —
+  suspect removed, verification needs eyes.** Facts established blind:
+  (1) `src/rtl/mcr3.vhd` diffed against upstream MiSTer — IDENTICAL except
+  the documented patches (INIT_FILE dprams, vcntout/cpu_halt_n exports),
+  so sprite/bg COMPOSITION (which happens inside the core) cannot differ
+  from MiSTer's. (2) Top-level sprite wiring matches MiSTer's
+  Arcade-MCR3.sv structurally. (3) The one real divergence was OUR
+  diagnostic-era `sp_addr_r` register: +1 clk_sdram of sprite fetch
+  latency that MiSTer does not have -> plausible horizontal shift.
+  REMOVED (sp_addr now feeds the controller directly, MiSTer-exact) and
+  in flash as of f7b5d39. Zoomed frame comparison vs the MobyGames
+  reference hinted the mug sprite sinking ~4px into the bar top in the
+  OLD build, but the frames are different game moments - inconclusive.
+  NEXT: with HDMI back through the capture card, grab the same attract
+  moment and measure sprite-vs-bar alignment against the reference; if
+  still offset, the remaining suspects are sp fetch-window timing at
+  225-deg (data-arrival vs the core's read window) - test by comparing a
+  MiSTer screenshot of the same frame.
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for
