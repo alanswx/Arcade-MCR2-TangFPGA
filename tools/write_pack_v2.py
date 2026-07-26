@@ -1,4 +1,4 @@
-"""Write mcr_mcr_pack_v2.img to an SD card, with guard rails (macOS).
+"""Write mcr_pack_v2.img to an SD card, with guard rails (macOS).
 
 The pack is raw sectors - no filesystem - starting at sector 2048 (1 MiB
 into the card), where src/rtl/rom_loader.sv reads it. This script exists
@@ -31,7 +31,7 @@ import sys
 
 SECTOR = 512
 PACK_BASE = 2048        # must match rom_loader.sv / make_rompack.py
-IMAGE = "mcr_mcr_pack_v2.img"
+IMAGE = "mcr_pack_v2.img"
 
 
 def run(*cmd, capture=True):
@@ -96,7 +96,7 @@ def main(argv):
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     image = os.path.join(here, IMAGE)
     if not os.path.exists(image):
-        sys.exit(f"{IMAGE} not found - run: python3 tools/make_rompack.py")
+        sys.exit(f"{IMAGE} not found - run: python3 tools/make_pack_v2.py")
     size = os.path.getsize(image)
     # PACK_BASE-1 is the prefs sector (last-selected game, written by the
     # FPGA) - include it in the overlap guard even though we don't write it.
