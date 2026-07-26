@@ -35,6 +35,10 @@ case "$(uname -s)" in
     export LD_LIBRARY_PATH="$GWROOT/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}"
     [ -n "$FT" ] && export LD_PRELOAD="$FT${LD_PRELOAD:+:$LD_PRELOAD}"
     export QT_QPA_PLATFORM=offscreen
+    # A live DISPLAY makes gw_sh's Qt attempt GLX despite the offscreen
+    # platform and die with "X Error ... GLXCreateNewContext" before doing
+    # any work. Headless means headless.
+    unset DISPLAY WAYLAND_DISPLAY
     ;;
   *) echo "unsupported host: $(uname -s)" >&2; exit 1 ;;
 esac
