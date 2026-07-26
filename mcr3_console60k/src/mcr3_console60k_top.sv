@@ -347,7 +347,13 @@ wire cpu_rom_we = dl_wr && dl_cpu_rng;
 wire snd_rom_we = dl_wr && dl_snd_rng;
 // core-facing dl bus: bg planes at the core's own decode addresses
 wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
-wire [15:0] core_dl_addr = {1'b0, dl_bg2_rng, dl_addr[13:0]};
+// NOTE the core's crossed wiring (upstream quirk): the dpram INIT'd from
+// rom_gfx1_1.hex is written by dl range "01", and the rom_gfx1_2.hex one
+// by "00". So blob plane 1 (gfx1_1) must go to core range "01" - selector
+// is dl_bg1_rng, NOT dl_bg2_rng. Getting this backwards made CARD-loaded
+// games show the old swapped bg colors while baked boots were correct
+// (exactly the first v2-card session's report).
+wire [15:0] core_dl_addr = {1'b0, dl_bg1_rng, dl_addr[13:0]};
 
 // ------------------------------------------------------------------------
 // Sprite SDRAM (Tang module, J9): read port to the core + write port from the
