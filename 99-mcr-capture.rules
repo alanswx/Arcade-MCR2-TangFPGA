@@ -1,0 +1,2 @@
+# MacroSilicon MS2109 HDMI capture (MCR bench) - allow unprivileged USB reset
+SUBSYSTEM=="usb", ATTRS{idVendor}=="534d", ATTRS{idProduct}=="2109", MODE="0664", GROUP="plugdev"

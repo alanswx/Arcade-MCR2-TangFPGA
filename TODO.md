@@ -15,11 +15,17 @@ next real milestone" within each section.
    a corrupt un-verified flash, not the rate change. A fractional-exact
    divider was tried and made things WORSE (clk_audio is a real clock
    downstream; edge jitter >> ppm offset) - reverted, do not repeat.
-   RESIDUAL: dropout % drifts downward over session time on identical
-   builds - board-vs-capture-card thermal is unresolved (card USB-reset
-   needs sudo; its 534d:2109 id is not in our udev rules). Ground truth
-   next: the user's monitor impression on the consistent-32k build, and
-   the DDR3 wr-FIFO hold margins remain the board-side suspect.
+   RESIDUAL RESOLVED TO BOARD THERMAL 2026-07-26: udev rule added for the
+   capture card (99-mcr-capture.rules, 534d:2109 -> plugdev) enabling
+   unprivileged USB reset; a fresh card reset does NOT recover the rate
+   (86% -> 71%), but an overnight cool-down took the identical build from
+   28% to 86% content. The drift is the BOARD warming - suspects: TMDS
+   analog margin, or the DDR3 wr-FIFO holds (+0.001 ns). Ground truth
+   still wanted: the user's monitor impression on the consistent-32k
+   build (warm vs cold). Cosmetic: /etc/udev/rules.d/99-mcr-capture.rules
+   has a stray indented EOF line from the heredoc - harmless, cleanable
+   with: sudo cp 99-mcr-capture.rules /etc/udev/rules.d/ (clean copy in
+   the repo root).
    Original notes: Mechanism cornered: audio data islands, 48 kHz
    divider actually emits 48,027 Hz vs ACR constants claiming 48,000 →
    sinks periodically resync. The 32 kHz quick-try killed sync because ONLY
