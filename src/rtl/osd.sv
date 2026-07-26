@@ -301,12 +301,15 @@ always @(*) begin
     ch = 8'h20;   // space
     case (p1_row)
         4'd0:  ch = row_char(TXT_TITLE, p1_col);
-        4'd3:  ch = row_char(TXT_G0, p1_col);
-        4'd4:  ch = row_char(TXT_G1, p1_col);
-        4'd5:  ch = row_char(TXT_G2, p1_col);
-        4'd6:  ch = row_char(TXT_G3, p1_col);
-        4'd7:  ch = row_char(TXT_G4, p1_col);
-        4'd8:  ch = row_char(TXT_G5, p1_col);
+        // Game rows: names beyond NUM_GAMES stay blank. (The gate was
+        // documented but never implemented - a 3-game family showed the
+        // MCR-2 default names as unselectable ghost rows.)
+        4'd3:  ch = (NUM_GAMES > 4'd0) ? row_char(TXT_G0, p1_col) : 8'h20;
+        4'd4:  ch = (NUM_GAMES > 4'd1) ? row_char(TXT_G1, p1_col) : 8'h20;
+        4'd5:  ch = (NUM_GAMES > 4'd2) ? row_char(TXT_G2, p1_col) : 8'h20;
+        4'd6:  ch = (NUM_GAMES > 4'd3) ? row_char(TXT_G3, p1_col) : 8'h20;
+        4'd7:  ch = (NUM_GAMES > 4'd4) ? row_char(TXT_G4, p1_col) : 8'h20;
+        4'd8:  ch = (NUM_GAMES > 4'd5) ? row_char(TXT_G5, p1_col) : 8'h20;
         4'd10: ch = row_char(TXT_HELP, p1_col);
         4'd12: begin
             case (state)

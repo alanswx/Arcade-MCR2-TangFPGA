@@ -509,7 +509,7 @@ always @(posedge clk_sdram) begin
     ldrd_s2 <= ldrd_s1;
     sp_addr_r <= chk_active ? {7'd0, chk_addr} : {7'd0, core_sp_addr};
     if (!chk_active) chk_timer <= chk_timer + 34'd1;
-    if ((ldrd_s1 && !ldrd_s2) || (!chk_active && chk_timer == 34'd8_589_000_000)) begin
+    if (1'b0) begin   // sweep RETIRED (needed the sp mux; diagnostics evicted)
         chk_active <= 1'b1;
         chk_full   <= (pass_n[1:0] == 2'd3);   // every 4th pass: full array
         chk_timer  <= 34'd0;
@@ -713,10 +713,11 @@ sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     // HALF/FULL experiment: engine disconnected (parked at 0) - only the
     // sweep touches the array. Mux REGISTERED: combinational chk mux into
     // the controller's addr compare was -0.148ns setup at 80MHz.
-    // ENGINE RECONNECTED (225-deg fix in). The periodic sweep still borrows
-    // the bus ~26ms every ~107s as an array-health monitor (E1 allff_lo
-    // should stay ~0 forever now); sprites glitch that instant only.
-    .sp_addr(sp_addr_r),
+    // Sprite address straight from the core, MiSTer-exact: the diagnostic
+    // sp_addr_r register added a cycle of fetch latency (a suspect for a
+    // slight sprite X offset), and the health sweep that needed the mux is
+    // retired with the rest of the bring-up instrumentation.
+    .sp_addr({7'd0, core_sp_addr}),
     .sp_q(sp_q),
     .dbg_refresh(dbg_refresh),
     .dbg_blk0(dbg_blk0), .dbg_blk1(dbg_blk1)
