@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="ddr3_avltest_top" Register="93" Alu="49" Lut="27" T_Register="3665(93)" T_Alu="211(49)" T_Lut="2581(27)" T_Bsram="8(0)">
+ <SubModule name="pll_inst"/>
+ <SubModule name="pll27_inst"/>
+ <SubModule name="pll_ddr3_inst"/>
+ <SubModule name="u_ddr3" Register="3387" Alu="125" Lut="2112" Bsram="8" T_Register="3387(3387)" T_Alu="125(125)" T_Lut="2112(2112)" T_Bsram="8(8)"/>
+ <SubModule name="u_test" Register="70" Alu="13" Lut="197" T_Register="70(70)" T_Alu="13(13)" T_Lut="197(197)"/>
+ <SubModule name="u_bridge" Register="28" Lut="66" T_Register="28(28)" T_Lut="66(66)"/>
+ <SubModule name="beacon" Register="87" Alu="24" Lut="179" T_Register="87(87)" T_Alu="24(24)" T_Lut="179(179)"/>
+</Module>

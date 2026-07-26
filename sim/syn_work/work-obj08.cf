@@ -1,0 +1,7 @@
+v 4
+file "/home/alans/mister/Arcade-MCR2-TangFPGA/sim/" "../src/ascal/ascal_gw.vhd" "39ef2d22569f1a6926c8fa0da324dd799b4142b6" "20260726001225.388":
+  entity ascal_gw at 25( 1497) + 0 on 13;
+  architecture rtl of ascal_gw at 144( 7469) + 0 on 14;
+file "/home/alans/mister/Arcade-MCR2-TangFPGA/sim/" "ascal_sim.vhd" "1dd8b43f3dc65df017f5dd8a7d98d1c0de2e017d" "20260726001225.383":
+  entity ascal at 77( 2981) + 0 on 11;
+  architecture rtl of ascal at 284( 10781) + 0 on 12;

@@ -63,7 +63,14 @@ module ascal_avl_ddr3 #(
     output wire [N_DW-1:0]      app_wdf_data,
     output wire [N_DW/8-1:0]    app_wdf_mask,
     input  wire                 app_rd_data_valid,
-    input  wire [N_DW-1:0]      app_rd_data
+    input  wire [N_DW-1:0]      app_rd_data,
+
+    // Diagnostics: one-cycle pulse per word actually handed to / taken from
+    // the controller. Counting these per frame is the only direct way to see
+    // whether the burst expansion is moving the expected number of words
+    // (512x480 at 24bpp = 737280 B = 46080 x 16-byte words per frame).
+    output wire                 dbg_wr_beat,
+    output wire                 dbg_rd_beat
 );
 
     localparam ST_IDLE  = 2'd0;
@@ -93,6 +100,9 @@ module ascal_avl_ddr3 #(
     assign app_wdf_end  = 1'b1;               // one 128-bit beat per command
     assign app_wdf_data = avl_writedata;
     assign app_wdf_mask = ~avl_byteenable;    // Gowin mask is active-high
+
+    assign dbg_wr_beat = wr_go;
+    assign dbg_rd_beat = app_rd_data_valid;
 
     assign avl_readdata      = app_rd_data;
     assign avl_readdatavalid = app_rd_data_valid;

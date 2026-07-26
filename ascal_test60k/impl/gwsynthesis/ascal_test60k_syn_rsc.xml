@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="ascal_test60k_top" Register="181" Alu="118" Lut="61" T_Register="6506(181)" T_Alu="1555(118)" T_Lut="4914(61)" T_MULTALU27X18="15(0)" T_MULT12X12="32(0)" T_MULTADDALU12X12="6(0)" T_Bsram="32(0)" T_Ssram="18(0)">
+ <SubModule name="pll_inst"/>
+ <SubModule name="pll27_inst"/>
+ <SubModule name="pattern" Register="59" Alu="43" Lut="155" MULT12X12="2" T_Register="59(59)" T_Alu="43(43)" T_Lut="155(155)" T_MULT12X12="2(2)"/>
+ <SubModule name="pll_hdmi27_inst"/>
+ <SubModule name="pll_ddr3_inst"/>
+ <SubModule name="u_ddr3" Register="3387" Alu="125" Lut="2112" Bsram="8" T_Register="3387(3387)" T_Alu="125(125)" T_Lut="2112(2112)" T_Bsram="8(8)"/>
+ <SubModule name="u_ascal" T_Register="2721(0)" T_Alu="1215(0)" T_Lut="2126(0)" T_MULTALU27X18="15(0)" T_MULT12X12="30(0)" T_MULTADDALU12X12="6(0)" T_Bsram="24(0)" T_Ssram="18(0)">
+  <SubModule name="u_ascal" Register="2721" Alu="1215" Lut="2126" MULTALU27X18="15" MULT12X12="30" MULTADDALU12X12="6" Bsram="24" Ssram="18" T_Register="2721(2721)" T_Alu="1215(1215)" T_Lut="2126(2126)" T_MULTALU27X18="15(15)" T_MULT12X12="30(30)" T_MULTADDALU12X12="6(6)" T_Bsram="24(24)" T_Ssram="18(18)"/>
+ </SubModule>
+ <SubModule name="u_bridge" Register="34" Lut="69" T_Register="34(34)" T_Lut="69(69)"/>
+ <SubModule name="dvi_out" T_Register="42(0)" T_Alu="30(0)" T_Lut="233(0)">
+  <SubModule name="ch_blue" Register="14" Alu="10" Lut="79" T_Register="14(14)" T_Alu="10(10)" T_Lut="79(79)"/>
+  <SubModule name="ch_green" Register="14" Alu="10" Lut="80" T_Register="14(14)" T_Alu="10(10)" T_Lut="80(80)"/>
+  <SubModule name="ch_red" Register="14" Alu="10" Lut="74" T_Register="14(14)" T_Alu="10(10)" T_Lut="74(74)"/>
+ </SubModule>
+ <SubModule name="beacon" Register="82" Alu="24" Lut="158" T_Register="82(82)" T_Alu="24(24)" T_Lut="158(158)"/>
+</Module>

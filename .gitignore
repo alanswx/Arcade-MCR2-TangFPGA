@@ -52,3 +52,9 @@ mcr3_console60k/src/*.hex
 mcr3_console60k/impl/gwsynthesis/
 mcr3_console60k/impl/temp/
 mcr3_console60k/impl/pnr/
+
+# ascal simulation scratch (regenerate with sim/mk_ascal_sim.py + ghdl)
+sim/ghdl_work/
+sim/ascal_sim.vhd
+sim/*.log
+sim/ascal_*_out*.txt

@@ -253,6 +253,18 @@ ENTITY ascal IS
 		avl_byteenable     : OUT   std_logic_vector(N_DW/8-1 DOWNTO 0);
 
 		------------------------------------
+		-- GOWIN DEBUG PATCH: observers for the horizontal-scaling
+		-- investigation. Read out over the UART beacon; nothing else uses
+		-- them. Delete together with the assignments at the end of the
+		-- architecture once the fault is understood.
+		dbg_o_hacc         : OUT   std_logic_vector(15 DOWNTO 0);
+		dbg_o_dcpt         : OUT   std_logic_vector(11 DOWNTO 0);
+		dbg_i_himax        : OUT   natural RANGE 0 TO 4095;
+		dbg_i_hsize        : OUT   natural RANGE 0 TO 4095;
+		dbg_o_ihsize       : OUT   natural RANGE 0 TO 4095;
+		dbg_i_hdown        : OUT   std_logic;
+
+		------------------------------------
 		reset_na           : IN    std_logic
 		);
 
@@ -335,6 +347,12 @@ ARCHITECTURE rtl OF ascal IS
 	TYPE arr_pix IS ARRAY (natural RANGE <>) OF type_pix;
 	TYPE arr_pixq IS ARRAY(natural RANGE <>) OF arr_pix(0 TO 3);
 	ATTRIBUTE ramstyle : string;
+	-- GOWIN PORT PATCH: GowinSynthesis does not read Quartus' `ramstyle`,
+	-- so every "avoid blockram shift register" guard below is inert there
+	-- and the pipeline is packed into SP/SPX9 block RAM with an unsupported
+	-- WRITE_MODE (PnR error PA2122). syn_srlstyle is the spelling Gowin
+	-- honours. Both are kept so the file stays valid for MiSTer/Quartus.
+	ATTRIBUTE syn_srlstyle : string;
 
 	SUBTYPE uint12 IS natural RANGE 0 TO 4095;
 	SUBTYPE uint13 IS natural RANGE 0 TO 8191;
@@ -516,7 +534,8 @@ ARCHITECTURE rtl OF ascal IS
 
 	SIGNAL o_vfrac : unsigned(11 DOWNTO 0);
 	SIGNAL o_hfrac : arr_frac(0 TO 9);
-	ATTRIBUTE ramstyle OF o_hfrac : SIGNAL IS "logic"; -- avoid blockram shift register
+	ATTRIBUTE ramstyle OF o_hfrac : SIGNAL IS "logic";
+	ATTRIBUTE syn_srlstyle OF o_hfrac : SIGNAL IS "registers"; -- avoid blockram shift register
 
 	SIGNAL o_hacc,o_hacc_ini,o_hacc_next,o_vacc,o_vacc_next,o_vacc_ini : natural RANGE 0 TO 4*OHRESH-1;
 	SIGNAL o_hsv,o_vsv,o_dev,o_pev,o_end : unsigned(0 TO 11);
@@ -541,7 +560,8 @@ ARCHITECTURE rtl OF ascal IS
 	SIGNAL o_dcptv_clr, o_dcptv_inc : std_logic_vector(1 TO 12);
 	SIGNAL o_hpixs,o_hpix0,o_hpix1,o_hpix2,o_hpix3 : type_pix;
 	SIGNAL o_hpixq : arr_pixq(2 TO 8);
-	ATTRIBUTE ramstyle OF o_hpixq : SIGNAL IS "logic"; -- avoid blockram shift register
+	ATTRIBUTE ramstyle OF o_hpixq : SIGNAL IS "logic";
+	ATTRIBUTE syn_srlstyle OF o_hpixq : SIGNAL IS "registers"; -- avoid blockram shift register
 	SIGNAL o_vpixq, o_vpixq_pre : arr_pix(0 TO 3);
 	SIGNAL o_vpix_outer : arr_pix(0 TO 2);
 	SIGNAL o_vpix_inner : arr_pix(0 TO 6);
@@ -549,7 +569,8 @@ ARCHITECTURE rtl OF ascal IS
 	SIGNAL o_vpe : std_logic;
 	SIGNAL o_div : arr_div(0 TO 2); --uint12;
 	SIGNAL o_dir : arr_frac(0 TO 2);
-	ATTRIBUTE ramstyle OF o_div, o_dir : SIGNAL IS "logic"; -- avoid blockram shift register
+	ATTRIBUTE ramstyle OF o_div, o_dir : SIGNAL IS "logic";
+	ATTRIBUTE syn_srlstyle OF o_div, o_dir : SIGNAL IS "registers"; -- avoid blockram shift register
 	SIGNAL o_vdivi : unsigned(12 DOWNTO 0);
 	SIGNAL o_vdivr : unsigned(24 DOWNTO 0);
 	SIGNAL o_divstart : std_logic;
@@ -1035,6 +1056,14 @@ ARCHITECTURE rtl OF ascal IS
 	SIGNAL o_h_poly_t,o_h_poly_t2,o_v_poly_t   : type_poly_t;
 
 	SIGNAL o_v_poly_adaptive, o_h_poly_adaptive, o_v_poly_use_adaptive, o_h_poly_use_adaptive : std_logic;
+	-- GOWIN PORT PATCH: 5-deep 40-bit pipelines with no intermediate taps;
+	-- Gowin packs them into SPX9 block RAM and PA2122 kills the build.
+	ATTRIBUTE syn_srlstyle OF o_h_poly_phase_a, o_h_poly_phase_a2,
+	                          o_h_poly_phase_a3, o_h_poly_phase_a4,
+	                          o_h_poly_phase_a5 : SIGNAL IS "registers";
+	ATTRIBUTE syn_srlstyle OF o_v_poly_phase_a, o_v_poly_phase_a2,
+	                          o_v_poly_phase_a3, o_v_poly_phase_a4,
+	                          o_v_poly_phase_a5 : SIGNAL IS "registers";
 	SIGNAL poly_wr_mode : std_logic_vector(2 DOWNTO 0);
 	SIGNAL poly_tdw : unsigned(39 DOWNTO 0);
 	SIGNAL poly_a2 : unsigned(FRAC-1 DOWNTO 0);
@@ -3028,6 +3057,15 @@ BEGIN
 						 6 => i_clk,
 						 7 => o_clk,
 						 OTHERS =>'0');
+
+	----------------------------------------------------------------------------
+	-- GOWIN DEBUG PATCH (see the entity note above).
+	dbg_o_hacc   <= std_logic_vector(to_unsigned(o_hacc,16));
+	dbg_o_dcpt   <= std_logic_vector(to_unsigned(o_dcptv(14),12));
+	dbg_i_himax  <= i_himax;
+	dbg_i_hsize  <= o_hburst;                -- bursts per input line
+	dbg_o_ihsize <= o_copylev*64 + o_hbcpt;  -- {copy queue level, burst idx}
+	dbg_i_hdown  <= i_hdown;
 
 	----------------------------------------------------------------------------
 END ARCHITECTURE rtl;

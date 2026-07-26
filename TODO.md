@@ -7,7 +7,20 @@ next real milestone" within each section.
 
 ## ROADMAP — the MCR jukebox (agreed 2026-07-24, in priority order)
 
-1. **HDMI dropout fix.** Mechanism cornered: audio data islands, 48 kHz
+1. **HDMI dropout fix.** MAJOR FIX LANDED 2026-07-25, measured via the
+   capture card: the framebuffer's sample clock ran at 48 kHz while
+   AUDIO_OUT_RATE declared 32 kHz to the HDMI stack's ACR - a 50% rate
+   lie. Making both 32 kHz took content frames from 14% to 41-69%
+   (3-5x). The earlier "32k hung the monitor" trial was almost certainly
+   a corrupt un-verified flash, not the rate change. A fractional-exact
+   divider was tried and made things WORSE (clk_audio is a real clock
+   downstream; edge jitter >> ppm offset) - reverted, do not repeat.
+   RESIDUAL: dropout % drifts downward over session time on identical
+   builds - board-vs-capture-card thermal is unresolved (card USB-reset
+   needs sudo; its 534d:2109 id is not in our udev rules). Ground truth
+   next: the user's monitor impression on the consistent-32k build, and
+   the DDR3 wr-FIFO hold margins remain the board-side suspect.
+   Original notes: Mechanism cornered: audio data islands, 48 kHz
    divider actually emits 48,027 Hz vs ACR constants claiming 48,000 →
    sinks periodically resync. The 32 kHz quick-try killed sync because ONLY
    the divider changed — a correct fix sets rate + ACR N/CTS consistently

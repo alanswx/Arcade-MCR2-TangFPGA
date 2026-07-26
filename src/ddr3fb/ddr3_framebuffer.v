@@ -236,18 +236,31 @@ DDR3_Memory_Interface_Top u_ddr3 (
 /////////////////////////////////////////////////////////////////////
 // Audio
 
-localparam AUDIO_RATE=48000;
+// 2026-07-25: THE HDMI-dropout bug. The sample clock here ran at 48000
+// while AUDIO_OUT_RATE below declared 32000 to the HDMI stack's ACR/
+// channel-status - a 50% rate lie that keeps receivers' audio buffers in
+// permanent distress (periodic resync = the dropouts). 32000 both sides:
+// consistent, and 74.25MHz/32k/2 = 1160.16 truncates to only 0.013% off
+// (48k truncated to 0.06%). nand2mario hit the same wall (nes2hdmi.sv:
+// "weird only 32K sampling rate works").
+localparam AUDIO_RATE=32000;
 localparam AUDIO_CLK_DELAY = 74250 * 1000 / AUDIO_RATE / 2;
 logic [$clog2(AUDIO_CLK_DELAY)-1:0] audio_divider;
 logic clk_audio;
 
-always_ff@(posedge hclk) 
+// Integer divider (32004.3 Hz actual vs 32000 declared = 0.013%): fine,
+// because the stack MEASURES CTS - the tiny offset is self-reported and
+// receivers track it. A fractional-exact accumulator was tried 2026-07-25
+// and made dropouts WORSE (47%/22% content vs 65-69%): clk_audio is used
+// as a real clock downstream, and the accumulator's 13.5 ns edge jitter
+// hurts more than the ppm rate offset. Do not repeat.
+always_ff@(posedge hclk)
 begin
-    if (audio_divider != AUDIO_CLK_DELAY - 1) 
+    if (audio_divider != AUDIO_CLK_DELAY - 1)
         audio_divider++;
-    else begin 
-        clk_audio <= ~clk_audio; 
-        audio_divider <= 0; 
+    else begin
+        clk_audio <= ~clk_audio;
+        audio_divider <= 0;
     end
 end
 

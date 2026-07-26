@@ -1,0 +1,66 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/src/ascal_ghdlnl_top.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/testpat/mcr_testpattern.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_avl_ddr3.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_mcr2.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_ddr3.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_mDRP_intf.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/dvi_tx/dvi_tx_ext.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv'
+WARN  (EX2478) : Non-net output port 'tmds' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":16)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv'
+WARN  (EX2478) : Non-net output port 'txd' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":22)
+Compiling module 'ascal_ghdlnl_top'("/home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/src/ascal_ghdlnl_top.sv":48)
+Compiling module 'gowin_pll_mcr2'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_mcr2.v":11)
+Compiling module 'pll_27'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v":10)
+Compiling module 'mcr_testpattern'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/testpat/mcr_testpattern.sv":33)
+Compiling module 'gowin_pll_hdmi'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v":11)
+Compiling module 'pll_ddr3'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_ddr3.v":10)
+Compiling module '**'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_mDRP_intf.v":76)
+Compiling module 'DDR3_Memory_Interface_Top'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v":18520)
+Compiling module '**'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v":18519)
+WARN  (EX3670) : Actual bit length 15 differs from formal bit length 14 for port 'O_ddr_addr'("/home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/src/ascal_ghdlnl_top.sv":238)
+Compiling module 'ascal_gw'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":33743)
+Compiling module 'ascal_8_2304_1024_128_25_2048_22b09d1730f7a74c250ec0ba506724c6092d5c4e'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":2)
+Extracting RAM for identifier 'i_dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22438)
+Extracting RAM for identifier 'o_dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22448)
+Extracting RAM for identifier 'o_line0'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22458)
+Extracting RAM for identifier 'o_line1'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22468)
+Extracting RAM for identifier 'o_line2'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22478)
+Extracting RAM for identifier 'o_line3'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22488)
+Extracting RAM for identifier 'o_linf0'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22498)
+Extracting RAM for identifier 'o_linf1'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22508)
+Extracting RAM for identifier 'o_linf2'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22518)
+Extracting RAM for identifier 'o_linf3'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_gw_synth.v":22528)
+Compiling module 'ascal_avl_ddr3(N_BURST=2048)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ascal/ascal_avl_ddr3.sv":35)
+Compiling module 'dvi_tx_ext'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/dvi_tx/dvi_tx_ext.sv":28)
+Compiling module 'tmds_channel'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=2)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'uart_beacon'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":11)
+NOTE  (EX0101) : Current top module is "ascal_ghdlnl_top"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+[95%] Generate netlist file "/home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/impl/gwsynthesis/ascal_ghdlnl.vg" completed
+ERROR (CK3001) : The CASI configuration of 'u_ascal/u_ascal/mult_122505_s3' is incorrect
+WARN  (ST0001) : Ignored static timing analysis because of the failure of circuit analysis checking
+GowinSynthesis finish

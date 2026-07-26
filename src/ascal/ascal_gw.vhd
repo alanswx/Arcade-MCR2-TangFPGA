@@ -33,11 +33,22 @@ ENTITY ascal_gw IS
     MASK      : unsigned(7 DOWNTO 0) := x"FF";
     RAMBASE   : unsigned(31 DOWNTO 0) := x"0000_0000";
     RAMSIZE   : unsigned(31 DOWNTO 0) := x"0080_0000";  -- 8 MB per buffer
-    OHRES     : natural := 2048;   -- >= output width (1280 -> 2048)
+    OHRES     : natural := 2304;   -- MiSTer default. NOT 2048: ohres_h(2048)=2048
+                                   -- makes the sCOPY threshold 4*OHRESH=8192, which
+                                   -- collides with the hardcoded 8192 in o_hacc_ini.
+                                   -- 2304 -> ohres_h=4096, the tested MiSTer path.
     IHRES     : natural := 1024;   -- >= input width  (512 -> 1024)
+    -- Subpixel precision. MiSTer ships FRAC=8 and only ever tests that;
+    -- ascal's divider is written around 8 fractional bits (it subtracts
+    -- o_hsize*256 down to *2), so lower values are largely untravelled.
+    FRAC      : natural := 8;
     N_DW      : natural := 128;    -- Gowin DDR3 app data width
     N_AW      : natural := 25;     -- 16-byte word address -> 25b = 512 MB
-    N_BURST   : natural := 256;    -- bytes per burst -> BLEN = 16 words
+    -- MiSTer ships N_BURST=2048. It matters more than it looks: o_dpram/
+    -- i_dpram are sized BLEN*2 words = N_BURST*2 bytes, so 2048 holds a whole
+    -- source line (512 px x 3 B = 1536 B) in one burst, while 256 holds only
+    -- ~170 px and forces the sCOPY FSM to refill mid-line every line.
+    N_BURST   : natural := 2048;   -- bytes per burst -> BLEN = 128 words
     -- Output timing.  Defaults = 1280x720p60 (74.25 MHz).
     --   SYNC |_______________________/"""""\_____|
     --   DE   |""""""""""\________________________|
@@ -87,9 +98,30 @@ ENTITY ascal_gw IS
     i_hdmax  : OUT std_logic_vector(11 DOWNTO 0);
     i_vdmax  : OUT std_logic_vector(11 DOWNTO 0);
 
+    -- INPUT window. iauto='1' (default) lets ascal measure the source from
+    -- its own i_de/i_vs edges, which is the whole point of using ascal - it
+    -- then adapts to any core, any resolution, with no per-game constants.
+    -- iauto='0' forces the window to himin..himax / vimin..vimax instead,
+    -- which is what you want to crop a core's garbage overscan columns, or
+    -- as a fallback if a particular source defeats the auto-detect.
+    iauto    : IN  std_logic := '1';
+    himin    : IN  std_logic_vector(11 DOWNTO 0) := (OTHERS => '0');
+    himax    : IN  std_logic_vector(11 DOWNTO 0) := (OTHERS => '0');
+    vimin    : IN  std_logic_vector(11 DOWNTO 0) := (OTHERS => '0');
+    vimax    : IN  std_logic_vector(11 DOWNTO 0) := (OTHERS => '0');
+
+    -- GOWIN DEBUG PATCH 2026-07-25: horizontal auto-size chain, for the
+    -- beacon. Delete together with the taps in ascal.vhd once resolved.
+    dbg_o_hacc   : OUT std_logic_vector(15 DOWNTO 0);
+    dbg_o_dcpt   : OUT std_logic_vector(11 DOWNTO 0);
+    dbg_i_himax  : OUT std_logic_vector(11 DOWNTO 0);
+    dbg_i_hsize  : OUT std_logic_vector(11 DOWNTO 0);
+    dbg_o_ihsize : OUT std_logic_vector(11 DOWNTO 0);
+    dbg_i_hdown  : OUT std_logic;
+
     ------------------------------------------- polyphase coefficient load
     poly_clk : IN  std_logic := '0';
-    poly_a   : IN  std_logic_vector(7 DOWNTO 0) := (OTHERS => '0');
+    poly_a   : IN  std_logic_vector(FRAC+3 DOWNTO 0) := (OTHERS => '0');
     poly_dw  : IN  std_logic_vector(9 DOWNTO 0) := (OTHERS => '0');
     poly_wr  : IN  std_logic := '0';
 
@@ -112,7 +144,26 @@ END ENTITY ascal_gw;
 ARCHITECTURE rtl OF ascal_gw IS
   SIGNAL ur, ug, ub : unsigned(7 DOWNTO 0);
   SIGNAL hdmax_i, vdmax_i : natural RANGE 0 TO 4095;
+  SIGNAL dbg_himax_i, dbg_hsize_i, dbg_ihsize_i : natural RANGE 0 TO 4095;
+  -- Converted OUTSIDE the port map on purpose. Expressions as actuals in a
+  -- mixed-language instantiation are exactly the sort of construct Gowin
+  -- handles inconsistently, and these carry the geometry.
+  SIGNAL hmin_i, hmax_i, vmin_i, vmax_i : natural RANGE 0 TO 4095;
+  SIGNAL himin_i, himax_i, vimin_i, vimax_i : natural RANGE 0 TO 4095;
 BEGIN
+
+  hmin_i  <= to_integer(unsigned(hmin));
+  hmax_i  <= to_integer(unsigned(hmax));
+  vmin_i  <= to_integer(unsigned(vmin));
+  vmax_i  <= to_integer(unsigned(vmax));
+  himin_i <= to_integer(unsigned(himin));
+  himax_i <= to_integer(unsigned(himax));
+  vimin_i <= to_integer(unsigned(vimin));
+  vimax_i <= to_integer(unsigned(vimax));
+
+  dbg_i_himax  <= std_logic_vector(to_unsigned(dbg_himax_i, 12));
+  dbg_i_hsize  <= std_logic_vector(to_unsigned(dbg_hsize_i, 12));
+  dbg_o_ihsize <= std_logic_vector(to_unsigned(dbg_ihsize_i, 12));
 
   o_r <= std_logic_vector(ur);
   o_g <= std_logic_vector(ug);
@@ -137,7 +188,7 @@ BEGIN
       PALETTE2     => false,
       ADAPTIVE     => false,
       DOWNSCALE_NN => false,
-      FRAC         => 4,
+      FRAC         => FRAC,
       OHRES        => OHRES,
       IHRES        => IHRES,
       N_DW         => N_DW,
@@ -156,16 +207,18 @@ BEGIN
       o_lltune => OPEN,
       i_hdmax => hdmax_i, i_vdmax => vdmax_i,
 
-      iauto => '1',                       -- autodetect the input window
+      iauto => iauto,
+      himin => himin_i, himax => himax_i,
+      vimin => vimin_i, vimax => vimax_i,
       run => run, freeze => '0',
       mode => unsigned(mode),
 
       htotal  => G_HTOTAL,  hsstart => G_HSSTART, hsend => G_HSEND,
       hdisp   => G_HDISP,
-      hmin    => to_integer(unsigned(hmin)), hmax => to_integer(unsigned(hmax)),
+      hmin    => hmin_i, hmax => hmax_i,
       vtotal  => G_VTOTAL,  vsstart => G_VSSTART, vsend => G_VSEND,
       vdisp   => G_VDISP,
-      vmin    => to_integer(unsigned(vmin)), vmax => to_integer(unsigned(vmax)),
+      vmin    => vmin_i, vmax => vmax_i,
 
       format  => "01",                    -- 24 bpp in RAM
 
@@ -184,6 +237,13 @@ BEGIN
       avl_write         => avl_write,
       avl_read          => avl_read,
       avl_byteenable    => avl_byteenable,
+
+      dbg_o_hacc   => dbg_o_hacc,
+      dbg_o_dcpt   => dbg_o_dcpt,
+      dbg_i_himax  => dbg_himax_i,
+      dbg_i_hsize  => dbg_hsize_i,
+      dbg_o_ihsize => dbg_ihsize_i,
+      dbg_i_hdown  => dbg_i_hdown,
 
       reset_na => reset_na);
 
