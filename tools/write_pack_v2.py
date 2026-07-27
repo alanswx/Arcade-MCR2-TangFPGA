@@ -15,9 +15,12 @@ digit there erases a disk. It will:
 
 Usage (needs root for the raw device):
 
-    python3 tools/make_rompack.py              # build the image first
+    python3 tools/make_pack_v2.py              # build the image first
     sudo python3 tools/write_pack_v2.py        # list candidate cards
     sudo python3 tools/write_pack_v2.py disk4  # write to /dev/disk4
+
+(make_rompack.py is the OLD v1 tool and writes a different image; this
+script consumes mcr_pack_v2.img from make_pack_v2.py.)
 
 The card obviously has to be in a reader on the computer - the console's
 own SD slot is read-only gateware and cannot program cards.
