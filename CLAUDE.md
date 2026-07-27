@@ -50,6 +50,15 @@ tools/gw_build.sh mcr2_primer25k           # build with the current hex
 
 Set `GOWIN_HOME` if the IDE isn't at the default location for the host.
 
+**Two toolchains are installed.** `tools/gw_build.sh` uses the free
+**V1.9.11.03 Education** in `~/IDE` — this is the one that works and the
+default for all boards. `tools/gw_build_1912.sh` uses the commercial
+**V1.9.12.03** in `~/gowin_1.9.12.03` (node-locked licence at
+`~/gowin_1.9.12.03/gowin.lic`, `IDE/bin/gwlicense.ini` points at it).
+**Do not use 1.9.12.03 for ascal work: GowinSynthesis crashes with SIGFPE
+during "Running inference"** on the same sources 1.9.11.03 builds cleanly
+(see the ascal section of `TODO.md` and `docs/gowin_bug_report.md`).
+
 **macOS.** GowinIDE bundles Tcl; the CLI needs dylib/framework paths set
 (`$ORIGIN` doesn't resolve on macOS):
 
@@ -306,7 +315,10 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
   update) this before starting anything; per-doc "open items" sections feed
   into it.
 
-- `handoff_v7_jukebox.md` — **most current handoff**: platform state after
+- `handoff_v8_sprite_shift.md` — **most current handoff**: the MCR-3
+  sprite "detached handle" investigation (proven facts, TEMPORARY
+  instruments in the tree, bench state, next steps). Start here.
+- `handoff_v7_jukebox.md` — previous handoff: platform state after
   the MCR-3 bring-up marathon (SDRAM 225-deg fix, boot watchdog, pack v2,
   Timber/DoT, roadmap progress). Start here.
 - `handoff_v6_sdram_refresh.md` / `handoff_v5_mcr3_sprites.md` —
