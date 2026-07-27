@@ -555,14 +555,20 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(GAME_DEFAULT),
-    .NUM_GAMES(4'd2),
-    // Both MCR-1 games run on a rotated cabinet monitor (Kick = SWAP_XY,
-    // Solar Fox = ROT90), so rotate the OSD text for both. Flip on hardware
-    // if a game reads mirrored (see osd.sv u/v remap note).
-    .ROT_MASK(6'b000011),
+    // Kickman added 2026-07-27: make_pack_v2 has always packed it at MCR-1
+    // slot 2, but NUM_GAMES was 2 so it could not be reached from the menu -
+    // only by the SD prefs happening to name slot 2, which is exactly how it
+    // turned up on the first hardware run. Roster order must match
+    // make_pack_v2's ROSTER: kick(0), solarfox(1), kickman(2).
+    .NUM_GAMES(4'd3),
+    // All MCR-1 games run on a rotated cabinet monitor (Kick/Kickman =
+    // SWAP_XY, Solar Fox = ROT90), so rotate the OSD text for all of them.
+    // Flip on hardware if a game reads mirrored (see osd.sv u/v remap note).
+    .ROT_MASK(6'b000111),
     .TITLE("    MCR1 GAME SELECT    "),
     .NAME0("   KICK                 "),
-    .NAME1("   SOLAR FOX            ")
+    .NAME1("   SOLAR FOX            "),
+    .NAME2("   KICKMAN              ")
 ) osd_inst (
     .clk(clk_sys),
     .rst(core_reset_raw),

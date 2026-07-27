@@ -55,10 +55,15 @@ next real milestone" within each section.
      kills that ROM's download path. All three modes pinned in `sim/dpram/`.
    - mcr3_console60k un-baked and **hardware-verified**: Tapper and Timber
      both render correctly with a completely ROM-free bitstream.
-   - mcr1_console60k and mcr2_console60k un-baked; both build clean with
-     BSRAM unchanged (77/118 and 94/118 — the RAMs still exist, only their
-     initial contents are gone), TNS 0.000. **Neither run on hardware yet**
-     (MCR-1 never has been at all).
+   - mcr1_console60k and mcr2_console60k un-baked, and **BOTH VERIFIED ON
+     HARDWARE 2026-07-27** loading entirely from the card with no ROM data
+     in the bitstream: MCR-2 booted Wacko (58 distinct frames/90, 1 black)
+     and MCR-1 booted Kickman — its first ever hardware run — with colours
+     compared against MAME (skyline, pink text, mauve buildings, brown
+     ladders, red/yellow balloons all match). MCR-1's picture is rotated on
+     a normal monitor, which is CORRECT for its ROT90 cabinet. BSRAM
+     unchanged (77/118 and 94/118), TNS 0.000.
+     Not yet exercised: MCR-1 Kick and Solar Fox; MCR-2's other five.
    - Bake control is a per-board GENERIC on mcr1.vhd/mcr2.vhd
      (`GFX1_1_INIT`/`GFX1_2_INIT`/`GFX2_INIT`/`GFX_LOADABLE`), defaults
      baking, so mcr2_primer25k and mcr2_console138k are untouched. The 25K
