@@ -97,19 +97,29 @@ SPI flash still holds the 2026-07-25 user-facing build (bad6bd5-era) —
 i.e. **flash still has the artifact-capable build; power cycling boots
 it.**
 
-## In flight when this handoff was written
+## Old-build cycling — RESULT (completed after the first draft)
 
 3 SRAM load cycles of `bitstreams/console60k_mcr3_tapper_sprites_working.fs`
-(the 3dbe824-era archive, which still contains the old sp_addr_r register)
-with 120s HDMI captures each → scratchpad `oldround1..3/f_*.png`.
-Question: does the OLD RTL/placement reproduce the detached handle on any
-fresh load? Analysis method: find the bar-demo frames, locate the sliding
-empty mug (real graphics in this build), check handle attachment.
-Chronology caution: the ARTIFACT build (bad6bd5-era flash) is neither this
-archive nor the current tree — if reproduction matters, rebuild/flash-load
-that exact bitstream (still resident in SPI flash! a plain power cycle
-boots it — the cheapest reproduction test of all, needs someone at the
-bench or a capture while it cycles attract).
+(the 3dbe824-era archive, which still contains the old sp_addr_r register),
+120s HDMI captures each (scratchpad `oldround1..3/`): the demo's sliding
+full mug (code 22) renders PERFECTLY in all three loads — handle attached
+(zooms `zz_old1mug.png`, `zz_old23mugs.png`; the attract is deterministic,
+frame f_083 of each round is the same game moment).
+
+So the day's tally is **~15 fresh JTAG reconfig+load cycles across three
+different bitstreams (current pattern/audit builds ×12, old archive ×3) —
+zero reproductions**. The 2026-07-25 artifact session remains the only
+observation. Untested reproduction paths, in order of value:
+- **Power-cycle boot from SPI flash** (bad6bd5-era build — the exact
+  artifact bitstream; a plain power cycle boots it). Needs hands at the
+  bench (USB-C replug); capture the attract mug afterward.
+- **Warm board**: the artifact session followed hours of uptime (the HDMI
+  dropouts already prove thermal drift on this board). If a cold flash
+  boot is clean, repeat after an hour of running.
+- OSD-commanded reloads (the user had been switching games via the menu
+  that session) — trigger a few via the cabinet chord/controller and
+  re-check; the OSD reload path skips the prefs read but shares the
+  loader FSM, so a difference would be surprising but is untested.
 
 ## Leading suspects for the instance dependence (open)
 
