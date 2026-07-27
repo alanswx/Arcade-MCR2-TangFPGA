@@ -434,7 +434,10 @@ reg [6:0]  scrub_row  = 7'd0;    // 128 rows cover the whole 128KB
 //   for i in range(0x8000):
 //       if Q[3][i]|Q[2][i]|Q[1][i]|Q[0][i]: c[i%4]+=1
 //   print([hex(x) for x in c])"
-// Tapper expects E0..E3 = {0x1266, 0x1B00, 0x1AD1, 0x13E4}.
+// Expected tuples (pad gfx2 to 0x20000 with zeros first - DoT's is only 64 KB):
+//   tapper  {0x1266, 0x1B00, 0x1AD1, 0x13E4}
+//   timber  {0x0E74, 0x1786, 0x17FD, 0x0FE1}
+//   dotron  {0x07B3, 0x11F3, 0x126A, 0x08AD}
 // (Measured before the fix: {0x1B0A, 0x1AD8, 0x1409, 0x128A} = that tuple
 // rotated, i.e. the shifted array, on 13/13 loads.)
 reg [2:0]  aud_st   = 3'd0;
@@ -1479,7 +1482,11 @@ ddr3_framebuffer #(
     .HEIGHT(480),
     .COLOR_BITS(12),
     .PREFETCH_DELAY(44),
-    .DVI_MODE(1)          // DROPOUT TEST: no data islands, NO AUDIO - if the monitor's periodic resyncs stop, the audio/ACR packets are the cause
+    .DVI_MODE(0)          // full HDMI, as NESTang uses (matches the mcr1/mcr2 tops).
+                          // Was 1 for the dropout test (strips data islands ->
+                          // SILENT). That test is done: the real fix was making
+                          // the sample rate and the ACR constants agree at 32 kHz
+                          // (see TODO item 1), and the residual is board thermal.
 ) fb_inst (
     .hclk_dbg(fb_hclk),
     .clk_27(clk27),

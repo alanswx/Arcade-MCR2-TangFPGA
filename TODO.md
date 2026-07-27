@@ -656,9 +656,11 @@ budget exists anymore. See the Shield PCB section.
   drift); prime suspects the DDR3 wr-FIFO hold margins (+0.001 ns at
   nominal, negative on some placement rolls) or TMDS analog margin.
   Also noted: no picture during early boot (DDR3 calib + watchdog reload
-  latency) — believed benign, unconfirmed. **FLASH currently holds the
-  SILENT DVI test build**; restore sound with:
-  `openFPGALoader -b tangconsole -f --verify bitstreams/console60k_mcr3_tapper_sprites_working.fs`
+  latency) — believed benign, unconfirmed. The MCR-3 top's `DVI_MODE` was
+  put back to 0 on 2026-07-27 (full HDMI + audio, matching the mcr1/mcr2
+  tops) when the sprite-shift fix was flashed; the silent-DVI experiment is
+  finished — the real audio fix was making the sample rate and the ACR
+  constants agree at 32 kHz, and the residual is board thermal.
 
 - **Sprite "slight offset" report (2026-07-25) — FIXED 2026-07-27.** Root
   cause: in the MCR-3 top's dl→SDRAM port2 sprite write, the address and
