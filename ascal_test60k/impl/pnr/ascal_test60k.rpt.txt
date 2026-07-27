@@ -12,27 +12,27 @@
   <Part Number>: GW5AT-LV60PG484AC1/I0
   <Device>: GW5AT-60
   <Device Version>: B
-  <Created Time>:Sat Jul 25 20:08:34 2026
+  <Created Time>:Mon Jul 27 06:02:36 2026
 
 
 2. PnR Details
 
   Running placement:
     Placement Phase 0: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
-    Placement Phase 1: CPU time = 0h 0m 0.318s, Elapsed time = 0h 0m 0.318s
+    Placement Phase 1: CPU time = 0h 0m 0.339s, Elapsed time = 0h 0m 0.339s
     Placement Phase 2: CPU time = 0h 0m 4s, Elapsed time = 0h 0m 4s
-    Placement Phase 3: CPU time = 0h 0m 18s, Elapsed time = 0h 0m 18s
-    Total Placement: CPU time = 0h 0m 24s, Elapsed time = 0h 0m 24s
+    Placement Phase 3: CPU time = 0h 0m 19s, Elapsed time = 0h 0m 19s
+    Total Placement: CPU time = 0h 0m 25s, Elapsed time = 0h 0m 25s
  Running routing:
-    Routing Phase 0: CPU time = 0h 0m 0.004s, Elapsed time = 0h 0m 0.004s
-    Routing Phase 1: CPU time = 0h 0m 20s, Elapsed time = 0h 0m 20s
-    Routing Phase 2: CPU time = 0h 0m 0.101s, Elapsed time = 0h 0m 0.101s
+    Routing Phase 0: CPU time = 0h 0m 0.005s, Elapsed time = 0h 0m 0.005s
+    Routing Phase 1: CPU time = 0h 0m 24s, Elapsed time = 0h 0m 24s
+    Routing Phase 2: CPU time = 0h 0m 0.099s, Elapsed time = 0h 0m 0.099s
     Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-    Total Routing: CPU time = 0h 0m 20s, Elapsed time = 0h 0m 20s
+    Total Routing: CPU time = 0h 0m 24s, Elapsed time = 0h 0m 24s
  Generate output files:
     CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
 
- Total Time and Memory Usage: CPU time = 0h 0m 46s, Elapsed time = 0h 0m 46s, Peak memory usage = 1633MB
+ Total Time and Memory Usage: CPU time = 0h 0m 51s, Elapsed time = 0h 0m 51s, Peak memory usage = 1661MB
 
 
 3. Resource Usage Summary
@@ -40,15 +40,15 @@
   --------------------------------------------------------------------------------
   Resources                   | Usage                               | Utilization
   --------------------------------------------------------------------------------
-  Logic                       | 6650/59904                          |  12%
-    --LUT,ALU,ROM16           | 6542(4889 LUT, 1653 ALU, 0 ROM16)   | -
+  Logic                       | 6678/59904                          |  12%
+    --LUT,ALU,ROM16           | 6570(4877 LUT, 1693 ALU, 0 ROM16)   | -
     --SSRAM(RAM16)            | 18                                  | -
-  Register                    | 6506/60780                          |  11%
+  Register                    | 6564/60780                          |  11%
     --Logic Register as Latch | 0/59904                             |  0%
-    --Logic Register as FF    | 6503/59904                          |  11%
+    --Logic Register as FF    | 6561/59904                          |  11%
     --I/O Register as Latch   | 0/876                               |  0%
     --I/O Register as FF      | 3/876                               |  <1%
-  CLS                         | 5886/29952                          |  20%
+  CLS                         | 5960/29952                          |  20%
   I/O Port                    | 81/297                              |  28%
   I/O Buf                     | 74                                  | -
     --Input Buf               | 4                                   | -
@@ -97,7 +97,7 @@
   Clock Resource| Usage         | Utilization 
   ------------------------------------------
   PRIMARY       | 6/8           | 75%
-  LW            | 6/8           | 75%
+  LW            | 7/8           | 88%
   GCLK_PIN      | 8/40          | 20%
   CLKDIV        | 2/20          | 10%
   DDRDLL        | 1/5           | 20%
@@ -112,15 +112,16 @@
   Signal         | Global Clock   | Location
   -------------------------------------------
   sys_clk_d      | PRIMARY        |  PBR1 PBR3
-  hclk           | PRIMARY        |  PTR1 PTR2 PTR3 PBR1 PBR2
+  hclk           | PRIMARY        |  PTR0 PTR1 PTR2 PTR3 PBR1 PBR2
   clk_sys        | PRIMARY        |  PTR1 PTR2 PBR1 PBR2
-  clk50_pll      | PRIMARY        |  PTR1 PBR0 PBR1 PBR2
-  clk27          | PRIMARY        |  PTR2 PTR3 PBR0
+  clk50_pll      | PRIMARY        |  PTR0 PTR1 PBR0
+  clk27          | PRIMARY        |  PTR3 PBR0 PBR1 PBR2
   clk_x1         | PRIMARY        |  PTR0 PTR1 PTR2 PBR0 PBR1 PBR2
   debug_o_d_9[3] | LW             |  -
   u_ascal/u_ascal_0/i_acpt_3_5| LW             |  -
   u_ascal/u_ascal_0/n933067_3| LW             |  -
   u_ascal/u_ascal_0/i_dw_127_7| LW             |  -
+  u_ascal/u_ascal_0/n931062_10| LW             |  -
   u_ascal/u_ascal_0/o_reset_na| LW             |  -
   u_ascal/u_ascal_0/avl_reset_na| LW             |  -
   hclk5          | HCLK           | BANK3_BANK4_BANK5_HCLK0

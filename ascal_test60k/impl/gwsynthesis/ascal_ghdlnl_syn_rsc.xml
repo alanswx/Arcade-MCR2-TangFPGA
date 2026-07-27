@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Module name="ascal_ghdlnl_top" Register="181" Alu="118" Lut="62" T_Register="5938(181)" T_Alu="1575(118)" T_Lut="4826(62)" T_MULTALU27X18="9(0)" T_MULT12X12="32(0)" T_MULTADDALU12X12="6(0)" T_Bsram="35(0)" T_Ssram="19(0)">
+<Module name="ascal_ghdlnl_top" Register="181" Alu="118" Lut="55" T_Register="6878(181)" T_Alu="1559(118)" T_Lut="4750(55)" T_MULTALU27X18="9(0)" T_MULT12X12="32(0)" T_MULTADDALU12X12="6(0)" T_Bsram="32(0)">
  <SubModule name="pll_inst"/>
  <SubModule name="pll27_inst"/>
- <SubModule name="pattern" Register="59" Alu="43" Lut="163" MULT12X12="2" T_Register="59(59)" T_Alu="43(43)" T_Lut="163(163)" T_MULT12X12="2(2)"/>
+ <SubModule name="pattern" Register="59" Alu="43" Lut="155" MULT12X12="2" T_Register="59(59)" T_Alu="43(43)" T_Lut="155(155)" T_MULT12X12="2(2)"/>
  <SubModule name="pll_hdmi27_inst"/>
  <SubModule name="pll_ddr3_inst"/>
- <SubModule name="u_ddr3" Register="3387" Alu="125" Lut="2112" Bsram="8" T_Register="3387(3387)" T_Alu="125(125)" T_Lut="2112(2112)" T_Bsram="8(8)"/>
- <SubModule name="u_ascal" T_Register="2153(0)" T_Alu="1229(0)" T_Lut="2026(0)" T_MULTALU27X18="9(0)" T_MULT12X12="30(0)" T_MULTADDALU12X12="6(0)" T_Bsram="27(0)" T_Ssram="19(0)">
-  <SubModule name="u_ascal" Register="2153" Alu="1229" Lut="2026" MULTALU27X18="9" MULT12X12="30" MULTADDALU12X12="6" Bsram="27" Ssram="19" T_Register="2153(2153)" T_Alu="1229(1229)" T_Lut="2026(2026)" T_MULTALU27X18="9(9)" T_MULT12X12="30(30)" T_MULTADDALU12X12="6(6)" T_Bsram="27(27)" T_Ssram="19(19)"/>
+ <SubModule name="u_ddr3" Register="3387" Alu="125" Lut="2111" Bsram="8" T_Register="3387(3387)" T_Alu="125(125)" T_Lut="2111(2111)" T_Bsram="8(8)"/>
+ <SubModule name="u_ascal" T_Register="3093(0)" T_Alu="1213(0)" T_Lut="1983(0)" T_MULTALU27X18="9(0)" T_MULT12X12="30(0)" T_MULTADDALU12X12="6(0)" T_Bsram="24(0)">
+  <SubModule name="u_ascal" Register="3093" Alu="1213" Lut="1983" MULTALU27X18="9" MULT12X12="30" MULTADDALU12X12="6" Bsram="24" T_Register="3093(3093)" T_Alu="1213(1213)" T_Lut="1983(1983)" T_MULTALU27X18="9(9)" T_MULT12X12="30(30)" T_MULTADDALU12X12="6(6)" T_Bsram="24(24)"/>
  </SubModule>
- <SubModule name="u_bridge" Register="34" Lut="70" T_Register="34(34)" T_Lut="70(70)"/>
- <SubModule name="dvi_out" T_Register="42(0)" T_Alu="36(0)" T_Lut="234(0)">
-  <SubModule name="ch_blue" Register="14" Alu="12" Lut="84" T_Register="14(14)" T_Alu="12(12)" T_Lut="84(84)"/>
-  <SubModule name="ch_green" Register="14" Alu="12" Lut="73" T_Register="14(14)" T_Alu="12(12)" T_Lut="73(73)"/>
-  <SubModule name="ch_red" Register="14" Alu="12" Lut="77" T_Register="14(14)" T_Alu="12(12)" T_Lut="77(77)"/>
+ <SubModule name="u_bridge" Register="34" Lut="69" T_Register="34(34)" T_Lut="69(69)"/>
+ <SubModule name="dvi_out" T_Register="42(0)" T_Alu="36(0)" T_Lut="228(0)">
+  <SubModule name="ch_blue" Register="14" Alu="12" Lut="86" T_Register="14(14)" T_Alu="12(12)" T_Lut="86(86)"/>
+  <SubModule name="ch_green" Register="14" Alu="12" Lut="78" T_Register="14(14)" T_Alu="12(12)" T_Lut="78(78)"/>
+  <SubModule name="ch_red" Register="14" Alu="12" Lut="64" T_Register="14(14)" T_Alu="12(12)" T_Lut="64(64)"/>
  </SubModule>
- <SubModule name="beacon" Register="82" Alu="24" Lut="159" T_Register="82(82)" T_Alu="24(24)" T_Lut="159(159)"/>
+ <SubModule name="beacon" Register="82" Alu="24" Lut="149" T_Register="82(82)" T_Alu="24(24)" T_Lut="149(149)"/>
 </Module>

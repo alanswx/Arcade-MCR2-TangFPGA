@@ -1,10 +1,11 @@
 # GowinSynthesis defect report — GW5AT-60, Gowin EDA V1.9.11.03
 
-Four independent issues found in GowinSynthesis while porting a
+Five independent issues found in GowinSynthesis while porting a
 well-established open-source VHDL video scaler to a GW5AT-60:
 
 | # | Issue | Severity |
 |---|---|---|
+| 0 | **GowinSynthesis crashes** (SIGFPE, core dumped) during "Running inference" — V1.9.12.03 only; V1.9.11.03 builds the same sources cleanly | **Critical (regression)** |
 | 1 | **Silent functional miscompile** of a Bresenham accumulator — builds clean, meets timing, wrong hardware | High |
 | 2 | `PA2122` — the tool infers a block-RAM shift register and gives it a `WRITE_MODE` its own placer rejects | Medium (blocks PnR, workaround exists) |
 | 3 | `CK3001` — invalid DSP cascade (`CASI`) configuration | Medium (blocks PnR, no workaround found) |
@@ -13,7 +14,7 @@ well-established open-source VHDL video scaler to a GW5AT-60:
 Defect 1 is the important one: **the design builds with no errors and no
 warnings, meets timing with margin, and produces wrong hardware behaviour.**
 
-All four are reproducible with a single freely-redistributable source file.
+All are reproducible with a single freely-redistributable source file.
 
 ---
 
@@ -21,7 +22,8 @@ All four are reproducible with a single freely-redistributable source file.
 
 | Item | Value |
 |---|---|
-| Tool | Gowin EDA **V1.9.11.03 Education**, Linux tarball build |
+| Tool A | Gowin EDA **V1.9.11.03 Education**, Linux tarball — defects 1-4 |
+| Tool B | Gowin EDA **V1.9.12.03 Commercial** (node-locked licence), Linux tarball — **defect 0** |
 | Flow | headless `gw_sh build.tcl` (GowinSynthesis, not Synplify) |
 | Device | `GW5AT-LV60PG484AC1/I0`, `-device_version B` (GW5AT-60) |
 | Board | Sipeed Tang Console 60K |
@@ -57,7 +59,57 @@ memories, deep register pipelines, FSMs and integer arithmetic heavily.
 
 ---
 
-## 3. Defect 1 — silent functional miscompile of the horizontal scaler
+## 3. Defect 0 — GowinSynthesis crashes (SIGFPE) in V1.9.12.03
+
+**Severity: critical. This is a regression — V1.9.11.03 builds the identical
+sources cleanly.** V1.9.12.03 cannot build this design at all.
+
+```
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+Floating point exception (core dumped)          <-- exit status 136
+```
+
+The crash is always at the same stage ("Running inference"), with no error
+message and no log entry.
+
+### Reproduced with
+
+| Input | V1.9.11.03 | V1.9.12.03 |
+|---|---|---|
+| upstream `ascal.vhd` + minimal wrapper (`build_defect2_PA2122.tcl`) | `ERROR (PA2122)` at PnR | **SIGFPE** |
+| patched `ascal.vhd`, full design (`build_defect1_miscompile.tcl`) | builds clean, 0 violations | **SIGFPE** |
+| same, with `MASK=0x07` (bicubic + polyphase removed) | builds clean | **SIGFPE** |
+
+So it is not specific to the polyphase filters, not specific to our patches,
+and not specific to the full design.
+
+### Control — the environment is sound
+
+A trivial design (a 12-deep 8-bit register pipeline) synthesises successfully
+under V1.9.12.03 in the **identical** shell environment, same device, same
+options:
+
+```
+GowinSynthesis finish        rc=0
+```
+
+Both versions require `LD_PRELOAD` of the system libfreetype on Ubuntu 24.04
+(otherwise `gw_sh` aborts with `undefined symbol: FT_Done_MM_Var` before
+printing anything); that is the only environment adjustment, and it is applied
+identically to the passing control and the crashing runs.
+
+### Note
+
+Defect 3 (`CK3001`) reproduces on **both** versions, at a different instance
+name (`u_ascal/u_ascal/n5541_o_0_s0` under V1.9.12.03).
+
+---
+
+## 4. Defect 1 — silent functional miscompile of the horizontal scaler
 
 **Severity: high.** No error, no warning, timing met, wrong hardware.
 
@@ -188,7 +240,8 @@ an address-derived payload (so a wrong *address* fails as loudly as wrong
 | Avalon clock phase (0° vs 90° relative to output clock) | no change (sim) |
 
 Timing is clean in every one of those builds: **0 setup violations, 0 hold
-violations**, `hclk` 83.4 MHz actual against 74.25 MHz required.
+violations**, `hclk` ~83 MHz actual against 74.25 MHz required
+(82.6-83.4 MHz depending on placement).
 
 ### What we would like
 
@@ -203,7 +256,7 @@ most of this investigation.
 
 ---
 
-## 4. Defect 2 — PA2122: inferred BSRAM shift register uses an unsupported WRITE_MODE
+## 5. Defect 2 — PA2122: inferred BSRAM shift register uses an unsupported WRITE_MODE
 
 **Severity: medium.** Hard error, blocks PnR. Workaround exists.
 
@@ -246,7 +299,7 @@ plain register arrays quite aggressively.
 
 ---
 
-## 5. Defect 3 — CK3001: incorrect DSP CASI configuration
+## 6. Defect 3 — CK3001: incorrect DSP CASI configuration
 
 **Severity: medium.** Hard error, blocks PnR. No workaround found.
 
@@ -263,7 +316,7 @@ module does not change the result (see Defect 4).
 
 ---
 
-## 6. Defect 4 — synthesis attributes silently ignored
+## 7. Defect 4 — synthesis attributes silently ignored
 
 Not a crash, but it makes the other defects far harder to work around, and
 costs users a great deal of time because failures are silent.
@@ -300,7 +353,7 @@ hours here.
 
 ---
 
-## 7. Reproduction
+## 8. Reproduction
 
 Minimal case for Defects 2 and 4 — no board required, fails at PnR:
 
@@ -312,11 +365,14 @@ Minimal case for Defects 2 and 4 — no board required, fails at PnR:
 5. Add `syn_srlstyle "registers"` to `o_hfrac`, `o_hpixq`, `o_div`, `o_dir`
    and the `o_[hv]_poly_phase_a*` pipelines; the build then completes.
 
+**Defect 0 (V1.9.12.03 crash)** needs only steps 1-3 above: the same minimal
+case that gives PA2122 on V1.9.11.03 crashes with SIGFPE on V1.9.12.03.
+
 Defect 1 additionally needs the scaler driven with real video (512×480 in,
 720p out) to observe the wrong picture; the internal-state table in §3 can be
 reproduced by exporting `o_hacc` / `o_dcpt` to spare pins or a UART.
 
-## 8. Contact / attachments available on request
+## 9. Contact / attachments available on request
 
 * Complete buildable project (top level, constraints, `build.tcl`)
 * The GHDL-synthesised Verilog netlist that behaves correctly

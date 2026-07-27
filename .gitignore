@@ -58,3 +58,12 @@ sim/ghdl_work/
 sim/ascal_sim.vhd
 sim/*.log
 sim/ascal_*_out*.txt
+
+# macOS AppleDouble turds
+._*
+.DS_Store
+
+# ROM tarballs - roms/ is ignored to keep copyrighted ROM data out of the
+# repo; a tarball of it would sneak the same data past that rule.
+mcrroms.tar
+*roms*.tar

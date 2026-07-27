@@ -61,6 +61,6 @@ Running technical mapping ...
 [80%] Tech-Mapping Phase 3 completed
 [90%] Tech-Mapping Phase 4 completed
 [95%] Generate netlist file "/home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/impl/gwsynthesis/ascal_ghdlnl.vg" completed
-ERROR (CK3001) : The CASI configuration of 'u_ascal/u_ascal/mult_122505_s3' is incorrect
+ERROR (CK3001) : The CASI configuration of 'u_ascal/u_ascal/n5541_o_0_s0' is incorrect
 WARN  (ST0001) : Ignored static timing analysis because of the failure of circuit analysis checking
 GowinSynthesis finish
