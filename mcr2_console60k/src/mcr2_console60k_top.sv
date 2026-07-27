@@ -151,7 +151,28 @@ wire core_reset_raw = (reset_cnt != 0);       // resets the SD loader itself
 // path (deterministic -0.35ns on the shollow build). One extra cycle of
 // reset latency costs nothing.
 reg core_reset = 1'b1;
-always @(posedge clk_sys) core_reset <= core_reset_raw || !rom_ready;
+wire       osd_nocard;   // INSERT CARD screen owns the display
+// INSERT CARD screen (no baked ROMs any more, so a missing card has nothing
+// to fall back on). Two things have to be true while it is up:
+//  1. The core must NOT be held in reset. mcr3/mcr2/mcr1.vhd hold hcnt/vcnt
+//     at zero under reset, so resetting stops the raster - and the OSD draws
+//     in the core raster domain, so the message would vanish into a black
+//     screen. The core free-runs on blank RAM instead; osd_nocard blanks its
+//     video so none of that garbage is visible behind the text.
+//  2. When a card finally loads, the core has been running for a while on
+//     nonsense and must be restarted, or the Z80 carries on from wherever it
+//     wandered to. Pulse reset on the way out of the screen.
+reg       nocard_d      = 1'b0;
+reg [7:0] nocard_exit_r = 8'd0;   // ~6us reset pulse on card-found
+always @(posedge clk_sys) begin
+    nocard_d <= osd_nocard;
+    if (nocard_d && !osd_nocard)      nocard_exit_r <= 8'hFF;
+    else if (nocard_exit_r != 8'd0)   nocard_exit_r <= nocard_exit_r - 8'd1;
+end
+always @(posedge clk_sys)
+    core_reset <= core_reset_raw
+               || (!rom_ready && !osd_nocard)
+               || (nocard_exit_r != 8'd0);
 
 // Game selection. game_id picks the input/DIP mapping at RUNTIME (all six
 // maps are compiled in); game_slot tells the SD loader which pack slot to
@@ -223,7 +244,9 @@ rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .FAMILY(8'd1)) loader (
     .slot(game_slot),
     // Boot consults the SD-saved preference; an OSD-commanded reload
     // (menu open) loads exactly the slot the user picked.
-    .use_prefs(~osd_active),
+    // INSERT CARD retries still honour the saved game (osd_active alone
+    // would force prefs off and lose the owner's selection)
+    .use_prefs(~osd_active | osd_nocard),
     .save_req(osd_save), .saved(ldr_saved),
     .cur_slot(ldr_slot),
     .sd_ready(sd_ready), .sd_err(sd_err),
@@ -652,7 +675,7 @@ osd #(.GAME_DEFAULT(GAME_DEFAULT)) osd_inst (
     .loaded_slot(ldr_slot),
     .save_req(osd_save),
     .sd_ready(sd_ready),
-    .osd_active(osd_active)
+    .osd_active(osd_active), .osd_nocard(osd_nocard)
 );
 // Both video paths consume the OSD-composited pixels from here on.
 wire [2:0] vid_r = osd_rgb[8:6];

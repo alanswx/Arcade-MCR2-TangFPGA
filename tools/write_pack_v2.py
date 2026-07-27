@@ -11,7 +11,8 @@ digit there erases a disk. It will:
     SD-Association way (first partition at sector 8192) keeps its
     filesystem; one partitioned at sector 2048 would be corrupted, so it
     is rejected - reformat it or use a spare card.
-  * unmount, write, then read the header back and verify "MCRPACK2".
+  * unmount, write, then read the WHOLE image back and verify it byte for
+    byte (header-only verification hid a partial write once)
 
 Usage (needs root for the raw device):
 
@@ -137,16 +138,31 @@ def main(argv):
 
     subprocess.run(["diskutil", "unmountDisk", f"/dev/{dev}"], check=True)
     with open(image, "rb") as src, open(f"/dev/r{dev}", "r+b") as dst:
+        data = src.read()
         dst.seek(PACK_BASE * SECTOR)
-        dst.write(src.read())
+        dst.write(data)
         dst.flush()
         os.fsync(dst.fileno())
-        # verify the header made it
+        # FULL read-back verify. Header-only was not enough: it checks the
+        # first 8 bytes and declares success, so a write that fails deeper in
+        # (a game's payload is hundreds of sectors in - timber starts ~2600
+        # sectors past the header) passes silently and shows up much later as
+        # a corrupt-looking GAME. Compare every byte, and say exactly where
+        # the first mismatch is so a bad card is obvious immediately.
         dst.seek(PACK_BASE * SECTOR)
-        if dst.read(8) != b"MCRPACK2":
-            sys.exit("Verify FAILED - header does not read back. Bad card?")
+        back = dst.read(len(data))
+    if len(back) != len(data):
+        sys.exit(f"Verify FAILED - read back {len(back)} of {len(data)} bytes.")
+    if back != data:
+        bad = next(i for i in range(len(data)) if back[i] != data[i])
+        sys.exit(
+            f"Verify FAILED - first mismatch at byte {bad} "
+            f"(absolute sector {PACK_BASE + bad // SECTOR}, "
+            f"{bad // SECTOR} sectors into the pack).\n"
+            "The card did not take the whole image. Retry; if it keeps "
+            "failing at a similar place, replace the card.")
     print(f"OK: wrote {size} bytes to {dev} at sector {PACK_BASE}, "
-          "header verified (MCRPACK2).")
+          f"ALL {size} bytes verified byte-for-byte.")
     subprocess.run(["diskutil", "eject", f"/dev/{dev}"], check=False)
     print("Card ejected - move it to the console and open the OSD "
           "(Select+Start).")

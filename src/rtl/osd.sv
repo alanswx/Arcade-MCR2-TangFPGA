@@ -77,19 +77,35 @@ module osd #(
     output reg        save_req,       // pulse: persist the selection to SD
     input             sd_ready,       // card initialised
 
-    output            osd_active
+    output            osd_active,
+    // High while the INSERT CARD screen owns the display. The tops use it to
+    // keep honouring the SD prefs during its retries (osd_active alone would
+    // force use_prefs low and lose the owner's saved game) and it is what
+    // blanks the core's video underneath.
+    output            osd_nocard
 );
 
 localparam [2:0] S_CLOSED = 3'd0,
                  S_OPEN   = 3'd1,
                  S_LOAD   = 3'd2,   // restart pulse issued, done not yet low
                  S_LOAD2  = 3'd3,   // loader running
-                 S_ERR    = 3'd4;
+                 S_ERR    = 3'd4,
+                 S_NOCARD = 3'd5;   // no usable card - retry until there is
 
 reg [2:0] state = S_CLOSED;
 reg [2:0] cursor = GAME_DEFAULT;
 
 assign osd_active = (state != S_CLOSED);
+assign osd_nocard = (state == S_NOCARD);
+
+// INSERT CARD retry cadence. The bitstream carries no ROM data any more
+// (licensing), so a missing or unreadable card leaves the core with blank
+// RAM and nothing to run - it must say so rather than show whatever empty
+// memory renders. rom_loader gives up after MAX_RETRY and latches `error`,
+// so recovery needs a fresh restart pulse: retry roughly every 2 s at
+// 60 Hz, which makes inserting a card Just Work with no power cycle.
+localparam [6:0] NOCARD_RETRY_FRAMES = 7'd120;
+reg [6:0] nocard_div = 7'd0;
 
 // ---------------------------------------------------------------------------
 // Button events: sampled once per FRAME, not per clock. The USB HID host
@@ -169,10 +185,31 @@ always @(posedge clk) begin
 
         case (state)
 
+        // A load that failed with the menu closed means boot found no usable
+        // card. There is no baked fallback any more, so take over the screen.
         S_CLOSED:
-            if (ev_combo) begin
+            if (loader_error) begin
+                state      <= S_NOCARD;
+                nocard_div <= 7'd0;
+            end else if (ev_combo) begin
                 state  <= S_OPEN;
                 cursor <= game_id;
+            end
+
+        // Hold the INSERT CARD message and keep retrying. Any successful load
+        // (the card turning up) drops straight back into the game.
+        S_NOCARD:
+            if (loader_done)
+                state <= S_CLOSED;
+            // Self-pacing: only count while the loader has GIVEN UP
+            // (loader_error high). An attempt takes seconds, so a free-running
+            // timer would stack restarts on top of an in-flight retry.
+            else if (frame_tick && loader_error) begin
+                if (nocard_div == NOCARD_RETRY_FRAMES - 7'd1) begin
+                    nocard_div     <= 7'd0;
+                    loader_restart <= 1'b1;   // re-arm; rom_loader latched error
+                end else
+                    nocard_div <= nocard_div + 7'd1;
             end
 
         S_OPEN: begin
@@ -272,6 +309,12 @@ localparam [191:0] TXT_SDOK    = "  SD CARD: READY        ";
 localparam [191:0] TXT_NOSD    = "  SD CARD: NOT FOUND    ";
 localparam [191:0] TXT_LOADING = "  LOADING...            ";
 localparam [191:0] TXT_FAILED  = "  LOAD FAILED           ";
+// INSERT CARD screen. 24 columns; keep every line inside them or row_char
+// simply truncates and the message reads wrong.
+localparam [191:0] TXT_NC1     = "     NO SD CARD         ";
+localparam [191:0] TXT_NC2     = "  INSERT THE CARD TO    ";
+localparam [191:0] TXT_NC3     = "  LOAD A GAME           ";
+localparam [191:0] TXT_NC4     = "  RETRYING...           ";
 
 function [7:0] row_char(input [191:0] rowtext, input [4:0] col);
     // char 0 sits in the MSBs
@@ -299,6 +342,16 @@ end
 reg [7:0] ch;
 always @(*) begin
     ch = 8'h20;   // space
+    if (state == S_NOCARD) begin
+        // Dedicated layout - the game roster is meaningless with no card.
+        case (p1_row)
+            4'd3:  ch = row_char(TXT_NC1, p1_col);
+            4'd5:  ch = row_char(TXT_NC2, p1_col);
+            4'd6:  ch = row_char(TXT_NC3, p1_col);
+            4'd9:  ch = row_char(TXT_NC4, p1_col);
+            default: ;
+        endcase
+    end else
     case (p1_row)
         4'd0:  ch = row_char(TXT_TITLE, p1_col);
         // Game rows: names beyond NUM_GAMES stay blank. (The gate was
@@ -321,8 +374,9 @@ always @(*) begin
         end
         default: ;
     endcase
-    // game rows: '>' = cursor, '*' = running game
-    if (p1_row >= 4'd3 && p1_row <= 4'd8) begin
+    // game rows: '>' = cursor, '*' = running game (not on the INSERT CARD
+    // screen - there is no roster there, and rows 3..8 carry the message)
+    if (state != S_NOCARD && p1_row >= 4'd3 && p1_row <= 4'd8) begin
         if (p1_col == 5'd1  && (p1_row - 4'd3) == {1'b0, cursor})
             ch = ">";
         if (p1_col == 5'd17 && (p1_row - 4'd3) == {1'b0, game_id})
@@ -349,10 +403,15 @@ end
 
 wire pix = p2_byte[3'd7 - p2_ub];   // bit 7 = leftmost pixel
 
-// white text on a dark blue box; game video passes through untouched
-// everywhere else (and entirely, when the menu is closed)
+// White text on a dark blue box; game video passes through untouched
+// everywhere else (and entirely, when the menu is closed).
+// On the INSERT CARD screen the core has NO ROMs - its RAM is blank and
+// whatever it renders is meaningless - so blank the background to black and
+// show only the message. Without this the operator sees the message sitting
+// on top of undefined video and cannot tell a missing card from a crash.
 assign rgb_out = (osd_active && p2_in) ? (pix ? 9'b111_111_111
                                               : 9'b000_000_010)
+                 : osd_nocard          ? 9'b000_000_000
                                        : rgb_in;
 
 endmodule
