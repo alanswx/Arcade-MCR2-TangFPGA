@@ -61,8 +61,24 @@ next real milestone" within each section.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
-   input maps, OSD slots 1/2, pack entries) - hardware test pending the v2
-   card write on the Mac. DoT's aim DIAL not wired yet (aim uses its
+   input maps, OSD slots 1/2, pack entries).
+   **TIMBER IS BROKEN ON HARDWARE — first observed 2026-07-27** (the board
+   was booting slot 1 from the SD pref, which is how it got looked at). The
+   sprite layer renders plausibly — lumberjack, logs, bears, and the audit
+   sweep reads Timber's exact sprite tuple {0E74,1786,17FD,0FE1} — but the
+   BACKGROUND TILE PLANE is garbage, showing what looks like sprite artwork
+   in the tilemap, with wrong colours. Ruled out already:
+   - NOT caused by un-baking the ROMs: the with-bake and no-bake bitstreams
+     render it identically, which also proves the bg download path works
+     (Tapper's baked bg is fully overwritten by Timber's SD data).
+   - NOT a region size/offset mismatch: timber and tapper have byte-identical
+     region sizes (main 57344, snd 16384, gfx1_1/2 16384, gfx2 131072), so
+     the pack v2 layout puts everything in the same place.
+   Prime suspects: the gfx1 plane order (merge_roms deliberately reverses it
+   for timber — timbg1 then timbg0 — per MAME; verify that is actually right
+   for our bg1/bg2 wiring), and per-game video config (ROT0 vs the tops'
+   assumptions). Captures: scratchpad nb_best.png / bk_best.png.
+   Discs of Tron remains completely untested. DoT's aim DIAL not wired yet (aim uses its
    dedicated IP2 buttons; spinner.sv WIRED 2026-07-24 - aim buttons rotate the dial; swap minus/plus if inverted on hardware).
    Remaining: Next: Timber, Discs of
    Tron (MCR-3, same core as Tapper); then the MCR3Scroll games (Spy Hunter,
