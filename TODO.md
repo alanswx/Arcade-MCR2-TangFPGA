@@ -63,12 +63,17 @@ next real milestone" within each section.
      (`GFX1_1_INIT`/`GFX1_2_INIT`/`GFX2_INIT`/`GFX_LOADABLE`), defaults
      baking, so mcr2_primer25k and mcr2_console138k are untouched. The 25K
      stays baked on purpose — fixed-function single-game board.
+   **"INSERT CARD" screen — DONE and HARDWARE-VERIFIED 2026-07-27.** Booted
+   with the card physically out: the message appears (no game, as intended -
+   there is no baked fallback any more). Inserting the card while it ran was
+   picked up within seconds and booted straight into the saved game with NO
+   power cycle, which is the behaviour that matters for a cabinet (no reset
+   button). Implementation notes in src/rtl/osd.sv - the core must NOT be
+   held in reset while the screen is up (mcr1/2/3.vhd hold hcnt/vcnt at zero
+   under reset and the OSD draws in the core raster domain, so resetting
+   blanks the message), retries are self-paced off loader_error, and leaving
+   the screen pulses core reset so the Z80 restarts cleanly on real ROMs.
    Still owed:
-   - **"INSERT CARD" screen.** The card-less fallback used to boot a baked
-     game; on the 60K there is now nothing to fall back to, so a missing or
-     unreadable card needs a clear on-screen message rather than whatever
-     blank/garbage the core produces from empty RAM. `sim/tb_nocard.sv`
-     exists and is the place to drive it.
    - `merge_roms` still emits `rom_*.hex` for the 25K/138K, and
      `game_config.vh` is still needed on the 60K for `GAME_DEFAULT` (the
      slot used when the prefs sector has no valid entry).
@@ -76,13 +81,12 @@ next real milestone" within each section.
    one bitstream hold all three cores.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-27:
-   **Tapper and Timber both WORK on hardware** (MCR-3) - Timber plays
-   perfectly when chosen from the OSD; treat it as a working title, with
-   only the boot-load caveat below outstanding. Discs of Tron now partly
-   tested too: it runs, screen mirrored (CORRECT - the real cabinet uses a
-   mirror), but its SPRITES were striped/missing interior pixels. Root
-   caused and fixed 2026-07-27 (sprite BITPLANE padding, see below);
-   awaits a card rewrite to confirm.
+   **ALL THREE MCR-3 TITLES NOW WORK ON HARDWARE** - Tapper, Timber and
+   Discs of Tron. Timber plays perfectly when chosen from the OSD (only the
+   boot-load caveat below is outstanding). Discs of Tron renders correctly
+   after the sprite bitplane fix; its screen is mirrored, which is CORRECT
+   (the real cabinet uses a mirror). Remaining for DoT: the aim DIAL is not
+   wired (aim uses the dedicated IP2 buttons).
    Earlier notes:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries).
@@ -126,9 +130,14 @@ next real milestone" within each section.
    CAUTION: the board reaches ~57% black frames (thermal HDMI dropout, TODO
    item 1) after hours of running - capture-based measurements get
    unreliable, so prefer beacon counters over screenshots when it is warm.
-   **DISCS OF TRON — sprite bitplane padding, FIXED 2026-07-27 (card rewrite
-   needed to confirm).** Symptom: runs, but sprites striped / missing
-   interior pixels. Cause: the MCR-3 sprite engine fetches each 32-bit word
+   **DISCS OF TRON — WORKS. Sprite bitplane padding FIXED and
+   HARDWARE-VERIFIED 2026-07-27.** Screen is mirrored, which is CORRECT (the
+   real cabinet uses a mirror). Confirmed on the board after a card rewrite:
+   sprite audit bucket2 reads 09F7 (the bitplane-padded prediction; the
+   broken layout read 126A), and all four download checksums match
+   tools/ck.py exactly - cpu 621C, snd 2FE4, bg1 2DF3, bg2 02AF - with
+   kick_n=0 / hwin=0xFF showing a healthy CPU.
+   Original symptom: ran, but sprites striped / missing interior pixels. Cause: the MCR-3 sprite engine fetches each 32-bit word
    as {Q3[i],Q2[i],Q1[i],Q0[i]} from the FOUR 32 KB QUARTERS of the 128 KB
    region, so every bitplane owns a fixed 32 KB slot. merge_roms simply
    concatenated the gfx2 files and padded at the END, which is only correct

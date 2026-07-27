@@ -10,9 +10,9 @@ the planned merged core possible. The 25K is the exception: it stays a
 fixed-function baked single-game board. See `TODO.md` item 2.
 
 Games: **MCR-2** — all six (Domino Man default on the 25K; the 60K holds
-the whole family behind its OSD). **MCR-3 (91490)** — Tapper and Timber
-both hardware-verified and playable; Discs of Tron runs (mirrored, which
-is correct - the real cabinet has a mirror) after a sprite-bitplane fix. **MCR-1** —
+the whole family behind its OSD). **MCR-3 (91490)** — all three titles
+hardware-verified and playable: Tapper, Timber and Discs of Tron (the
+latter mirrored, which is correct - the real cabinet has a mirror). **MCR-1** —
 Kick/Kickman/Solar Fox (builds, never hardware-tested; Kickman is on the
 card but missing from the OSD roster). One pack-v2 SD card carries every
 game for every family (`tools/make_pack_v2.py`); the product roadmap toward
@@ -31,7 +31,7 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr1_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds** — MCR-1 core (Kick/Kickman/Solar Fox); no baked ROMs, card required; OSD + pack-v2 (FAMILY=0). **Never hardware-tested** |
 | `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract over HDMI, 56/56 BSRAM, timing met. **Deliberately still BAKED** (fixed-function board, not part of the jukebox) |
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs |
-| `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — Tapper AND Timber verified on hardware (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); DoT untested; HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD |
+| `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
 Shared, platform-independent code lives in `src/`:
@@ -265,11 +265,11 @@ MCR-3 per-game notes:
 - **Timber** — WORKS (plays perfectly when chosen from the OSD). Needed the
   gfx1 plane-order correction above. One caveat open: a BOOT load renders
   corrupt bg tiles while an OSD load is fine — see TODO item 3.
-- **Discs of Tron** — runs; screen is mirrored, which is CORRECT (the real
-  cabinet uses a mirror). Needed the gfx1 plane-order fix AND the sprite
-  bitplane-padding fix (its 64 KB sprite set left two of four planes empty
-  — see the sprite note below). Aim dial not wired; aim uses the dedicated
-  IP2 buttons via `spinner.sv`.
+- **Discs of Tron** — WORKS (verified 2026-07-27). Screen is mirrored,
+  which is CORRECT — the real cabinet uses a mirror. Needed the gfx1
+  plane-order fix AND the sprite bitplane-padding fix (its 64 KB sprite set
+  left two of four planes empty — see the sprite note below). Aim dial not
+  wired; aim uses the dedicated IP2 buttons via `spinner.sv`.
 
 ## Hard-won constraints — do not regress these
 
