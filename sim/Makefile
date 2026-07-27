@@ -5,6 +5,15 @@
 #
 # These run on the host in seconds; use them before spending a build+flash
 # cycle on the board.
+#
+# REQUIRES VERILATOR 5.x - both --binary and --timing arrived in v5, and the
+# testbenches use delays/event controls that v4 rejects as UNSUPPORTED. The
+# Linux box here has 4.204 from apt, so these do NOT run there; build a v5
+# from source or run them on the Mac. `verilator --lint-only` on the RTL
+# alone still works under v4 and is worth doing as a cheap syntax check.
+#
+# The dpram mode tests are separate and use iverilog (any version):
+#   cd sim/dpram && see its README
 
 VERILATOR ?= verilator
 VFLAGS    := --binary --timing -j 4 -Wno-fatal

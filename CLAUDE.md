@@ -1,25 +1,37 @@
 # CLAUDE.md
 
-Bally Midway MCR2 arcade core (MiSTer/Cyclone V origin) ported to Sipeed Tang
-Gowin FPGA boards as standalone, hardcoded builds (no HPS/ARM download bus —
-ROMs are baked into BSRAM via `INIT_FILE` hex tables).
+Bally Midway MCR arcade cores (MiSTer/Cyclone V origin) ported to Sipeed Tang
+Gowin FPGA boards.
+
+**ROMs stream from the user's SD card — the 60K bitstreams contain NO ROM
+data.** This is a licensing requirement (a distributed bitstream must not
+embed copyrighted ROM data), not just an optimisation, and it is what makes
+the planned merged core possible. The 25K is the exception: it stays a
+fixed-function baked single-game board. See `TODO.md` item 2.
 
 Games: **MCR-2** — all six (Domino Man default on the 25K; the 60K holds
-the whole family behind its OSD). **MCR-3 (91490)** — Tapper (hardware-
-verified), Timber, Discs of Tron. **MCR-1** — Kick/Kickman/Solar Fox
-(builds, not hardware-verified). One pack-v2 SD card carries every game
-for every family (`tools/make_pack_v2.py`); the product roadmap toward
-the full-series multi-core jukebox is at the top of `TODO.md`.
+the whole family behind its OSD). **MCR-3 (91490)** — Tapper and Timber
+both hardware-verified; Discs of Tron untested. **MCR-1** —
+Kick/Kickman/Solar Fox (builds, never hardware-tested; Kickman is on the
+card but missing from the OSD roster). One pack-v2 SD card carries every
+game for every family (`tools/make_pack_v2.py`); the product roadmap toward
+the full-series jukebox is at the top of `TODO.md`.
+
+**Direction (agreed 2026-07-27): MCR-1/2/3 will be MERGED into one
+bitstream** rather than switched by Gowin multiboot — core switching then
+becomes the same instant SD reload that game switching already is. Multiboot
+was investigated and is deferred to MCR3Scroll/MCR3Mono; the full decode is
+preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 
 ## Board projects
 
 | Dir | Board | FPGA | Status |
 |---|---|---|---|
-| `mcr1_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds** — MCR-1 core (Kick/Kickman/Solar Fox); baked-ROM boot + OSD; pack-v2 SD loading wired (FAMILY=0). Not yet hardware-tested |
-| `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract mode over HDMI, 56/56 BSRAM, timing met |
-| `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games compiled in, OSD menu (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap |
-| `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — Tapper verified on hardware (sprites from the Tang SDRAM module at 225-deg pin clock, colors verified vs reference); Timber + Discs of Tron added (await v2-card test); HALT-watchdog boot (<10 s cold); pack-v2 full-from-SD wired |
-| `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K |
+| `mcr1_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds** — MCR-1 core (Kick/Kickman/Solar Fox); no baked ROMs, card required; OSD + pack-v2 (FAMILY=0). **Never hardware-tested** |
+| `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract over HDMI, 56/56 BSRAM, timing met. **Deliberately still BAKED** (fixed-function board, not part of the jukebox) |
+| `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs |
+| `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — Tapper AND Timber verified on hardware (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); DoT untested; HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD |
+| `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
 Shared, platform-independent code lives in `src/`:
 - `src/rtl/` — MCR2 core (`mcr2.vhd`), T80 Z80, Z80CTC, PLL (`gowin_pll_mcr2.v`), RAM wrappers (`dpram.sv`)
@@ -162,19 +174,48 @@ sprites 0x10000, bg 0x18000/0x19000) — the `mcr1_console60k` top and
 merge_roms both follow it.
 
 Writes `rom_*.hex` into every board's `src/` and into `src/rtl/`, **and**
-generates `game_config.vh` in the console board dirs. On the 60K all six
-per-game input/DIP maps are compiled in and muxed at runtime by `game_id`
-(owned by the OSD menu in `src/rtl/osd.sv`); `game_config.vh` (`GAME_TRON`
-etc.) only sets which game's ROMs are BAKED in — i.e. what boots with no SD
-card — and the matching `GAME_DEFAULT` for `game_id`. ROMs and input map
-still always match: at boot both come from the script's game, and an OSD
-switch reloads ROMs from the SD pack as it changes `game_id`. Gowin resolves `INIT_FILE`/`include` relative to the
-**instantiating source file's directory**: the board tops (`rom_main.hex`,
-`rom_snd.hex`, `game_config.vh`) resolve next to themselves; the gfx ROMs
-instantiated inside `mcr2.vhd` (`rom_gfx1_*.hex`, `rom_gfx2.hex`) resolve
-against `src/rtl/`. That's why the script writes to multiple dirs.
-(`src/roms/*.hex` is a stale Satan's Hollow set from the initial port — do
-not point new code at it.)
+generates `game_config.vh` in the console board dirs.
+
+**The 60K boards no longer USE those hex files** — they build with no baked
+ROMs at all (licensing). `merge_roms` still emits them because the 25K/138K
+tops do use them, and because `game_config.vh` is still needed: it sets
+`GAME_DEFAULT`, the slot the loader falls back to when the SD prefs sector
+has no valid entry. On the 60K all per-game input/DIP maps are compiled in
+and muxed at runtime by `game_id` (owned by `src/rtl/osd.sv`), so ROMs and
+input map always match — both follow whatever slot the loader actually
+loaded.
+
+**Bake control is per board, via generics** (`GFX1_1_INIT`, `GFX1_2_INIT`,
+`GFX2_INIT`, `GFX_LOADABLE`) on `mcr1.vhd` / `mcr2.vhd`. Defaults bake, so
+the shared cores keep the 25K and 138K working unchanged; the 60K tops pass
+empty names + `GFX_LOADABLE(1)`. Their CPU/sound dprams likewise use
+`.LOADABLE(1)` instead of `.INIT_FILE(...)`.
+**Never drop an `INIT_FILE` without setting `LOADABLE`** — see the dpram
+warning in the BSRAM section; port B goes read-only and the download dies
+silently.
+
+Gowin resolves `INIT_FILE`/`include` relative to the **instantiating source
+file's directory**: the board tops (`rom_main.hex`, `rom_snd.hex`,
+`game_config.vh`) resolve next to themselves; gfx ROMs instantiated inside
+`mcr2.vhd` resolve against `src/rtl/`. That's why the script writes to
+multiple dirs. (`src/roms/*.hex` is a stale Satan's Hollow set from the
+initial port — do not point new code at it.)
+
+### gfx1 background plane order is PER-CORE (cost a day, 2026-07-27)
+`merge_roms`' `gfx1_1_file`/`gfx1_2_file` are the two bg BITPLANES, and the
+right order depends on which core, because `mcr2.vhd` and `mcr3.vhd` wire
+their bg dprams differently:
+
+| Core | `gfx1_1` = | Verified by |
+|---|---|---|
+| MCR-3 (`mcr3.vhd`) | the ROM MAME loads **second** (higher offset) | tapper, timber |
+| MCR-2 (`mcr2.vhd`) | the ROM MAME loads **first** (offset 0) | domino, shollow, tron, wacko, kroozr |
+
+Check a new game with `mame -listxml <game> | grep 'region="gfx1"'` — the
+`offset=` attributes are the authority. Getting it backwards gives **correct
+shapes with wrong colours on bg tiles only** (sprites/sky/ground look fine),
+because both ROMs share `bg_code_line` and supply only the low 2 bits of
+`bg_palette_addr`. That exact symptom hit Timber and Discs of Tron.
 
 **openFPGALoader on this board**: SRAM loads fail SILENTLY ~1/3 of the
 time ("DONE" prints regardless) - confirm every load took via a per-build
@@ -183,8 +224,11 @@ verification - always `-f --verify`, retry until clean (first attempt
 usually fails just past byte 0x30000).
 
 Prebuilt flashable images are kept in `bitstreams/` (e.g.
-`console60k_tron.fs`, `console60k_domino.fs`) so switching games on the
-board is just a reflash, no rebuild. Regenerate them after RTL changes.
+`console60k_tron.fs`, `console60k_domino.fs`). These date from the era when
+a game was chosen by BAKING its ROMs, so most are now only useful as
+archives — on the 60K the game is chosen from the card via the OSD, and one
+bitstream per FAMILY covers every game in it. Regenerate after RTL changes;
+the per-game names are historical.
 
 Per-game notes (bit maps verified against MAME `mcr.cpp`):
 - **Domino Man** — 4-way stick (IP1), Button 1 = IP0 bit 4, DIPs 0x3E.
@@ -202,7 +246,15 @@ Per-game notes (bit maps verified against MAME `mcr.cpp`):
   buttons on IP2[3:0]. The dedicated set needs a videoram remap we lack.
 
 All six MCR-2 games fit the same core: `merge_roms.py` has ROM specs for
-each and `make_rompack.py` packs them into one card image.
+each and `make_pack_v2.py` packs every family's games into one card image.
+
+MCR-3 per-game notes:
+- **Tapper** — hardware-verified. The reference for MCR-3 gfx1 plane order.
+- **Timber** — hardware-verified 2026-07-27. Needed two fixes: a fresh card
+  (the old one's slot was stale) and the gfx1 plane-order correction above.
+- **Discs of Tron** — got the same plane-order fix; NEVER RUN. Its aim dial
+  is on the dedicated IP2 buttons via `spinner.sv` (swap minus/plus if
+  inverted); `video_hflip=1` per the roadmap.
 
 ## Hard-won constraints — do not regress these
 
@@ -265,13 +317,20 @@ Residual faint shimmer is a known limit of the line-buffer approach on the
 16 + core RAM/line buffer ~8). Satan's Hollow's 48 KB CPU ROM forces dropping
 the bg tile ROMs.
 
-**`dpram` with `INIT_FILE` is a TRUE dual-port RAM, not a ROM** — the file is
-only the power-on default and port B takes writes normally, which is how the
-SD loader overwrites baked ROMs at boot. (An older revision did tie port B
-off; anything claiming the `dl_*` bus is "inert" is stale.) Note the trap in
-the other direction: leaving `INIT_FILE` empty selects the `ram_mode` branch,
-where port B is **read-only** — so removing a bake without adding a writable
-no-init mode silently kills that ROM's download path.
+### `dpram` has three modes and the wrong one fails SILENTLY
+| Parameters | Behaviour | Use for |
+|---|---|---|
+| `INIT_FILE` set | dual-port RAM, port B writable, preloaded from hex | baked game (25K/138K) |
+| `LOADABLE(1)`, no `INIT_FILE` | same but starts blank — SD is the only source | **all 60K ROMs** (licensing) |
+| neither | dual-port RAM, writes on **port A only** | scratch RAM nothing downloads to |
+
+**`INIT_FILE` is a power-on DEFAULT, not a ROM** — port B takes writes
+normally, which is how the SD loader overwrites a baked ROM at boot. (An
+older revision did tie port B off; anything claiming the `dl_*` bus is
+"inert" is stale.) The trap: **dropping an `INIT_FILE` without setting
+`LOADABLE` silently selects the third mode**, port B goes read-only, and the
+download dies with no error anywhere. Always pair the two. All three modes
+are pinned by `sim/dpram/` — run those if you touch it.
 
 ### Tang SDRAM module (J9): pin clock MUST be phase-shifted ~225 deg
 The module (Winbond W9825G6KH) is fine; a 0-deg forwarded SDRAM_CLK puts
@@ -322,9 +381,14 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
   update) this before starting anything; per-doc "open items" sections feed
   into it.
 
-- `handoff_v8_sprite_shift.md` — **most current handoff**: the MCR-3
-  sprite "detached handle" investigation (proven facts, TEMPORARY
-  instruments in the tree, bench state, next steps). Start here.
+- `TODO.md` items 2 and 4 — **start here for current direction**: the
+  everything-from-SD status and the merge-vs-multiboot decision with its
+  measured BSRAM budget. These supersede the handoffs for "what next".
+- `handoff_v8_sprite_shift.md` — the MCR-3 sprite "detached handle"
+  investigation. **RESOLVED 2026-07-27** (see its header): the cause was a
+  pipeline-depth mismatch in the top's sprite dl→SDRAM write, not anything
+  in the core. Its "instance dependence", "leading suspects" and "next
+  steps" sections are superseded — read the header, not the body.
 - `handoff_v7_jukebox.md` — previous handoff: platform state after
   the MCR-3 bring-up marathon (SDRAM 225-deg fix, boot watchdog, pack v2,
   Timber/DoT, roadmap progress). Start here.

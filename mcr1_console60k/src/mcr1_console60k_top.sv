@@ -243,7 +243,9 @@ wire [7:0]  snd_do;
 dpram #(
     .dWidth(8),
     .aWidth(15),
-    .INIT_FILE("rom_main.hex")
+    // NO BAKE (licensing): starts blank, SD pack is the only source.
+    // LOADABLE keeps port B writable (empty INIT_FILE alone = read-only B).
+    .LOADABLE(1)
 ) rom_cpu_inst (
     .clk_a(clk_sys),
     .we_a(1'b0),
@@ -261,7 +263,7 @@ dpram #(
 dpram #(
     .dWidth(8),
     .aWidth(14),
-    .INIT_FILE("rom_snd.hex")
+    .LOADABLE(1)          // NO BAKE (licensing) - see the CPU ROM above
 ) rom_snd_inst (
     .clk_a(clk_sys),
     .we_a(1'b0),
@@ -442,7 +444,13 @@ wire [15:0] audio_l_val, audio_r_val;
 wire [9:0] core_hcnt;
 wire [9:0] core_vcnt;
 
-mcr1 mcr1_core (
+mcr1 #(
+    // NO BAKED ROMs (licensing): the bitstream must carry no ROM data, so the
+    // gfx dprams start blank and the SD pack is the only source. LOADABLE
+    // keeps their port B writable - an empty INIT_FILE alone would select
+    // dpram's read-only-port-B mode and silently kill the download.
+    .GFX1_1_INIT(""), .GFX1_2_INIT(""), .GFX2_INIT(""), .GFX_LOADABLE(1)
+) mcr1_core (
     .clock_40(clk_sys),
     .reset(core_reset),
 

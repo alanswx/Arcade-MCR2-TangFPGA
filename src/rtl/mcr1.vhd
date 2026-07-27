@@ -145,6 +145,17 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity mcr1 is
+-- Graphics-ROM baking, per board. Defaults keep the historic baked-hex
+-- behaviour; mcr1_console60k passes empty names + GFX_LOADABLE => 1 so the
+-- bitstream carries NO ROM data and the SD pack is the only source
+-- (licensing - see TODO item 2). dpram needs LOADABLE whenever INIT_FILE is
+-- empty, or its port B silently goes read-only and the download dies.
+generic(
+ GFX1_1_INIT  : string  := "rom_gfx1_1.hex";
+ GFX1_2_INIT  : string  := "rom_gfx1_2.hex";
+ GFX2_INIT    : string  := "rom_gfx2.hex";
+ GFX_LOADABLE : integer := 0
+);
 port(
  clock_40       : in std_logic;
  reset          : in std_logic;
@@ -821,7 +832,7 @@ port map(
 
 -- background graphics ROM G4
 bg_graphics_1 : entity work.dpram
-generic map( dWidth => 8, aWidth => 12, INIT_FILE => "rom_gfx1_1.hex")
+generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_1_INIT, LOADABLE => GFX_LOADABLE)
 port map(
  clk_a  => clock_vidn,
  we_a   => '0',
@@ -839,7 +850,7 @@ bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11000" els
 
 -- background graphics ROM G5
 bg_graphics_2 : entity work.dpram
-generic map( dWidth => 8, aWidth => 12, INIT_FILE => "rom_gfx1_2.hex")
+generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_2_INIT, LOADABLE => GFX_LOADABLE)
 port map(
  clk_a  => clock_vidn,
  we_a   => '0',
@@ -857,7 +868,7 @@ bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11001" els
 
 -- sprite graphics ROM 1E/1D/1B/1A
 sprite_graphics : entity work.dpram
-generic map( dWidth => 8, aWidth => 15, INIT_FILE => "rom_gfx2.hex")
+generic map( dWidth => 8, aWidth => 15, INIT_FILE => GFX2_INIT, LOADABLE => GFX_LOADABLE)
 port map(
  clk_a  => clock_vidn,
  we_a   => '0',
