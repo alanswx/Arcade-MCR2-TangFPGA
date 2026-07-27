@@ -818,7 +818,11 @@ wire [7:0]  snd_do;
 dpram #(
     .dWidth(8),
     .aWidth(16),
-    .INIT_FILE("rom_main.hex")
+    // NO BAKE (licensing): a distributed bitstream must not contain ROM data,
+    // so this starts blank and the SD pack is the only source. LOADABLE keeps
+    // port B writable - without it the empty INIT_FILE would select dpram's
+    // read-only-port-B mode and silently kill the download.
+    .LOADABLE(1)
 ) rom_cpu_inst (
     .clk_a(clk_sys),
     .we_a(1'b0),
@@ -836,7 +840,7 @@ dpram #(
 dpram #(
     .dWidth(8),
     .aWidth(14),
-    .INIT_FILE("rom_snd.hex")
+    .LOADABLE(1)          // NO BAKE (licensing) - see rom_cpu_inst above
 ) rom_snd_inst (
     .clk_a(clk_sys),
     .we_a(1'b0),

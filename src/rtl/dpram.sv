@@ -1,8 +1,22 @@
 // Parameterized Dual-Port RAM / ROM wrapper optimized for Gowin BSRAM block inference
+// Three modes, selected by INIT_FILE / LOADABLE:
+//   INIT_FILE set            -> dual-port RAM, port B writable, contents
+//                               pre-loaded from the hex file (baked game)
+//   LOADABLE=1, no INIT_FILE -> same, but starts blank: the SD loader is the
+//                               ONLY source. This is the shipping mode - a
+//                               distributed bitstream must not contain ROM
+//                               data (licensing), so bakes are being retired.
+//   neither                  -> simple dual-port RAM, writes on port A only
+//                               (cleanest BSRAM inference); use for scratch
+//                               RAM that no downloader writes.
+// TRAP: dropping an INIT_FILE without setting LOADABLE silently moves the
+// instance into the third mode, where port B writes are DISCARDED - the
+// download path dies with no error anywhere. Always pair the two.
 module dpram #(
     parameter dWidth = 8,
     parameter aWidth = 10,
-    parameter INIT_FILE = ""
+    parameter INIT_FILE = "",
+    parameter LOADABLE = 0
 ) (
     input                     clk_a,
     input                     we_a,
@@ -20,15 +34,17 @@ module dpram #(
 (* syn_ramstyle = "block_ram" *) reg [dWidth-1:0] ram [0:(2**aWidth)-1];
 
 generate
-    if (INIT_FILE != "") begin: rom_mode
-        // Initialised dual-port RAM: port A is the core's read port, port B
-        // takes ROM downloads (SD loader). The INIT_FILE contents act as the
-        // power-on default, so a bitstream still boots a baked-in game when
-        // no card is present and the loader simply overwrites it when there
-        // is one. Leaving we_b tied low reproduces the old ROM behaviour
-        // exactly.
-        initial begin
-            $readmemh(INIT_FILE, ram);
+    if (INIT_FILE != "" || LOADABLE) begin: rom_mode
+        // Dual-port RAM: port A is the core's read port, port B takes ROM
+        // downloads (SD loader). With INIT_FILE the contents act as a
+        // power-on default, so the bitstream boots a baked-in game with no
+        // card and the loader overwrites it when there is one; with
+        // LOADABLE alone the array starts blank and the card is required.
+        // Leaving we_b tied low reproduces plain-ROM behaviour exactly.
+        if (INIT_FILE != "") begin: preload
+            initial begin
+                $readmemh(INIT_FILE, ram);
+            end
         end
         always @(posedge clk_a) begin
             if (we_a) begin

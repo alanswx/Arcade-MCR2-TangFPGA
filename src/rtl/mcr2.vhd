@@ -765,7 +765,8 @@ port map(
 
 -- background tile graphics ROMs (gfx1): two 8KB planes, addressed by bg_code_line.
 -- Re-enabled for Domino Man, whose 32KB CPU ROM frees the BSRAM these need.
--- Read on port A via INIT_FILE (port B is inert in the dpram ROM mode).
+-- Read on port A; INIT_FILE is only the power-on default - dpram is a true
+-- dual-port RAM, so the port B writes decoded below DO land (SD overrides it).
 -- ROM download decode. Map (shared with rom_loader.sv / make_rompack.py):
 --   0x00000-0x0FFFF  CPU program   (written by the board top)
 --   0x10000-0x13FFF  sound CPU     (written by the board top)

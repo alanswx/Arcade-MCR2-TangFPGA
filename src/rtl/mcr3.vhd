@@ -843,7 +843,7 @@ bg_graphics_1 : entity work.dpram
 generic map(
 	aWidth => 14,
 	dWidth => 8,
-	INIT_FILE => "rom_gfx1_1.hex"   -- baked bg plane (dl 0x0000-0x3FFF)
+	LOADABLE => 1   -- bg plane from SD (dl 0x0000-0x3FFF); NO bake (licensing)
 )
 port map(
  clk_a  => clock_vidn,
@@ -865,7 +865,7 @@ bg_graphics_2 : entity work.dpram
 generic map(
 	aWidth => 14,
 	dWidth => 8,
-	INIT_FILE => "rom_gfx1_2.hex"   -- baked bg plane (dl 0x4000-0x7FFF)
+	LOADABLE => 1   -- bg plane from SD (dl 0x4000-0x7FFF); NO bake (licensing)
 )
 port map(
  clk_a  => clock_vidn,

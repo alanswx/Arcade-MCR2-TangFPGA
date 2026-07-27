@@ -263,8 +263,15 @@ Residual faint shimmer is a known limit of the line-buffer approach on the
 ### BSRAM budget (25K)
 56 blocks total. Domino Man fits exactly (CPU 16 + sound 8 + bg 2×4 + sprites
 16 + core RAM/line buffer ~8). Satan's Hollow's 48 KB CPU ROM forces dropping
-the bg tile ROMs. `dpram` in ROM mode reads only port A; the `dl_*` download
-bus is inert in these standalone builds.
+the bg tile ROMs.
+
+**`dpram` with `INIT_FILE` is a TRUE dual-port RAM, not a ROM** — the file is
+only the power-on default and port B takes writes normally, which is how the
+SD loader overwrites baked ROMs at boot. (An older revision did tie port B
+off; anything claiming the `dl_*` bus is "inert" is stale.) Note the trap in
+the other direction: leaving `INIT_FILE` empty selects the `ram_mode` branch,
+where port B is **read-only** — so removing a bake without adding a writable
+no-init mode silently kills that ROM's download path.
 
 ### Tang SDRAM module (J9): pin clock MUST be phase-shifted ~225 deg
 The module (Winbond W9825G6KH) is fine; a 0-deg forwarded SDRAM_CLK puts

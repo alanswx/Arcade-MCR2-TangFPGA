@@ -35,12 +35,29 @@ next real milestone" within each section.
    Evidence + revert details: commits 2bee7ea/2424e0c, and the two-cause
    entry below (thermal residual is secondary).
 
-2. **All cores load ROMs from the SD card (Phase 2, "everything-from-SD").**
-   CPU/sound/bg for every game stream from SD at boot instead of baked
-   BSRAM; sprites already do (MCR-3). Unblocked by the 225-deg SDRAM fix.
-   Gate: SD format v2 (docs/sd_card_layout_v2.md — region tables replace
-   fixed 128 KB slots). Applies to mcr1/mcr2/mcr3 tops; hold-in-reset-until-
-   all-regions-written is already the boot contract (see the boot kick note).
+2. **All cores load ROMs from the SD card ("everything-from-SD").** NOW A
+   LICENSING REQUIREMENT, not just an optimisation: no copyrighted ROM data
+   may ship inside a distributed bitstream, so the INIT_FILE bakes have to
+   go and the card becomes mandatory.
+   **STATUS 2026-07-27 — the mechanism is already built and wired.** Every
+   ROM in all three families has a dl write decode driving `dpram` port B:
+   MCR-2 `mcr2.vhd` (bg1/bg2/sprite gfx) + top (cpu/snd), same for
+   `mcr1.vhd`, and MCR-3 (bg via core dl, sprites via SDRAM). And `dpram`
+   in INIT_FILE mode is a TRUE dual-port RAM — the file is only the
+   power-on default and port B writes land normally. (CLAUDE.md's "port B
+   is inert in the dpram ROM mode", and the same line in mcr2.vhd:768, are
+   STALE — they describe an older dpram. Fixed 2026-07-27.)
+   Remaining work is therefore small:
+   - `dpram` needs a mode for "writable dual-port, NO init file": today the
+     generate picks `ram_mode` when INIT_FILE is empty, and that branch
+     makes port B READ-ONLY. Dropping the bakes without this would silently
+     break every download path.
+   - Delete the INIT_FILE bakes + the `rom_*.hex` generation they need,
+     and replace the card-less fallback (which currently boots a baked
+     game) with an "INSERT CARD" screen.
+   - Verify each family still boots from the v2 pack afterwards.
+   Feeds directly into item 4's merge — the freed BSRAM is what makes one
+   bitstream hold all three cores.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
@@ -54,17 +71,64 @@ next real milestone" within each section.
    is built but never hardware-verified — verify while at it. Remember the
    Tapper lesson: bg ROM plane order bg0->gfx1_1 for EVERY new game.
 
-4. **Core switching (multi-FAMILY).** VERIFIED 2026-07-24: the SPI flash
-   is 16 MB (JEDEC 0B 40 18) -> SIX 2.48 MB core slots fit. Remaining: the
-   Gowin multiboot mechanics (the .fs header says "MultiBootMode: Single"
-   even with -multi_boot 1 - the option needs investigating; likely needs
-   the IDE's multiboot address settings or a golden+jump image layout).
-   Then: Games within a family already switch
-   at runtime via the OSD. Switching between family cores = Gowin multiboot:
-   one core per SPI-flash slot + multiboot jump. To verify first: flash size
-   (2.48 MB/.bin per core; how many slots fit) and multiboot address config
-   (build.tcl already sets -multi_boot 1). Design in
-   docs/sd_card_layout_v2.md ("cores in flash, ROMs on SD" — option 1).
+4. **Core switching (multi-FAMILY). DECISION 2026-07-27: MERGE MCR-1/2/3
+   into ONE bitstream; multiboot is deferred to MCR3Scroll/MCR3Mono.**
+   Driver: ROMs must stream from the user's SD card for licensing anyway
+   (no copyrighted ROM data may ship inside a bitstream), and that is the
+   same work that makes a merged core fit. Merged, core switching becomes
+   the instant SD reload that game switching already is — no reconfig, no
+   flash slot map, no wire. See items 4a/4b below for the budget and the
+   multiboot findings (kept: Scroll/Mono will need them).
+
+   **4a. Why merging fits (measured from the syn resource reports, 60K):**
+   Logic is a non-issue — ~23k of 60k LUT for all three cores plus shared
+   infra. BSRAM is the constraint (118 blocks):
+   | | LUT | BSRAM |
+   |---|---|---|
+   | shared infra (DDR3 fb 9, USB 2, OSD 1) | ~4.3k | 12 |
+   | MCR-1: cpu 16 + snd 8 + core 33 | 5.8k | 57 |
+   | MCR-2: cpu 32 + snd 8 + core 34 | 5.8k | 74 |
+   | MCR-3: cpu 32 + snd 8 + core 28 | 5.6k | 68 |
+   Naive merge = 211/118. But only ONE game runs at a time, so the ROM
+   storage can be shared: cpu max(16,32,32)=32 + snd 8 shared at top level
+   -> 147. Then move MCR-1/2 `sprite_graphics` (16 blocks each) to SDRAM
+   exactly as mcr3.vhd already does -> **115/118**. If that is too tight,
+   sharing the bg gfx RAMs (mcr1 4 + mcr2 8 + mcr3 16 = 28 -> 16) gives
+   **103/118**. Does NOT stretch to 5 families (adding Scroll+Mono working
+   RAMs ~12 each overshoots), hence multiboot survives for those.
+
+   **4b. Multiboot mechanics — DECODED and partly VERIFIED on this
+   toolchain (keep for Scroll/Mono).** The 2026-07-24 investigation's notes
+   were never actually committed (1b25a33 staged only RTL), so they are
+   recorded here properly:
+   - `//MultiBootMode: Single` in the .fs header is the SPI **bus width**
+     (Single/Fast/Dual/Quad), NOT a "multiboot off" flag. The old worry
+     about it was a red herring.
+   - The jump pointer is `set_option -multiboot_spi_flash_address <hex>`
+     (plus `-multiboot_address_width 24`). **VERIFIED 2026-07-27**: 300000
+     vs 600000 produce DIFFERENT bitstream bodies, so the address really is
+     encoded. Pass the value WITHOUT a `0x` prefix — `0x300000` yields a
+     cosmetic `//MultiBootSPIAddr: 0x0x300000` (same bits, ugly header).
+     `-mspi_jump` / `-mspijump_spi_flash_address` are the sibling options.
+   - GW5A (Arora V) has **no fabric GOCONFIG/HOTBOOT primitive**; reload is
+     triggered by the dedicated **RECONFIG_N** pin.
+   - **RECONFIG_N routing — ANSWERED 2026-07-27** (was the open hardware
+     question): dock schematic sheet 19/17 (`FPGA_CFG`, rev A and rev C) —
+     `RECONFIG_N` is SOM connector J0 pin 61 = SOM ball **N12**
+     (`BANK3_N12_IOR9B`), pulled up on the SOM, and grounded by **SW2**
+     (`RECFG_KEY`, a 6x6 mm tact switch on the dock) through C9 10 nF with
+     D1 for ESD. So the net exists and a spare GPIO can be jumpered to it;
+     the FPGA cannot drive it directly because it is a dedicated config pin.
+   - Cost that killed it for this product: each hop is a FULL
+     reconfiguration — 2.51 MB at the default 2.5 MHz single-lane SPI is
+     ~8 s, and the device always starts at flash address 0, so a ring walk
+     happens on EVERY cold boot, not just when switching (a cabinet set to
+     the 3rd core pays ~24 s per power-on). `-multiboot_mode Quad` might cut
+     that ~4x (untested). `-loading_rate` rejected every value tried
+     (100/50/30/20/10.0/5.0) on GW5AT-60 — accepted set unknown.
+   - Flash budget: 16 MB (JEDEC 0B 40 18), 2.51 MB per .bin -> five 3 MB
+     slots. Design in docs/sd_card_layout_v2.md ("cores in flash, ROMs on
+     SD" — option 1).
 
 5. **Persist the chosen core across power cycles.** GROUNDWORK IN
    2026-07-24: prefs sector byte 9 now records the running FAMILY on every

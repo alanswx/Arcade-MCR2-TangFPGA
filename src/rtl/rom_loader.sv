@@ -40,6 +40,16 @@ module rom_loader #(
     output reg        saved,         // pulse: save attempt finished
     output reg [3:0]  cur_slot,      // slot actually loaded (valid with done)
 
+    // Which CORE (family) the cabinet was last running, from prefs byte 9.
+    // Only meaningful with pref_core_valid high: that means the prefs sector
+    // carried a good "MCRPREF1" magic, so byte 9 is a real family id rather
+    // than a blank/garbage sector. Read on the boot path only (use_prefs);
+    // an OSD-commanded reload leaves both untouched. The top uses this to
+    // decide whether it is the right core for this cabinet and, if not, to
+    // hand off to the next one (multiboot chain - roadmap items 4/5).
+    output reg [7:0]  pref_core,
+    output reg        pref_core_valid,
+
     // sd_reader interface
     input             sd_ready,
     input             sd_err,
@@ -93,8 +103,7 @@ reg [26:0] watchdog;     // hard upper bound on the whole load (~1.7s @40MHz)
 reg [63:0] hdr;
 reg [7:0]  slot_cnt;     // header byte 8: number of slots in the pack
 reg [7:0]  pref_slot;    // prefs sector byte 8: last-selected slot
-reg [7:0]  pref_core;    // prefs sector byte 9: last-running core/family
-                         // (read for item-4 multiboot; write side done)
+                         // (pref_core / pref_core_valid are output ports)
 reg [8:0]  hdr_cnt;
 reg [15:0] sect_left_hi;   // sectors remaining in this slot (0..256)
 // v2 superblock parsing (within the single header-sector stream)
@@ -156,6 +165,8 @@ always @(posedge clk) begin
         cur_slot   <= slot;
         retry_cnt  <= 3'd0;
         retry_wait <= 22'd0;
+        pref_core       <= 8'd0;
+        pref_core_valid <= 1'b0;
     end else begin
         if (save_req) save_pend <= 1'b1;
 
@@ -205,8 +216,10 @@ always @(posedge clk) begin
         // A valid preference overrides the baked-in default; anything else
         // (blank sector, garbage) silently falls through to `slot`.
         L_PREFCHK: begin
-            if (hdr == MAGIC_PREF && pref_slot[7:4] == 4'd0)
-                cur_slot <= pref_slot[3:0];
+            if (hdr == MAGIC_PREF) begin
+                if (pref_slot[7:4] == 4'd0) cur_slot <= pref_slot[3:0];
+                pref_core_valid <= 1'b1;   // byte 9 is a real family id
+            end
             hdr_cnt     <= 9'd0;
             sd_sector   <= PACK_BASE;
             sd_rd_start <= 1'b1;
