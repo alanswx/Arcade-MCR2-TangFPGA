@@ -376,6 +376,31 @@ wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
 // is dl_bg1_rng, NOT dl_bg2_rng. Getting this backwards made CARD-loaded
 // games show the old swapped bg colors while baked boots were correct
 // (exactly the first v2-card session's report).
+// TEMPORARY DIAGNOSTIC (2026-07-27): per-region checksums of the DOWNLOAD
+// STREAM. Timber runs when loaded from the OSD but crashes when loaded at
+// BOOT (use_prefs path) - sprites audit bit-exact either way, so the fault is
+// in what the loader DELIVERS for one of the BSRAM regions. Checksum the
+// bytes as they stream past, position-sensitive (rotate-then-XOR), and
+// compare against the value computed offline from the ROM:
+//   tools/ck.py  (prints cpu/snd/bg1/bg2 for a game)
+// Matching = the loader delivered that region correctly and the fault is
+// downstream; differing = the boot path corrupts it. Beacon slots E5/E6/E7.
+reg [15:0] ck_cpu = 16'd0, ck_snd = 16'd0, ck_bg1 = 16'd0, ck_bg2 = 16'd0;
+always @(posedge clk_sys) begin
+    // Restart on the first byte of a payload, NOT just at power-on: an
+    // OSD-commanded reload must produce a value comparable with the boot
+    // load, and accumulating across both would make them differ for a
+    // meaningless reason.
+    if (core_reset_raw || (dl_wr && dl_addr == 18'd0)) begin
+        ck_cpu <= 16'd0; ck_snd <= 16'd0; ck_bg1 <= 16'd0; ck_bg2 <= 16'd0;
+    end else if (dl_wr) begin
+        if (dl_cpu_rng) ck_cpu <= {ck_cpu[14:0], ck_cpu[15]} ^ {8'd0, dl_data};
+        if (dl_snd_rng) ck_snd <= {ck_snd[14:0], ck_snd[15]} ^ {8'd0, dl_data};
+        if (dl_bg1_rng) ck_bg1 <= {ck_bg1[14:0], ck_bg1[15]} ^ {8'd0, dl_data};
+        if (dl_bg2_rng) ck_bg2 <= {ck_bg2[14:0], ck_bg2[15]} ^ {8'd0, dl_data};
+    end
+end
+
 wire [15:0] core_dl_addr = {1'b0, dl_bg1_rng, dl_addr[13:0]};
 
 // ------------------------------------------------------------------------
@@ -1452,9 +1477,9 @@ end
 assign wedge_kick = (!core_reset) && (wd_holdoff == 28'd134_217_712)
                     && (hwin == 22'd0);
 
-reg [26:0] diag_cnt = 0;
+reg [27:0] diag_cnt = 0;   // 28 bits: diag_ph uses [27:25] (8 slots)
 always @(posedge clk_sys) diag_cnt <= diag_cnt + 1'b1;
-wire [1:0]  diag_ph = diag_cnt[26:25];
+wire [2:0]  diag_ph = diag_cnt[27:25];   // 8 slots (was 4)
 
 // DIAGNOSTIC: core raster heartbeat. The beacon could not previously tell
 // "core halted in reset" apart from "core running, but no picture reaching
@@ -1482,9 +1507,14 @@ end
 // ROTATED = the array is stored one word off (that is what the 2026-07-25
 // detached-handle artifact was, fixed by aligning dl_data's pipeline depth
 // with the address's).
-wire [15:0] diag_x = !aud_done_s ? spw_count_s[23:8] : aud_lat_s[diag_ph];
+wire [15:0] diag_x = !aud_done_s      ? spw_count_s[23:8] :
+                     diag_ph == 3'd5 ? ck_cpu :
+                     diag_ph == 3'd6 ? ck_bg1 :
+                     diag_ph == 3'd7 ? ck_bg2 :
+                     diag_ph == 3'd4 ? ck_snd :
+                                       aud_lat_s[diag_ph[1:0]];
 wire [7:0]  diag_q = !aud_done_s ? spw_count_s[7:0]  :
-                                   {6'h38, diag_ph};   // 8'hE0 | ph
+                                   {5'h1C, diag_ph};   // 8'hE0 | ph
 
 // DIAGNOSTIC: the one-shot SDRAM dump borrows the UART pin while it runs
 wire beacon_txd;
