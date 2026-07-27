@@ -646,11 +646,27 @@ budget exists anymore. See the Shield PCB section.
   in flash as of f7b5d39. Zoomed frame comparison vs the MobyGames
   reference hinted the mug sprite sinking ~4px into the bar top in the
   OLD build, but the frames are different game moments - inconclusive.
-  NEXT: with HDMI back through the capture card, grab the same attract
-  moment and measure sprite-vs-bar alignment against the reference; if
-  still offset, the remaining suspects are sp fetch-window timing at
-  225-deg (data-arrival vs the core's read window) - test by comparing a
-  MiSTer screenshot of the same frame.
+  UPDATE 2026-07-26 — the artifact is now precisely characterized from
+  live captures (scratchpad live_199 + zooms): **the last-drawn 8px
+  word-slot of a sprite is displaced ~8px RIGHT with a transparent gap
+  where it belongs** (empty mug: glass..gap..detached handle; patrons: a
+  detached right sliver). Established: (1) the pack blob decodes
+  perfectly offline — all 256 codes render right, handles attached
+  (scratchpad sheet.png), so card data is good; (2) MAME ground truth
+  confirms handle attaches directly to the glass; (3) a GHDL testbench
+  (scratchpad/spsim/sp_tb.vhd) running the mcr3.vhd sprite machine
+  VERBATIM against a cycle-exact model of sdram_gw's sp port renders
+  all four words contiguous for ALL 7 possible 80MHz-round alignments —
+  the RTL logic cannot produce the artifact, and the engine cannot even
+  write past its 32px window. So the fault is a hardware-only behavior
+  (fetch/data path at 225-deg, or something synthesis-specific).
+  IN FLIGHT: a diagnostic build that (a) replaces sprite codes 22/23
+  (mugs) with a synthetic pattern at SD-load time — fetch word w renders
+  as 8px of color w+1, so one capture of the attract mug shows exactly
+  which word landed at which slot; (b) adds a post-load port2 audit
+  sweep counting nonzero sprite words by i%4 in beacon slots E0-E3
+  (write-side loss vs fetch-side). Both marked TEMPORARY in
+  mcr3_console60k_top.sv; REVERT after diagnosis.
 
 - **See `docs/mcr_core_roadmap.md`** for the phased plan. All ROMs in `roms/`.
 - **MCR3Mono (Rampage/Sarge/Max RPM/Power Drive/Star Guards) — PARKED for

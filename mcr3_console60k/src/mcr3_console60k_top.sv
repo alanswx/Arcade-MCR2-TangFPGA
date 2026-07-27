@@ -410,6 +410,30 @@ reg [4:0]  pat_wait = 5'd0;
 reg        p1_req_r = 1'b0, p1_we_r = 1'b0;
 reg [14:0] scrub_tick = 15'd0;   // 2^15 @80MHz = 410us per scrub read
 reg [6:0]  scrub_row  = 7'd0;    // 128 rows cover the whole 128KB
+// SPRITE-WORD AUDIT (2026-07-26): the on-screen mug lacks its handle (the
+// 4th 32-bit word of each sprite line) although the pack blob decodes
+// perfectly offline. After each load, read back all 32K sprite words via
+// the idle port2 and count NONZERO words bucketed by i%4. Write-side loss
+// of the 4th words -> aud3 ~0 while aud0 is large; all buckets similar ->
+// SDRAM content fine, fault is in the core's fetch path.
+reg [2:0]  aud_st   = 3'd0;
+reg [14:0] aud_i    = 15'd0;
+reg [15:0] aud_cnt [0:3];
+reg [15:0] aud_lat [0:3];
+reg [7:0]  aud_wait = 8'd0;
+reg        aud_done = 1'b0;
+// Pattern-compare: codes 22/23 hold a KNOWN synthetic pattern (see the dl
+// substitution below), so the audit can verify VALUES, not just nonzero-ness.
+// aud_bad = words of codes 22/23 whose readback != expected. 0 = clean load;
+// ~256 with a one-word rotation = the load slipped a byte (the suspected
+// cause of the detached-handle artifact). Beacon slot E4.
+reg [15:0] aud_bad  = 16'd0;
+reg [15:0] aud_bad_l= 16'hFFFF;    // FFFF = no sweep yet
+wire [31:0] aud_exp = (aud_i[1:0]==2'd0) ? 32'h00000011 :
+                      (aud_i[1:0]==2'd1) ? 32'h00002222 :
+                      (aud_i[1:0]==2'd2) ? 32'h00333333 : 32'h44444444;
+wire        aud_ispat = (aud_i[14:7] == 8'd22) || (aud_i[14:7] == 8'd23);
+wire [31:0] p2_q_aud;          // port2 read data (declared before use)
 reg [23:1] p1_a_r = 23'd0;
 reg [1:0]  p1_ds_r = 2'b00;
 reg [15:0] p1_d_r = 16'd0;
@@ -437,6 +461,47 @@ always @(posedge clk_sdram) begin
     // ~30-100s; busy bus -> data stays alive. (One-word-per-row at 410us
     // was too quiet to help; the continuous fast sweeps were not.)
     scrub_tick <= scrub_tick + 15'd1;
+    // sprite-word audit FSM (see decl above): owns p1_* while it runs.
+    // req/ack toggle protocol: after flipping req, ack == req means the
+    // read committed and port2_q holds this word. Aborts back to idle if
+    // a new load starts (the loader owns port2 during loads).
+    if (aud_st != 3'd0 && aud_st != 3'd5 && !ldrp_s2)
+        aud_st <= 3'd0;
+    else case (aud_st)
+    3'd0: if (ldrp_s2) begin aud_st <= 3'd1; aud_i <= 0; aud_wait <= 0;
+              aud_cnt[0] <= 0; aud_cnt[1] <= 0; aud_cnt[2] <= 0; aud_cnt[3] <= 0;
+              aud_bad <= 0;
+              aud_done <= 1'b0;
+          end
+    3'd1: begin aud_wait <= aud_wait + 1'd1;    // ~3us settle after ldr_done
+              if (&aud_wait) aud_st <= 3'd2; end
+    3'd2: begin
+              p1_a_r   <= {7'b0, aud_i, 1'b0};
+              p1_we_r  <= 1'b0;
+              p1_req_r <= ~p1_req_r;
+              aud_st   <= 3'd3;
+          end
+    3'd3: if (p1_ack == p1_req_r) aud_st <= 3'd4;  // read committed
+    3'd4: begin                                    // port2_q = word aud_i
+              if (p2_q_aud != 32'd0)
+                  aud_cnt[aud_i[1:0]] <= aud_cnt[aud_i[1:0]] + 1'd1;
+              if (aud_ispat && p2_q_aud != aud_exp)
+                  aud_bad <= aud_bad + 1'd1;
+              if (aud_i == 15'h7FFF) begin
+                  aud_bad_l <= aud_bad;   // last word isn't code 22/23; no fold needed
+                  // aud_cnt[3] hasn't absorbed this last word yet (NBA), so
+                  // fold it into the latch by hand. 0x7FFF has i%4 == 3.
+                  aud_lat[0] <= aud_cnt[0]; aud_lat[1] <= aud_cnt[1];
+                  aud_lat[2] <= aud_cnt[2];
+                  aud_lat[3] <= aud_cnt[3] + ((p2_q_aud != 32'd0) ? 16'd1 : 16'd0);
+                  aud_done <= 1'b1;
+                  aud_st <= 3'd5;                  // done; hold results
+              end else begin aud_i <= aud_i + 1'd1; aud_st <= 3'd2; end
+          end
+    3'd5: if (!ldrp_s2) aud_st <= 3'd0;            // rearm on next load
+    default: aud_st <= 3'd0;
+    endcase
+
     if (1'b0) begin   // scrub retired: refresh works at 225deg
         p1_a_r   <= {7'b0, scrub_row, 9'd0};         // word 0 of each row
         p1_we_r  <= 1'b0;
@@ -446,7 +511,23 @@ always @(posedge clk_sdram) begin
     if (dl_wr_s1 && !dl_wr_s2 && dl_sp_rng_s2) begin   // new SPRITE dl byte
         p1_a_r    <= {7'b0, dl_sp_off_s2[14:0], dl_sp_off_s2[16]};
         p1_ds_r   <= {dl_sp_off_s2[15], ~dl_sp_off_s2[15]};
-        p1_d_r    <= {dl_data, dl_data};
+        // TEMPORARY DIAGNOSTIC (2026-07-26): sprite codes 22/23 (the beer
+        // mugs) get a synthetic pattern instead of ROM data - every pixel
+        // nibble of 32-bit fetch word w = w+1 (values 1..4). On screen the
+        // mug renders as four 8px bands whose colors reveal exactly which
+        // fetch word the engine drew at which screen slot (chasing the
+        // displaced-last-word artifact). Word index in tile = off[1:0];
+        // the same byte goes to all four planes. REVERT after experiment.
+        // v2 pattern: word w carries (w+1)*2 opaque pixels of value w+1 then
+        // transparency, so run LENGTHS 2/4/6/8 identify each word even if
+        // palette colors collide (they did: pal[1]==pal[4]). Byte plane p
+        // (off[16:15]) covers pixels 2p..2p+1 -> nonzero iff p <= w.
+        if (dl_sp_off_s2[14:7] == 8'd22 || dl_sp_off_s2[14:7] == 8'd23)
+            p1_d_r <= (dl_sp_off_s2[16:15] <= dl_sp_off_s2[1:0])
+                      ? {4{ {1'b0, ({1'b0, dl_sp_off_s2[1:0]} + 3'd1)} }}
+                      : 16'h0000;
+        else
+            p1_d_r <= {dl_data, dl_data};
         p1_we_r   <= 1'b1;
         p1_req_r  <= ~p1_req_r;             // launch (toggle req vs ack)
         spw_count <= spw_count + 24'd1;
@@ -565,7 +646,14 @@ reg [23:0] dbg_refresh_s = 0;
 reg [15:0] dbg_blk0_s = 0, dbg_blk1_s = 0;
 reg [15:0] rw_lat_s = 0;
 reg [15:0] boot_dbg_s = 0;   // DIAGNOSTIC: boot-kick evidence, beacon E2
+reg        aud_done_s = 0;
+reg [15:0] aud_lat_s [0:3];
+reg [15:0] aud_bad_s = 16'hFFFF;
 always @(posedge clk_sys) begin
+    aud_done_s   <= aud_done;
+    aud_bad_s    <= aud_bad_l;
+    aud_lat_s[0] <= aud_lat[0];  aud_lat_s[1] <= aud_lat[1];
+    aud_lat_s[2] <= aud_lat[2];  aud_lat_s[3] <= aud_lat[3];
     spw_count_s <= spw_count;
     spq_nonff_s <= spq_nonff;
     chk_allff_s <= chk_allff;
@@ -708,7 +796,7 @@ sdram_gw #(.RFRSH_CYCLES(10'd600)) sdram (
     .cpu3_addr(23'd0), .cpu3_q(),
     // port2: sprite download write (shares the sp read's bank 2,3 group)
     .port2_req(p1_req_r), .port2_ack(p1_ack), .port2_we(p1_we_r),
-    .port2_a(p1_a_r), .port2_ds(p1_ds_r), .port2_d(p1_d_r), .port2_q(),
+    .port2_a(p1_a_r), .port2_ds(p1_ds_r), .port2_d(p1_d_r), .port2_q(p2_q_aud),
     // sprite read to the core: 15-bit word addr -> 32-bit plane word
     // v6 EXPERIMENT REVERTED 2026-07-23: the core drives the sp bus again.
     // (While disconnected, sp_addr followed the dump's probe address and the
@@ -1365,15 +1453,20 @@ end
 // E1 repurposed: live AUTO_REFRESH issue counter (sweep is disabled).
 // A DIFFERENT xE1 value on every beacon line = refresh commands are being
 // issued (~133k/s, wraps ~2x/s); frozen x0000 qE1 = the branch never fires.
-wire [15:0] diag_x = !chk_done_s     ? spw_count_s[23:8] :
-                     diag_ph == 2'd0 ? vbl_cnt :              // E0 = core vblank count
-                     diag_ph == 2'd1 ? allff_lo_l :               // E1 = all-FF, read half (16384=dead)
-                     diag_ph == 2'd2 ? partff :                   // E4-tag = partial-FF words (decay makes many; transaction failure ~none)
-                                       remis;                      // E3 = double-read disagreements (transaction flicker)
-wire [7:0]  diag_q = !chk_done_s     ? spw_count_s[7:0] :
-                     diag_ph == 2'd0 ? 8'hE0 :
-                     diag_ph == 2'd1 ? 8'hE1 :
-                     diag_ph == 2'd2 ? 8'hE4 : 8'hE3;   // E4 = LOAD-TOOK marker (tag never used before)
+// SPRITE-WORD AUDIT readout (2026-07-26): once the post-load port2 sweep
+// finishes, rotate its four bucket counts through the x field, tagged
+// E0..E3 in q. Bucket k = nonzero 32-bit sprite words with i%4 == k
+// (k = word-within-sprite-line). Expected if SDRAM content is complete:
+// four similar mid-size counts. E3 ~ 0 with E0-E2 healthy = the 4th words
+// never landed (write-side); all four healthy = fetch-side fault.
+// ph2's slot now carries aud_bad (pattern-compare mismatches, tag E4):
+// 0x0000 = clean load; ~0xC0 = the one-word shift; 0xFFFF = no sweep yet.
+wire [15:0] diag_x = !aud_done_s     ? spw_count_s[23:8] :
+                     diag_ph == 2'd2 ? aud_bad_s :
+                                       aud_lat_s[diag_ph];
+wire [7:0]  diag_q = !aud_done_s     ? spw_count_s[7:0] :
+                     diag_ph == 2'd2 ? 8'hE4 :
+                                       {6'h38, diag_ph};   // 8'hE0 | ph
 
 // DIAGNOSTIC: the one-shot SDRAM dump borrows the UART pin while it runs
 wire beacon_txd;
