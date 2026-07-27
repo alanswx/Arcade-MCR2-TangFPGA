@@ -333,6 +333,33 @@ Open items:
    attributes) with upstream line numbers, measured evidence tables and a
    minimal no-board repro for PA2122.
 
+   **COMMERCIAL V1.9.12.03 TESTED 2026-07-27 — DOES NOT FIX IT, IT IS WORSE.**
+   Installed side-by-side at `~/gowin_1.9.12.03` (free 1.9.11.03 in `~/IDE`
+   untouched); node-locked licence at `~/gowin_1.9.12.03/gowin.lic` with
+   `IDE/bin/gwlicense.ini` pointed at it. Build with
+   `tools/gw_build_1912.sh <board> [tcl]`.
+     * VHDL ascal -> **GowinSynthesis CRASHES**: `Running inference ...` then
+       `Floating point exception (core dumped)`, exit 136. No error message.
+       Reproduces with upstream ascal + minimal wrapper, with our patched
+       ascal in the full design, and with MASK=0x07 (bicubic + polyphase
+       removed) - so it is not the polyphase memories and not our patches.
+     * A trivial 12-deep pipeline design synthesises fine under 1.9.12.03 in
+       the IDENTICAL environment (rc=0), so the toolchain/env is sound.
+     * The same sources still build CLEAN on 1.9.11.03 (0 errors, 0 setup /
+       0 hold) - verified after the 1.9.12.03 runs. Clean regression.
+     * GHDL Verilog netlist path: `CK3001` on 1.9.12.03 too (different
+       instance name), so that workaround is still blocked.
+   Net: 1.9.12.03 cannot build this design at all. Stay on 1.9.11.03.
+   The crash is now Defect 0 in `docs/gowin_bug_report.md` - a hard crash is
+   usually easier to get fixed than a subtle miscompile, so it may be the
+   most useful lever with Gowin support.
+
+   **LICENCE CAVEAT:** the licence is node-locked to `06:BB:FA:F8:40:51`,
+   which on this machine is the **docker bridge** `br-8f7dfefb2229`, not the
+   physical NIC (`enp4s0`, d8:5e:d3:81:75:af). Docker bridge MACs are
+   regenerated when the network is recreated, so the licence can silently
+   stop working. Consider re-requesting it against enp4s0.
+
    **WHERE THIS STOPS.** Every targeted hypothesis is exhausted. The fault
    is a GowinSynthesis miscompile of ascal's horizontal Bresenham advance;
    it survives every rephrasing of that logic, is mode-independent, and
@@ -633,8 +660,30 @@ budget exists anymore. See the Shield PCB section.
   SILENT DVI test build**; restore sound with:
   `openFPGALoader -b tangconsole -f --verify bitstreams/console60k_mcr3_tapper_sprites_working.fs`
 
-- **Sprite "slight offset" report (2026-07-25, first v2-card session) —
-  suspect removed, verification needs eyes.** Facts established blind:
+- **Sprite "slight offset" report (2026-07-25) — FIXED 2026-07-27.** Root
+  cause: in the MCR-3 top's dl→SDRAM port2 sprite write, the address and
+  byte lane came from the 2-deep sync registers (`dl_sp_off_s2`) while the
+  data was taken live off `dl_data`. `dl_wr`'s edge is detected on the
+  clk_sdram cycle where `_s2` still holds the previous byte, so byte j's
+  data landed at byte j−1's address and the whole 128 KB sprite array was
+  stored as `mem[i] = blob[i+1]` — precisely the observed
+  glass..gap..detached-handle shape. Introduced by 500c74a (pack v2);
+  builds at/before 3dbe824 took address and data both live and are clean.
+  Fix: `dl_data_s1/s2`, so all three fields sit at the same pipeline
+  depth. Confirmed three ways — the audit's `i%4` bucket tuple read the
+  ROM prediction rotated left by one, bit-exact, on 13/13 loads; the
+  artifact was visible on a fresh load with no warm-up or power cycle;
+  and `mcr3_console60k/diag/dlsync_tb.v` (iverilog) reproduces the shift
+  and shows the fix clean. NOT instance-dependent — the earlier
+  "instance dependence" came from instruments that were blind to it (the
+  synthetic pattern was keyed on the destination index, so it always read
+  back aligned). See the RESOLVED header of `handoff_v8_sprite_shift.md`.
+  The audit sweep is kept as the per-boot canary, now reporting all four
+  buckets in E0..E3 (Tapper expects `{0x1266,0x1B00,0x1AD1,0x13E4}`).
+  Historical detail below.
+
+- **(historical) Sprite "slight offset" investigation trail.** Facts
+  established blind:
   (1) `src/rtl/mcr3.vhd` diffed against upstream MiSTer — IDENTICAL except
   the documented patches (INIT_FILE dprams, vcntout/cpu_halt_n exports),
   so sprite/bg COMPOSITION (which happens inside the core) cannot differ

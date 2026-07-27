@@ -1,5 +1,80 @@
 # Handoff v8 — MCR-3 Tapper sprite "detached handle" investigation (2026-07-27)
 
+## RESOLVED 2026-07-27 — root cause was a pipeline-depth mismatch in the
+## sprite dl→SDRAM write path (`mcr3_console60k_top.sv`), introduced by 500c74a
+
+**The bug was never instance-dependent.** It was present on every load of
+every build after 500c74a ("Pack format v2"), including the 2026-07-25
+flash build the user saw. The whole "instance dependence" premise below is
+wrong; it came from instruments that were structurally blind to the fault
+(see "why every check missed it").
+
+**Root cause.** In the port2 sprite write, the address and byte-lane came
+from the 2-deep synchronizer (`dl_sp_off_s2`) while the data was taken
+LIVE off `dl_data`:
+
+```
+if (dl_wr_s1 && !dl_wr_s2 && dl_sp_rng_s2) begin
+    p1_a_r  <= {7'b0, dl_sp_off_s2[14:0], dl_sp_off_s2[16]};  // depth 2
+    p1_ds_r <= {dl_sp_off_s2[15], ~dl_sp_off_s2[15]};         // depth 2
+    p1_d_r  <= {dl_data, dl_data};                            // depth 0  <-- BUG
+```
+
+`dl_wr`'s rising edge is detected on the clk_sdram cycle at which `_s2`
+still holds the PREVIOUS byte's offset, so byte j's data was written to
+byte j−1's address. The entire 128 KB sprite array was stored as
+**`mem[i] = blob[i+1]`** — exactly the shape derived from the screen in
+"The symptom" below. Before 500c74a (3dbe824, the archived working build)
+address AND data both came live off `dl_addr`/`dl_data`, which is why that
+archive renders the mug perfectly.
+
+**Fix.** Give `dl_data` the same pipeline depth as the address
+(`dl_data_s1/s2`, write `{dl_data_s2, dl_data_s2}`). MCR-1 and MCR-2 are
+unaffected — only MCR-3 crosses the dl bus into the SDRAM clock domain.
+
+**Evidence (three independent confirmations of the same +1):**
+1. *Hardware histogram.* The audit's nonzero-word counts by `i%4` read
+   `{0x1B0A, 0x1AD8, 0x1409, 0x128A}` on 13/13 loads (6 rounds of
+   2026-07-26 + a fresh load today). The prediction computed from the ROM
+   is `{0x1289, 0x1B0A, 0x1AD8, 0x1409}` — the measured tuple is that one
+   **rotated left by one, bit-exact on three of four buckets**. Rotation
+   ⇔ `mem[i] = blob[i+1]`. (Item 5 below misreported this as a match; it
+   put 0x128A on E0, but the logs have it on E3.)
+2. *On screen, live.* A fresh load today shows the artifact plainly —
+   detached 8 px slivers beside the patron and the barman, mug interior
+   pulling in neighbouring-word pixels (`scratchpad now/f_121.png`,
+   zoom `zz_before.png`). No warm board, no power cycle, no OSD reload
+   needed.
+3. *Simulation.* `scratchpad/dlsync_tb.v` (iverilog) models the loader and
+   both wirings: old ⇒ `mem[i] = blob[i+1]` on every byte; new ⇒ clean.
+
+**Why every check in "What is PROVEN" missed it.** Items 1–4 and 6 are all
+still true — and all blind to this fault:
+- The offline blob decode (1) and MAME (2) examine the *blob*, not the array.
+- The RTL sim (3) and the upstream diffs (4) cover the sprite *engine* and
+  `sdram_gw`; the fault is upstream of both, in the top's dl plumbing.
+- The pattern substitution (6, and the audit's E4 compare) writes its
+  synthetic pattern keyed on `dl_sp_off_s2` — the *destination* index. So
+  the pattern lands wherever the address says, and reads back perfectly
+  aligned no matter how shifted the address is. E4 = 0x0000 was a
+  tautology; the per-pixel run-length capture proved word→slot mapping,
+  which was never the broken part.
+- Only the bucket histogram compares blob content against array position,
+  which is why it is the one instrument that caught it. It is kept (now
+  E0..E3, all four buckets) as the per-boot canary; the prediction command
+  is in the comment at the audit declaration. Tapper expects
+  `{0x1266, 0x1B00, 0x1AD1, 0x13E4}` (real ROM, no pattern).
+
+The TEMPORARY pattern substitution and the E4 compare are removed. The
+`if (1'b0)`-disabled v6 diagnostics are still in the tree and still owed a
+cleanup pass.
+
+Everything below is the pre-resolution investigation, kept for the record.
+Its "instance dependence", "leading suspects" and "recommended next steps"
+sections are superseded — do not act on them.
+
+---
+
 Start after `handoff_v7_jukebox.md`. This documents the user-reported
 "sprites are cut off — look at the beer glass" bug (2026-07-25), what has
 been PROVEN, the instruments now in the tree/bitstream, and exactly what

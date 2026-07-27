@@ -373,6 +373,8 @@ wire [31:0] sp_q;           // SDRAM -> core: 32-bit (4-plane) sprite word
 //   port2_a  = {7'b0, dl_addr[14:0], dl_addr[16]}   (16-bit word address)
 //   port2_ds = {dl_addr[15], ~dl_addr[15]}          (which byte of the word)
 //   port2_d  = {dl_data, dl_data}                   (ds picks the lane)
+// All three are taken from the SAME pipeline stage (_s2) - see the dl_data_s1/s2
+// declaration for why mixing depths silently shifts the whole array by a byte.
 // clk_sdram = 2x clk_sys (synchronous), so dl_wr is a 2-cycle pulse here;
 // rising-edge detect turns each into exactly one port2 write. The SD byte rate
 // is << clk_sdram, so a write always finishes before the next dl_wr.
@@ -404,35 +406,43 @@ end
 reg        dl_wr_s1 = 1'b0, dl_wr_s2 = 1'b0;
 reg        dl_sp_rng_s1 = 1'b0, dl_sp_rng_s2 = 1'b0;
 reg [16:0] dl_sp_off_s1 = 17'd0, dl_sp_off_s2 = 17'd0;
+// dl_data MUST travel the same number of pipeline stages as dl_sp_off/dl_sp_rng.
+// It did not between 500c74a and this commit: the address came from the 2-deep
+// _s2 registers while the data was taken LIVE off dl_data, so the write landed
+// byte j's data at byte j-1's address - the whole 128 KB sprite array stored as
+// mem[i] = blob[i+1]. That is exactly the "detached handle / 8px sliver one slot
+// right" artifact, and it was present on EVERY load of every post-500c74a build
+// (measured: the audit's i%4 bucket counts read the blob prediction rotated by
+// one, bit-exact, on 13/13 loads). Keep all three at depth 2.
+reg [7:0]  dl_data_s1 = 8'd0, dl_data_s2 = 8'd0;
 reg        ldrp_s1 = 1'b0, ldrp_s2 = 1'b0;  // ldr_done sync for the pattern writer
 reg [4:0]  pat_step = 5'd31;                // 31 = idle, 0..15 = write steps
 reg [4:0]  pat_wait = 5'd0;
 reg        p1_req_r = 1'b0, p1_we_r = 1'b0;
 reg [14:0] scrub_tick = 15'd0;   // 2^15 @80MHz = 410us per scrub read
 reg [6:0]  scrub_row  = 7'd0;    // 128 rows cover the whole 128KB
-// SPRITE-WORD AUDIT (2026-07-26): the on-screen mug lacks its handle (the
-// 4th 32-bit word of each sprite line) although the pack blob decodes
-// perfectly offline. After each load, read back all 32K sprite words via
-// the idle port2 and count NONZERO words bucketed by i%4. Write-side loss
-// of the 4th words -> aud3 ~0 while aud0 is large; all buckets similar ->
-// SDRAM content fine, fault is in the core's fetch path.
+// SPRITE-WORD AUDIT (2026-07-26): after each load, read back all 32K sprite
+// words via the idle port2 and count NONZERO words bucketed by i%4, reported
+// in beacon slots E0..E3. This is the per-boot canary for the whole SD ->
+// SDRAM sprite path, and it is what caught the byte-alignment bug: a bucket
+// tuple that is the blob prediction ROTATED means the array is stored shifted
+// (rotate left by one = mem[i] = blob[i+1]); the un-rotated tuple means the
+// 128 KB landed byte-exact. Predictions come from the ROM (repo root):
+//   python3 -c "import sys;sys.path.insert(0,'tools');from merge_roms import collect
+//   g=collect('tapper')['gfx2'];Q=[g[p*0x8000:(p+1)*0x8000] for p in range(4)]
+//   c=[0]*4
+//   for i in range(0x8000):
+//       if Q[3][i]|Q[2][i]|Q[1][i]|Q[0][i]: c[i%4]+=1
+//   print([hex(x) for x in c])"
+// Tapper expects E0..E3 = {0x1266, 0x1B00, 0x1AD1, 0x13E4}.
+// (Measured before the fix: {0x1B0A, 0x1AD8, 0x1409, 0x128A} = that tuple
+// rotated, i.e. the shifted array, on 13/13 loads.)
 reg [2:0]  aud_st   = 3'd0;
 reg [14:0] aud_i    = 15'd0;
 reg [15:0] aud_cnt [0:3];
 reg [15:0] aud_lat [0:3];
 reg [7:0]  aud_wait = 8'd0;
 reg        aud_done = 1'b0;
-// Pattern-compare: codes 22/23 hold a KNOWN synthetic pattern (see the dl
-// substitution below), so the audit can verify VALUES, not just nonzero-ness.
-// aud_bad = words of codes 22/23 whose readback != expected. 0 = clean load;
-// ~256 with a one-word rotation = the load slipped a byte (the suspected
-// cause of the detached-handle artifact). Beacon slot E4.
-reg [15:0] aud_bad  = 16'd0;
-reg [15:0] aud_bad_l= 16'hFFFF;    // FFFF = no sweep yet
-wire [31:0] aud_exp = (aud_i[1:0]==2'd0) ? 32'h00000011 :
-                      (aud_i[1:0]==2'd1) ? 32'h00002222 :
-                      (aud_i[1:0]==2'd2) ? 32'h00333333 : 32'h44444444;
-wire        aud_ispat = (aud_i[14:7] == 8'd22) || (aud_i[14:7] == 8'd23);
 wire [31:0] p2_q_aud;          // port2 read data (declared before use)
 reg [23:1] p1_a_r = 23'd0;
 reg [1:0]  p1_ds_r = 2'b00;
@@ -447,6 +457,7 @@ always @(posedge clk_sdram) begin
     dl_wr_s2 <= dl_wr_s1;
     dl_sp_rng_s1 <= dl_sp_rng;   dl_sp_rng_s2 <= dl_sp_rng_s1;
     dl_sp_off_s1 <= dl_sp_off;   dl_sp_off_s2 <= dl_sp_off_s1;
+    dl_data_s1   <= dl_data;     dl_data_s2   <= dl_data_s1;
     // SCRUB REFRESH (2026-07-24): both AUTO_REFRESH and RAS-only refresh are
     // ineffective on this module (measured: data decays in ~30-100s under
     // either, while rows kept alive by READS survive - the fast sweeps were
@@ -470,7 +481,6 @@ always @(posedge clk_sdram) begin
     else case (aud_st)
     3'd0: if (ldrp_s2) begin aud_st <= 3'd1; aud_i <= 0; aud_wait <= 0;
               aud_cnt[0] <= 0; aud_cnt[1] <= 0; aud_cnt[2] <= 0; aud_cnt[3] <= 0;
-              aud_bad <= 0;
               aud_done <= 1'b0;
           end
     3'd1: begin aud_wait <= aud_wait + 1'd1;    // ~3us settle after ldr_done
@@ -485,10 +495,7 @@ always @(posedge clk_sdram) begin
     3'd4: begin                                    // port2_q = word aud_i
               if (p2_q_aud != 32'd0)
                   aud_cnt[aud_i[1:0]] <= aud_cnt[aud_i[1:0]] + 1'd1;
-              if (aud_ispat && p2_q_aud != aud_exp)
-                  aud_bad <= aud_bad + 1'd1;
               if (aud_i == 15'h7FFF) begin
-                  aud_bad_l <= aud_bad;   // last word isn't code 22/23; no fold needed
                   // aud_cnt[3] hasn't absorbed this last word yet (NBA), so
                   // fold it into the latch by hand. 0x7FFF has i%4 == 3.
                   aud_lat[0] <= aud_cnt[0]; aud_lat[1] <= aud_cnt[1];
@@ -511,23 +518,8 @@ always @(posedge clk_sdram) begin
     if (dl_wr_s1 && !dl_wr_s2 && dl_sp_rng_s2) begin   // new SPRITE dl byte
         p1_a_r    <= {7'b0, dl_sp_off_s2[14:0], dl_sp_off_s2[16]};
         p1_ds_r   <= {dl_sp_off_s2[15], ~dl_sp_off_s2[15]};
-        // TEMPORARY DIAGNOSTIC (2026-07-26): sprite codes 22/23 (the beer
-        // mugs) get a synthetic pattern instead of ROM data - every pixel
-        // nibble of 32-bit fetch word w = w+1 (values 1..4). On screen the
-        // mug renders as four 8px bands whose colors reveal exactly which
-        // fetch word the engine drew at which screen slot (chasing the
-        // displaced-last-word artifact). Word index in tile = off[1:0];
-        // the same byte goes to all four planes. REVERT after experiment.
-        // v2 pattern: word w carries (w+1)*2 opaque pixels of value w+1 then
-        // transparency, so run LENGTHS 2/4/6/8 identify each word even if
-        // palette colors collide (they did: pal[1]==pal[4]). Byte plane p
-        // (off[16:15]) covers pixels 2p..2p+1 -> nonzero iff p <= w.
-        if (dl_sp_off_s2[14:7] == 8'd22 || dl_sp_off_s2[14:7] == 8'd23)
-            p1_d_r <= (dl_sp_off_s2[16:15] <= dl_sp_off_s2[1:0])
-                      ? {4{ {1'b0, ({1'b0, dl_sp_off_s2[1:0]} + 3'd1)} }}
-                      : 16'h0000;
-        else
-            p1_d_r <= {dl_data, dl_data};
+        p1_d_r    <= {dl_data_s2, dl_data_s2};   // SAME pipeline depth as the address
+
         p1_we_r   <= 1'b1;
         p1_req_r  <= ~p1_req_r;             // launch (toggle req vs ack)
         spw_count <= spw_count + 24'd1;
@@ -648,10 +640,8 @@ reg [15:0] rw_lat_s = 0;
 reg [15:0] boot_dbg_s = 0;   // DIAGNOSTIC: boot-kick evidence, beacon E2
 reg        aud_done_s = 0;
 reg [15:0] aud_lat_s [0:3];
-reg [15:0] aud_bad_s = 16'hFFFF;
 always @(posedge clk_sys) begin
     aud_done_s   <= aud_done;
-    aud_bad_s    <= aud_bad_l;
     aud_lat_s[0] <= aud_lat[0];  aud_lat_s[1] <= aud_lat[1];
     aud_lat_s[2] <= aud_lat[2];  aud_lat_s[3] <= aud_lat[3];
     spw_count_s <= spw_count;
@@ -1456,17 +1446,15 @@ end
 // SPRITE-WORD AUDIT readout (2026-07-26): once the post-load port2 sweep
 // finishes, rotate its four bucket counts through the x field, tagged
 // E0..E3 in q. Bucket k = nonzero 32-bit sprite words with i%4 == k
-// (k = word-within-sprite-line). Expected if SDRAM content is complete:
-// four similar mid-size counts. E3 ~ 0 with E0-E2 healthy = the 4th words
-// never landed (write-side); all four healthy = fetch-side fault.
-// ph2's slot now carries aud_bad (pattern-compare mismatches, tag E4):
-// 0x0000 = clean load; ~0xC0 = the one-word shift; 0xFFFF = no sweep yet.
-wire [15:0] diag_x = !aud_done_s     ? spw_count_s[23:8] :
-                     diag_ph == 2'd2 ? aud_bad_s :
-                                       aud_lat_s[diag_ph];
-wire [7:0]  diag_q = !aud_done_s     ? spw_count_s[7:0] :
-                     diag_ph == 2'd2 ? 8'hE4 :
-                                       {6'h38, diag_ph};   // 8'hE0 | ph
+// (k = word-within-sprite-line). E3 ~ 0 with E0-E2 healthy = the 4th words
+// never landed. Compare the whole TUPLE against the per-game prediction at
+// the audit declaration: matching = byte-exact load; the same four numbers
+// ROTATED = the array is stored one word off (that is what the 2026-07-25
+// detached-handle artifact was, fixed by aligning dl_data's pipeline depth
+// with the address's).
+wire [15:0] diag_x = !aud_done_s ? spw_count_s[23:8] : aud_lat_s[diag_ph];
+wire [7:0]  diag_q = !aud_done_s ? spw_count_s[7:0]  :
+                                   {6'h38, diag_ph};   // 8'hE0 | ph
 
 // DIAGNOSTIC: the one-shot SDRAM dump borrows the UART pin while it runs
 wire beacon_txd;
