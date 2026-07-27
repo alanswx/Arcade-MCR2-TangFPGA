@@ -62,22 +62,41 @@ next real milestone" within each section.
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries).
-   **TIMBER IS BROKEN ON HARDWARE — first observed 2026-07-27** (the board
-   was booting slot 1 from the SD pref, which is how it got looked at). The
-   sprite layer renders plausibly — lumberjack, logs, bears, and the audit
-   sweep reads Timber's exact sprite tuple {0E74,1786,17FD,0FE1} — but the
-   BACKGROUND TILE PLANE is garbage, showing what looks like sprite artwork
-   in the tilemap, with wrong colours. Ruled out already:
-   - NOT caused by un-baking the ROMs: the with-bake and no-bake bitstreams
-     render it identically, which also proves the bg download path works
-     (Tapper's baked bg is fully overwritten by Timber's SD data).
-   - NOT a region size/offset mismatch: timber and tapper have byte-identical
-     region sizes (main 57344, snd 16384, gfx1_1/2 16384, gfx2 131072), so
-     the pack v2 layout puts everything in the same place.
-   Prime suspects: the gfx1 plane order (merge_roms deliberately reverses it
-   for timber — timbg1 then timbg0 — per MAME; verify that is actually right
-   for our bg1/bg2 wiring), and per-game video config (ROT0 vs the tops'
-   assumptions). Captures: scratchpad nb_best.png / bk_best.png.
+   **TIMBER REGRESSED — it used to run (owner played it); broken as of
+   2026-07-27.** Noticed because the board was booting slot 1 from the SD
+   pref. Symptom: the sprite layer is fine (lumberjack, logs, bears in
+   sensible positions, so the Z80 is running Timber correctly, and the audit
+   sweep reads Timber's exact sprite tuple {0E74,1786,17FD,0FE1}), but the
+   BACKGROUND TILE PLANE renders structurally wrong — blocky fragments of
+   what looks like sprite artwork in the tilemap. Captures: scratchpad
+   nb_best.png / bk_best.png.
+   RULED OUT, each with evidence — do not re-litigate:
+   - NOT the un-baking: with-bake and no-bake bitstreams render it
+     IDENTICALLY. (Same test proves the bg download path works at all — the
+     baked Tapper bg is fully overwritten by Timber's SD data.)
+   - NOT a pack region size/offset error: timber and tapper have
+     byte-identical region sizes (main 57344, snd 16384, gfx1_1/2 16384,
+     gfx2 131072), so v2 puts every region at the same offset.
+   - NOT the gfx1 plane order, and NOT 50b075e's bg routing fix. Both bg
+     ROMs are addressed by the SAME `bg_code_line` and combine as two
+     BITPLANES (`bg_palette_addr <= bg_attr & bg_graphx2_do(n) &
+     bg_graphx1_do(n)`), so swapping them can only change the colour index
+     — it cannot scramble shapes. The observed fault is shapes.
+   - NOT the core dl gating: `core_dl_wr` is correctly ANDed with
+     (dl_bg1_rng || dl_bg2_rng), so no CPU/sprite bytes can splatter into
+     the bg dprams.
+   - The card's Timber payload is at least sprite-correct and therefore
+     correctly ALIGNED (sprites are the last region, 0x1C000+; if the
+     payload were shifted they would not read bit-exact).
+   Wrong shapes require wrong DATA in the bg dprams, yet every path above
+   checks out — so the prime remaining suspect is the SD card's Timber
+   payload itself being stale relative to current tools (it is the one
+   variable that cannot be inspected from the Linux box; Tapper works from
+   the same card, but each slot has its own start_lba/sector_count).
+   NEXT STEP: rewrite the card from a freshly built mcr_pack_v2.img on the
+   Mac (`python3 tools/make_pack_v2.py` then `tools/write_pack_v2.py`) and
+   retest. If it still renders wrong, the fault is in-core and per-game
+   video config (Timber is ROT0) becomes the next suspect.
    Discs of Tron remains completely untested. DoT's aim DIAL not wired yet (aim uses its
    dedicated IP2 buttons; spinner.sv WIRED 2026-07-24 - aim buttons rotate the dial; swap minus/plus if inverted on hardware).
    Remaining: Next: Timber, Discs of
