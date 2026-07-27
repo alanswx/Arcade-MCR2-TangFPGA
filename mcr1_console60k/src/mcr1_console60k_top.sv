@@ -187,7 +187,10 @@ localparam [2:0] GAME_DEFAULT = 3'd1;
 localparam [2:0] GAME_DEFAULT = 3'd0;   // Kick / Kickman
 `endif
 
-wire [2:0] game_id;      // game the core is running (from the OSD)
+// 4 bits since the OSD roster widened to 16 slots. Each family still has
+// <= 8 games, so the input mux and beacon below take game_id[2:0] - exact
+// today, and an explicit narrowing rather than a silent truncation.
+wire [3:0] game_id;      // game the core is running (from the OSD)
 wire [3:0] game_slot;    // SD pack slot the loader (re)loads
 wire       osd_restart;  // OSD pulse: restart the loader with game_slot
 wire       osd_active;   // menu open -> game inputs masked below
@@ -436,7 +439,7 @@ always @(*) begin
     input_2 = 8'hFF;
     input_3 = 8'hFF;   // MCR-1 game-option DIPs; 0xFF = all off (see note)
     input_4 = 8'hFF;
-    case (game_id)
+    case (game_id[2:0])
 
     // SOLAR FOX: 4-way stick, mirrored across both nibbles of IP1 (MiSTer maps
     // it to both the P1 and rotated axes). Two fire buttons: fire_a on IP0
@@ -560,11 +563,11 @@ osd #(
     // only by the SD prefs happening to name slot 2, which is exactly how it
     // turned up on the first hardware run. Roster order must match
     // make_pack_v2's ROSTER: kick(0), solarfox(1), kickman(2).
-    .NUM_GAMES(4'd3),
+    .NUM_GAMES(5'd3),
     // All MCR-1 games run on a rotated cabinet monitor (Kick/Kickman =
     // SWAP_XY, Solar Fox = ROT90), so rotate the OSD text for all of them.
     // Flip on hardware if a game reads mirrored (see osd.sv u/v remap note).
-    .ROT_MASK(6'b000111),
+    .ROT_MASK(16'h0007),   // kick/kickman SWAP_XY, solarfox ROT90
     .TITLE("    MCR1 GAME SELECT    "),
     .NAME0("   KICK                 "),
     .NAME1("   SOLAR FOX            "),
@@ -735,7 +738,7 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     .ddr_rst(fb_ddr_rst),
     .cnt_x({hb_h[24:21], hb_x1[25:14]}),
     .cnt_q(hb_27[24:17]),
-    .aux({game_id, cap_delay}),   // dXX: high 3 bits = running game_id
+    .aux({game_id[2:0], cap_delay}),   // dXX: high 3 bits = running game_id
     // L high nibble: {heartbeat, heartbeat, usb_typ} - usb_typ = 3 means a
     // gamepad is enumerated (0 = nothing on USB); low nibble = SD/loader.
     .aux2({hb_h[24:23], usb_typ_s2, sd_ready, sd_err, ldr_done, ldr_error}),

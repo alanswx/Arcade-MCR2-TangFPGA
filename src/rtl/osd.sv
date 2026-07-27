@@ -17,25 +17,49 @@
 // top); it only changes after a load completes, so a failed SD load leaves
 // the running game's controls intact.
 //
-// The '>' cursor marks the highlighted row, '*' the running game.
+// The '>' cursor marks the highlighted row, '*' the running game, and '^'/'V'
+// in the last column show the list continues past the visible window.
 // Parameterized for the family's roster: MCR-2 keeps the defaults below
-// (6 games); the MCR-1 top passes NUM_GAMES=2 with kick/solarfox names and
-// its own ROT_MASK. Names are 24-char strings; rows >= NUM_GAMES are not
-// drawn and the cursor wraps at NUM_GAMES-1.
+// (6 games), MCR-1 passes 3 (kick/solarfox/kickman), MCR-3 passes 3, each
+// with its own ROT_MASK. Names are 24-char strings; entries >= NUM_GAMES are
+// never drawn and the cursor wraps at NUM_GAMES-1.
+// ROSTER SIZE (widened 2026-07-27): up to MAX_GAMES entries, of which
+// VIS_ROWS are on screen at once and the list SCROLLS. The window geometry is
+// deliberately unchanged - it is 14 rows, and the ROT90 + 15 kHz case has only
+// ~24 scanlines of slack, so growing the box risks running off the raster in
+// one of the four rot x mode15 combinations. Scrolling costs a few LUTs and no
+// geometry risk. 20 slots covers the whole series we are building - MCR-1 (3)
+// + MCR-2 (6, +Demolition Derby when Turbo Cheap Squeak lands) + MCR-3 (3,
+// +Journey when DDR3 wave audio lands) + MCR3Scroll (3) = 17 - with room for
+// a diagnostic/test entry or two. MCR3Mono is NOT in scope.
 module osd #(
-    parameter [2:0]   GAME_DEFAULT = 3'd5, // pack slot order: 0 shollow,
+    parameter [4:0]   GAME_DEFAULT = 5'd5, // pack slot order: 0 shollow,
                                            // 1 tron, 2 wacko, 3 kroozr,
                                            // 4 twotiger, 5 domino
-    parameter [3:0]   NUM_GAMES    = 4'd6,
-    parameter [5:0]   ROT_MASK     = 6'b000011,  // bit i set: game i is
-                                                 // ROT90 (rotate OSD text)
+    parameter [5:0]   NUM_GAMES    = 6'd6,
+    parameter [19:0]  ROT_MASK     = 20'h00003,    // bit i: game i is ROT90
+                                                 // (rotate the OSD text)
     parameter [191:0] TITLE = "    MCR2 GAME SELECT    ",
     parameter [191:0] NAME0 = "   SATANS HOLLOW        ",
     parameter [191:0] NAME1 = "   TRON                 ",
     parameter [191:0] NAME2 = "   WACKO                ",
     parameter [191:0] NAME3 = "   KOZMIK KROOZR        ",
     parameter [191:0] NAME4 = "   TWO TIGERS           ",
-    parameter [191:0] NAME5 = "   DOMINO MAN           "
+    parameter [191:0] NAME5 = "   DOMINO MAN           ",
+    parameter [191:0] NAME6  = "                        ",
+    parameter [191:0] NAME7  = "                        ",
+    parameter [191:0] NAME8  = "                        ",
+    parameter [191:0] NAME9  = "                        ",
+    parameter [191:0] NAME10 = "                        ",
+    parameter [191:0] NAME11 = "                        ",
+    parameter [191:0] NAME12 = "                        ",
+    parameter [191:0] NAME13 = "                        ",
+    parameter [191:0] NAME14 = "                        ",
+    parameter [191:0] NAME15 = "                        ",
+    parameter [191:0] NAME16 = "                        ",
+    parameter [191:0] NAME17 = "                        ",
+    parameter [191:0] NAME18 = "                        ",
+    parameter [191:0] NAME19 = "                        "
 )(
     input             clk,          // clk_sys (40 MHz)
     input             rst,
@@ -66,7 +90,7 @@ module osd #(
     input             btn_menu_hold,
 
     // Game selection / loader handshake
-    output reg [2:0]  game_id,        // game the core is running
+    output reg [4:0]  game_id,        // game the core is running
     output reg [3:0]  load_slot,      // SD pack slot for rom_loader
     output reg        loader_restart, // 1-cycle pulse: reload load_slot
     input             loader_done,
@@ -93,7 +117,12 @@ localparam [2:0] S_CLOSED = 3'd0,
                  S_NOCARD = 3'd5;   // no usable card - retry until there is
 
 reg [2:0] state = S_CLOSED;
-reg [2:0] cursor = GAME_DEFAULT;
+reg [4:0] cursor = GAME_DEFAULT;
+// First roster entry drawn, so a list longer than VIS_ROWS can scroll. Kept
+// in step with the cursor on every move rather than recomputed while drawing.
+reg [4:0] scroll = 5'd0;
+localparam [4:0] VIS_ROWS = 5'd8;    // rows 3..10 of the 14-row window
+localparam [4:0] ROW_TOP  = 5'd3;
 
 assign osd_active = (state != S_CLOSED);
 assign osd_nocard = (state == S_NOCARD);
@@ -194,6 +223,9 @@ always @(posedge clk) begin
             end else if (ev_combo) begin
                 state  <= S_OPEN;
                 cursor <= game_id;
+                // Scroll so the running game is visible when the menu opens.
+                scroll <= (game_id < VIS_ROWS) ? 5'd0
+                                               : (game_id - VIS_ROWS + 5'd1);
             end
 
         // Hold the INSERT CARD message and keep retrying. Any successful load
@@ -215,12 +247,25 @@ always @(posedge clk) begin
         S_OPEN: begin
             if (ev_combo || ev_b)
                 state <= S_CLOSED;
-            else if (ev_up)
-                cursor <= (cursor == 3'd0) ? (NUM_GAMES[2:0] - 3'd1)
-                                           : cursor - 3'd1;
-            else if (ev_dn)
-                cursor <= (cursor == NUM_GAMES[2:0] - 3'd1) ? 3'd0
-                                                            : cursor + 3'd1;
+            else if (ev_up) begin
+                if (cursor == 5'd0) begin           // wrap to the end
+                    cursor <= NUM_GAMES[4:0] - 5'd1;
+                    scroll <= (NUM_GAMES[4:0] > VIS_ROWS)
+                              ? (NUM_GAMES[4:0] - VIS_ROWS) : 5'd0;
+                end else begin
+                    cursor <= cursor - 5'd1;
+                    if (cursor - 5'd1 < scroll) scroll <= cursor - 5'd1;
+                end
+            end else if (ev_dn) begin
+                if (cursor == NUM_GAMES[4:0] - 5'd1) begin   // wrap to the top
+                    cursor <= 5'd0;
+                    scroll <= 5'd0;
+                end else begin
+                    cursor <= cursor + 5'd1;
+                    if (cursor + 5'd1 >= scroll + VIS_ROWS)
+                        scroll <= cursor + 5'd2 - VIS_ROWS;
+                end
+            end
             else if (ev_a) begin
                 load_slot      <= {1'b0, cursor};
                 loader_restart <= 1'b1;
@@ -298,12 +343,8 @@ wire [6:0] v = rot ? xr[6:0] : yr[6:0];
 // sibling check in the build notes); shorter literals would left-pad with
 // NULs and shift the text right.
 localparam [191:0] TXT_TITLE   = TITLE;
-localparam [191:0] TXT_G0      = NAME0;
-localparam [191:0] TXT_G1      = NAME1;
-localparam [191:0] TXT_G2      = NAME2;
-localparam [191:0] TXT_G3      = NAME3;
-localparam [191:0] TXT_G4      = NAME4;
-localparam [191:0] TXT_G5      = NAME5;
+// (the old TXT_G0..G5 per-row aliases are gone - rows are now mapped to
+// roster entries dynamically through name_char(), so the list can scroll)
 localparam [191:0] TXT_HELP    = "  A:LOAD  B:EXIT        ";
 localparam [191:0] TXT_SDOK    = "  SD CARD: READY        ";
 localparam [191:0] TXT_NOSD    = "  SD CARD: NOT FOUND    ";
@@ -319,6 +360,39 @@ localparam [191:0] TXT_NC4     = "  RETRYING...           ";
 function [7:0] row_char(input [191:0] rowtext, input [4:0] col);
     // char 0 sits in the MSBs
     row_char = rowtext[{5'd23 - col, 3'b000} +: 8];
+endfunction
+
+// One character of roster entry `g`. Only one branch is live per pixel, so
+// this synthesises to a 16:1 mux of small constant ROMs.
+// One character of roster entry `g`. Only one branch is live per pixel, so
+// this synthesises to a mux of small constant ROMs; entries above the
+// instance's NUM_GAMES are pruned because the caller gates on it.
+// One character of roster entry `g`. Only one branch is live per pixel, so
+// this synthesises to a mux of small constant ROMs; entries above the
+// instance's NUM_GAMES are pruned because the caller gates on it.
+function [7:0] name_char(input [4:0] g, input [4:0] col);
+    case (g)
+    5'd0:   name_char = row_char(NAME0,  col);
+    5'd1:   name_char = row_char(NAME1,  col);
+    5'd2:   name_char = row_char(NAME2,  col);
+    5'd3:   name_char = row_char(NAME3,  col);
+    5'd4:   name_char = row_char(NAME4,  col);
+    5'd5:   name_char = row_char(NAME5,  col);
+    5'd6:   name_char = row_char(NAME6,  col);
+    5'd7:   name_char = row_char(NAME7,  col);
+    5'd8:   name_char = row_char(NAME8,  col);
+    5'd9:   name_char = row_char(NAME9,  col);
+    5'd10:  name_char = row_char(NAME10, col);
+    5'd11:  name_char = row_char(NAME11, col);
+    5'd12:  name_char = row_char(NAME12, col);
+    5'd13:  name_char = row_char(NAME13, col);
+    5'd14:  name_char = row_char(NAME14, col);
+    5'd15:  name_char = row_char(NAME15, col);
+    5'd16:  name_char = row_char(NAME16, col);
+    5'd17:  name_char = row_char(NAME17, col);
+    5'd18:  name_char = row_char(NAME18, col);
+    default: name_char = row_char(NAME19, col);
+    endcase
 endfunction
 
 // ---------------------------------------------------------------------------
@@ -339,6 +413,17 @@ always @(posedge clk) begin
     end
 end
 
+// Roster index shown on the current row, once the list is scrolled. 5 bits so
+// scroll+7 cannot wrap, and so it compares cleanly against 5-bit NUM_GAMES.
+// Use the FULL p1_row, not p1_row[2:0]: the roster occupies rows 3..10, and
+// truncating to 3 bits wraps rows 8/9/10 back to 0/1/2 - which would silently
+// repeat the first three entries at the bottom of the list.
+// Underflows for rows above ROW_TOP, which is harmless: every use is gated on
+// the row being inside the roster block.
+// DECLARED BEFORE USE - Gowin turns use-before-declaration into a silent
+// 1-bit wire (see CLAUDE.md), which here would collapse the whole roster.
+wire [5:0] row_game = {1'b0, scroll} + {2'b0, p1_row} - {1'b0, ROW_TOP};
+
 reg [7:0] ch;
 always @(*) begin
     ch = 8'h20;   // space
@@ -354,17 +439,14 @@ always @(*) begin
     end else
     case (p1_row)
         4'd0:  ch = row_char(TXT_TITLE, p1_col);
-        // Game rows: names beyond NUM_GAMES stay blank. (The gate was
-        // documented but never implemented - a 3-game family showed the
-        // MCR-2 default names as unselectable ghost rows.)
-        4'd3:  ch = (NUM_GAMES > 4'd0) ? row_char(TXT_G0, p1_col) : 8'h20;
-        4'd4:  ch = (NUM_GAMES > 4'd1) ? row_char(TXT_G1, p1_col) : 8'h20;
-        4'd5:  ch = (NUM_GAMES > 4'd2) ? row_char(TXT_G2, p1_col) : 8'h20;
-        4'd6:  ch = (NUM_GAMES > 4'd3) ? row_char(TXT_G3, p1_col) : 8'h20;
-        4'd7:  ch = (NUM_GAMES > 4'd4) ? row_char(TXT_G4, p1_col) : 8'h20;
-        4'd8:  ch = (NUM_GAMES > 4'd5) ? row_char(TXT_G5, p1_col) : 8'h20;
-        4'd10: ch = row_char(TXT_HELP, p1_col);
-        4'd12: begin
+        // Roster rows 3..10, scrolled. Entries past NUM_GAMES stay blank -
+        // without that gate a short roster shows the unused NAME defaults as
+        // ghost rows the cursor cannot reach.
+        4'd3, 4'd4, 4'd5, 4'd6, 4'd7, 4'd8, 4'd9, 4'd10:
+               ch = (row_game < NUM_GAMES) ? name_char(row_game[4:0], p1_col)
+                                           : 8'h20;
+        4'd12: ch = row_char(TXT_HELP, p1_col);
+        4'd13: begin
             case (state)
                 S_LOAD, S_LOAD2: ch = row_char(TXT_LOADING, p1_col);
                 S_ERR:           ch = row_char(TXT_FAILED, p1_col);
@@ -374,13 +456,18 @@ always @(*) begin
         end
         default: ;
     endcase
-    // game rows: '>' = cursor, '*' = running game (not on the INSERT CARD
-    // screen - there is no roster there, and rows 3..8 carry the message)
-    if (state != S_NOCARD && p1_row >= 4'd3 && p1_row <= 4'd8) begin
-        if (p1_col == 5'd1  && (p1_row - 4'd3) == {1'b0, cursor})
-            ch = ">";
-        if (p1_col == 5'd17 && (p1_row - 4'd3) == {1'b0, game_id})
-            ch = "*";
+    // Roster markers: '>' = cursor, '*' = running game. Compared against the
+    // SCROLLED index, not the raw row. Suppressed on the INSERT CARD screen -
+    // there is no roster there and those rows carry the message.
+    if (state != S_NOCARD && p1_row >= ROW_TOP && p1_row <= 4'd10
+        && row_game < NUM_GAMES) begin
+        if (p1_col == 5'd1  && row_game[4:0] == cursor)  ch = ">";
+        if (p1_col == 5'd17 && row_game[4:0] == game_id) ch = "*";
+    end
+    // Scroll hints in the last column when the list runs off either end.
+    if (state != S_NOCARD && p1_col == 5'd22) begin
+        if (p1_row == ROW_TOP && scroll != 4'd0)                    ch = "^";
+        if (p1_row == 4'd10  && (scroll + VIS_ROWS) < NUM_GAMES)    ch = "V";
     end
 end
 

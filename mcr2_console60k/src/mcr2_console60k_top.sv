@@ -194,7 +194,10 @@ localparam [2:0] GAME_DEFAULT = 3'd4;
 localparam [2:0] GAME_DEFAULT = 3'd5;   // Domino Man
 `endif
 
-wire [2:0] game_id;      // game the core is running (from the OSD)
+// 4 bits since the OSD roster widened to 16 slots. Each family still has
+// <= 8 games, so the input mux and beacon below take game_id[2:0] - exact
+// today, and an explicit narrowing rather than a silent truncation.
+wire [3:0] game_id;      // game the core is running (from the OSD)
 wire [3:0] game_slot;    // SD pack slot the loader (re)loads
 wire       osd_restart;  // OSD pulse: restart the loader with game_slot
 wire       osd_active;   // menu open -> game inputs masked below
@@ -489,7 +492,7 @@ always @(posedge clk_sys) begin
 end
 
 always @(*) begin
-    case (game_id)
+    case (game_id[2:0])
 
     // SATAN'S HOLLOW: IP0 = standard (no button bit), IP1 = {..., fire,
     // shield, right, left}. Pad: A = fire, B = shield, X = Start2, Y = Coin2.
@@ -820,7 +823,7 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     .ddr_rst(fb_ddr_rst),
     .cnt_x({hb_h[24:21], hb_x1[25:14]}),
     .cnt_q(hb_27[24:17]),
-    .aux({game_id, cap_delay}),   // dXX: high 3 bits = running game_id
+    .aux({game_id[2:0], cap_delay}),   // dXX: high 3 bits = running game_id
     // L high nibble: {heartbeat, heartbeat, usb_typ} - usb_typ = 3 means a
     // gamepad is enumerated (0 = nothing on USB); low nibble = SD/loader.
     .aux2({hb_h[24:23], usb_typ_s2, sd_ready, sd_err, ldr_done, ldr_error}),

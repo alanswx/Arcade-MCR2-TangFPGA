@@ -211,7 +211,10 @@ always @(posedge clk_sys)
 // MCR-3 roster (Increment 0: Tapper only). Timber/Journey/DoT slot in later.
 localparam [2:0] GAME_DEFAULT = 3'd0;   // Tapper
 
-wire [2:0] game_id;      // game the core is running (from the OSD)
+// 4 bits since the OSD roster widened to 16 slots. Each family still has
+// <= 8 games, so the input mux and beacon below take game_id[2:0] - exact
+// today, and an explicit narrowing rather than a silent truncation.
+wire [3:0] game_id;      // game the core is running (from the OSD)
 wire [3:0] game_slot;    // SD pack slot the loader (re)loads
 wire       osd_restart;  // OSD pulse: restart the loader with game_slot
 wire       osd_active;   // menu open -> game inputs masked below
@@ -1030,7 +1033,7 @@ always @(*) begin
     // IP0 is identical across the 91490 games (MAME mcr.cpp):
     //   ~{service,3'b0,start2,start1,1'b0,coin1}
     input_0 = ~{ m_service, 3'b000, m_start2, m_start1, 1'b0, m_coin1 };
-    case (game_id)
+    case (game_id[2:0])
     3'd2: begin
         // Discs of Tron (MAME 0.265 mcr.cpp): FIRE is IP0 bit 4!
         input_0 = ~{ m_service, 2'b00, m_pour, m_start2, m_start1, 1'b0, m_coin1 };
@@ -1155,8 +1158,8 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(GAME_DEFAULT),
-    .NUM_GAMES(4'd3),
-    .ROT_MASK(6'b000000),     // Tapper is ROT0 - no OSD text rotation
+    .NUM_GAMES(5'd3),
+    .ROT_MASK(16'h0000),      // all three MCR-3 titles are ROT0
     .TITLE("    MCR3 GAME SELECT    "),
     .NAME0("   TAPPER               "),
     .NAME1("   TIMBER               "),
@@ -1542,7 +1545,7 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     //   sprite read returned real data; =0 means it is stuck all-ones).
     .cnt_x(diag_x),
     .cnt_q(diag_q),
-    .aux({game_id, cap_delay}),   // dXX: high 3 bits = running game_id
+    .aux({game_id[2:0], cap_delay}),   // dXX: high 3 bits = running game_id
     // L bit7 = spq_nonff (sprite read saw non-FF data); rest = SD/loader flags.
     .aux2({spq_nonff_s, hb_h[23], usb_typ_s2, sd_ready, sd_err, ldr_done, ldr_error}),
     .txd(beacon_txd)
