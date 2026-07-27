@@ -76,8 +76,13 @@ next real milestone" within each section.
    one bitstream hold all three cores.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-27:
-   Tapper AND Timber both verified on hardware (MCR-3). Discs of Tron got
-   the same bg plane-order fix but is still completely untested.
+   **Tapper and Timber both WORK on hardware** (MCR-3) - Timber plays
+   perfectly when chosen from the OSD; treat it as a working title, with
+   only the boot-load caveat below outstanding. Discs of Tron now partly
+   tested too: it runs, screen mirrored (CORRECT - the real cabinet uses a
+   mirror), but its SPRITES were striped/missing interior pixels. Root
+   caused and fixed 2026-07-27 (sprite BITPLANE padding, see below);
+   awaits a card rewrite to confirm.
    Earlier notes:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries).
@@ -86,7 +91,10 @@ next real milestone" within each section.
    cause was the gfx1 PLANE ORDER in merge_roms (see the per-core rule
    below). Confirmed against MAME: the TREES LEFT / TIME LEFT boxes are now
    black with an orange border and orange text, bushes green, cabin red.
-   (2) *Boot-load renders corrupt bg tiles; OSD load is fine* — OPEN.
+   (2) *Boot-load renders corrupt bg tiles; OSD load is fine* — OPEN, and
+   the ONLY thing outstanding for Timber. Chosen from the menu it plays
+   perfectly (owner-confirmed), so this is a boot-path defect, not a
+   "Timber does not work" one.
    **Two earlier write-ups of this were WRONG and are corrected here:**
    it is NOT a stale SD card (the pack image was decoded and compared
    byte-for-byte against the ROMs - every region MATCHes, and two rewrites
@@ -118,7 +126,23 @@ next real milestone" within each section.
    CAUTION: the board reaches ~57% black frames (thermal HDMI dropout, TODO
    item 1) after hours of running - capture-based measurements get
    unreliable, so prefer beacon counters over screenshots when it is warm.
-   Discs of Tron remains completely untested. DoT's aim DIAL not wired yet (aim uses its
+   **DISCS OF TRON — sprite bitplane padding, FIXED 2026-07-27 (card rewrite
+   needed to confirm).** Symptom: runs, but sprites striped / missing
+   interior pixels. Cause: the MCR-3 sprite engine fetches each 32-bit word
+   as {Q3[i],Q2[i],Q1[i],Q0[i]} from the FOUR 32 KB QUARTERS of the 128 KB
+   region, so every bitplane owns a fixed 32 KB slot. merge_roms simply
+   concatenated the gfx2 files and padded at the END, which is only correct
+   for a full 128 KB set (tapper/timber: 8 x 16 KB, each pair exactly fills
+   a quarter). DoT has 8 x 8 KB = 64 KB, so it landed as Q0=files0-3,
+   Q1=files4-7, Q2=ZEROS, Q3=ZEROS - sprites drawn with 2 of 4 bitplanes,
+   i.e. missing pixels. Fix: assemble gfx2 BY PLANE, padding each pair to
+   its 32 KB slot. tapper/timber are byte-identical afterwards (verified);
+   only DoT changes. Gated to family==mcr3: MCR-1/MCR-2 sprites are a FLAT
+   32 KB region (one aWidth=15 dpram read 8 bits at a time), and padding
+   their planes overflowed the region and shifted every later game in the
+   pack - caught before commit. New DoT sprite-audit tuple:
+   {0x046E, 0x099B, 0x09F7, 0x04F0}.
+   DoT's aim DIAL still not wired (uses the dedicated IP2 buttons). DoT's aim DIAL not wired yet (aim uses its
    dedicated IP2 buttons; spinner.sv WIRED 2026-07-24 - aim buttons rotate the dial; swap minus/plus if inverted on hardware).
    Remaining: Next: Timber, Discs of
    Tron (MCR-3, same core as Tapper); then the MCR3Scroll games (Spy Hunter,

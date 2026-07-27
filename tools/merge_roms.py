@@ -36,6 +36,10 @@ CONFIG_DIRS = {
 # Game definitions. ROM member names are the old-MAME set names as found in
 # the merged zips; CRCs were verified against MAME 0.265 for tron.
 # ---------------------------------------------------------------------------
+# The MCR-3 sprite region is a fixed 128 KB split into four 32 KB bitplane
+# slots by the fetch engine; see the plane assembly in collect().
+SPRITE_REGION = 0x20000
+
 GAME_SPECS = {
     # --- MCR-1 (90009 video board; core src/rtl/mcr1.vhd) ------------------
     # Different download/ROM map from MCR-2: CPU is 4KB ROMs padded to 32KB,
@@ -294,10 +298,44 @@ def collect(game, quiet=False):
         gfx1_1_data = z.read(spec["gfx1_1_file"])
         gfx1_2_data = z.read(spec["gfx1_2_file"])
 
-        # 4. Sprite graphics (gfx2): 32KB
+        # 4. Sprite graphics (gfx2), assembled BY BITPLANE.
+        # The MCR-3 sprite engine fetches one 32-bit word as
+        #   {Q3[i], Q2[i], Q1[i], Q0[i]}
+        # where Qp is the p'th QUARTER of the 128 KB region - i.e. each plane
+        # owns a fixed 32 KB slot, regardless of how much ROM the game
+        # actually has. Plain concatenation only happens to be right when the
+        # set is a full 128 KB (tapper, timber: 8 x 16 KB, so each pair of
+        # files exactly fills a quarter).
+        # Discs of Tron has 8 x 8 KB = 64 KB. Concatenated and padded at the
+        # END, its four planes land as Q0=files0-3, Q1=files4-7, Q2=ZEROS,
+        # Q3=ZEROS - so sprites render with only 2 of their 4 bitplanes, which
+        # on screen is missing interior pixels / a striped look. Verified
+        # against `mame -listxml`: MAME loads DoT's 8 files contiguously at
+        # 8 KB spacing, so the plane grouping is pairs either way; what
+        # matters is padding EACH plane to its 32 KB slot.
+        # Pairs -> planes, each padded to a quarter. Full-size sets are
+        # byte-identical to the old behaviour (no padding needed).
+        # MCR-3 ONLY. MCR-1/MCR-2 sprites are a FLAT 32 KB region read 8 bits
+        # at a time (mcr1/mcr2.vhd's sprite_graphics is one aWidth=15 dpram),
+        # not four 32 KB bitplane slots - padding their planes would overflow
+        # the region and shift every later game in the pack.
+        files = spec["gfx2_files"]
         gfx2_data = bytearray()
-        for fn in spec["gfx2_files"]:
-            gfx2_data.extend(z.read(fn))
+        if spec.get("family", "mcr2") == "mcr3":
+            per_plane = SPRITE_REGION // 4          # 32 KB
+            for i in range(0, len(files), 2):
+                plane = bytearray()
+                for fn in files[i:i + 2]:
+                    plane.extend(z.read(fn))
+                if len(plane) > per_plane:
+                    raise SystemExit(
+                        f"{game}: sprite plane is {len(plane)} bytes, over "
+                        f"the {per_plane}-byte slot - check gfx2_files")
+                plane.extend(b"\x00" * (per_plane - len(plane)))
+                gfx2_data.extend(plane)
+        else:
+            for fn in files:
+                gfx2_data.extend(z.read(fn))
 
     if not quiet:
         print(f"  main(cpu)={len(main_data)}  snd={len(snd_data)}  "

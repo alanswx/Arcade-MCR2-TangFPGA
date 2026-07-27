@@ -11,7 +11,8 @@ fixed-function baked single-game board. See `TODO.md` item 2.
 
 Games: **MCR-2** — all six (Domino Man default on the 25K; the 60K holds
 the whole family behind its OSD). **MCR-3 (91490)** — Tapper and Timber
-both hardware-verified; Discs of Tron untested. **MCR-1** —
+both hardware-verified and playable; Discs of Tron runs (mirrored, which
+is correct - the real cabinet has a mirror) after a sprite-bitplane fix. **MCR-1** —
 Kick/Kickman/Solar Fox (builds, never hardware-tested; Kickman is on the
 card but missing from the OSD roster). One pack-v2 SD card carries every
 game for every family (`tools/make_pack_v2.py`); the product roadmap toward
@@ -211,6 +212,17 @@ their bg dprams differently:
 | MCR-3 (`mcr3.vhd`) | the ROM MAME loads **second** (higher offset) | tapper, timber |
 | MCR-2 (`mcr2.vhd`) | the ROM MAME loads **first** (offset 0) | domino, shollow, tron, wacko, kroozr |
 
+### MCR-3 sprite ROMs are FOUR 32 KB BITPLANE SLOTS, not a blob
+The sprite engine fetches each 32-bit word as `{Q3[i],Q2[i],Q1[i],Q0[i]}`
+from the four quarters of the 128 KB region, so every bitplane owns a fixed
+32 KB slot. `merge_roms` assembles gfx2 **by plane**, padding each pair of
+files to its slot. Concatenating and padding at the end only works for a
+full 128 KB set; a 64 KB set (Discs of Tron) then leaves Q2/Q3 empty and
+sprites draw with 2 of 4 planes — striped, missing interior pixels. This is
+MCR-3 only: MCR-1/MCR-2 sprites are a FLAT 32 KB region (one `aWidth=15`
+dpram read 8 bits at a time), and padding their planes overflows it and
+shifts every later game in the pack.
+
 Check a new game with `mame -listxml <game> | grep 'region="gfx1"'` — the
 `offset=` attributes are the authority. Getting it backwards gives **correct
 shapes with wrong colours on bg tiles only** (sprites/sky/ground look fine),
@@ -250,11 +262,14 @@ each and `make_pack_v2.py` packs every family's games into one card image.
 
 MCR-3 per-game notes:
 - **Tapper** — hardware-verified. The reference for MCR-3 gfx1 plane order.
-- **Timber** — hardware-verified 2026-07-27. Needed two fixes: a fresh card
-  (the old one's slot was stale) and the gfx1 plane-order correction above.
-- **Discs of Tron** — got the same plane-order fix; NEVER RUN. Its aim dial
-  is on the dedicated IP2 buttons via `spinner.sv` (swap minus/plus if
-  inverted); `video_hflip=1` per the roadmap.
+- **Timber** — WORKS (plays perfectly when chosen from the OSD). Needed the
+  gfx1 plane-order correction above. One caveat open: a BOOT load renders
+  corrupt bg tiles while an OSD load is fine — see TODO item 3.
+- **Discs of Tron** — runs; screen is mirrored, which is CORRECT (the real
+  cabinet uses a mirror). Needed the gfx1 plane-order fix AND the sprite
+  bitplane-padding fix (its 64 KB sprite set left two of four planes empty
+  — see the sprite note below). Aim dial not wired; aim uses the dedicated
+  IP2 buttons via `spinner.sv`.
 
 ## Hard-won constraints — do not regress these
 
