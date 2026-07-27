@@ -1,0 +1,309 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv'
+Analyzing included file '/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/game_config.vh'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":3)
+Back to file '/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":3)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_core80.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv'
+WARN  (EX2478) : Non-net output port 'dbg_refresh' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv":98)
+WARN  (EX2478) : Non-net output port 'dbg_blk0' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv":102)
+WARN  (EX2478) : Non-net output port 'dbg_blk1' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv":103)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/gowin_pll_usb.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host_rom.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/ds_dac.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv'
+WARN  (EX2478) : Non-net output port 'txd' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":22)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_spi_phy.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_reader.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/rom_loader.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/osd.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_ddr3.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_mDRP_intf.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv'
+WARN  (EX2478) : Non-net output port 'clk_audio_counter_wrap' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv":13)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv'
+WARN  (EX2478) : Non-net output port 'cx' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":81)
+WARN  (EX2478) : Non-net output port 'cy' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":82)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv'
+WARN  (EX2478) : Non-net output port 'counter' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv":11)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv'
+WARN  (EX2478) : Non-net output port 'tmds' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":16)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/spinner.sv'
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_2_mcode.vhd'
+Analyzing entity 't80_mcode'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_2_mcode.vhd":78)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_2_mcode.vhd":150)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_1_alu.vhd'
+Analyzing entity 't80_alu'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_1_alu.vhd":74)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_1_alu.vhd":102)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_3_reg.vhd'
+Analyzing entity 't80_reg'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_3_reg.vhd":75)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_3_reg.vhd":98)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_4_core.vhd'
+Analyzing entity 't80'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_4_core.vhd":83)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_4_core.vhd":128)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_6_s.vhd'
+Analyzing entity 't80s'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_6_s.vhd":73)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_6_s.vhd":102)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_controler.vhd'
+Analyzing entity 'ctc_controler'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_controler.vhd":10)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_controler.vhd":31)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_counter.vhd'
+Analyzing entity 'ctc_counter'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_counter.vhd":10)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_counter.vhd":28)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/z80ctc_top.vhd'
+Analyzing entity 'z80ctc_top'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/z80ctc_top.vhd":7)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/z80ctc_top.vhd":37)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd'
+Analyzing entity 'ym2149'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":63)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":94)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd'
+Analyzing entity 'midssio_82s123'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd":4)
+Analyzing architecture 'prom'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd":12)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd'
+Analyzing entity 'mcr_sound_board'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":55)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":83)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd'
+Analyzing entity 'mcr3'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":133)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":194)
+WARN  (EX4557) : Actual for formal port 'ce_n' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":738)
+WARN  (EX4557) : Actual for formal port 'we_b' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":767)
+WARN  (EX4557) : Actual for formal port 'd_a' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":894)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd'
+Analyzing entity 'mcr2'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":133)
+Analyzing architecture 'struct'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":201)
+WARN  (EX4557) : Actual for formal port 'ce_n' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":696)
+WARN  (EX4557) : Actual for formal port 'we_b' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":725)
+WARN  (EX4557) : Actual for formal port 'addr_b' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":812)
+WARN  (EX4557) : Actual for formal port 'd_a' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":854)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/cmos_ram.vhd'
+Analyzing entity 'cmos_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/cmos_ram.vhd":29)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/cmos_ram.vhd":45)
+Analyzing VHDL file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_5_pa.vhd'
+Analyzing entity 't80pa'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_5_pa.vhd":60)
+Analyzing architecture 'rtl'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_5_pa.vhd":91)
+WARN  (EX4557) : Actual for formal port 'cen' is neither a static name nor a globally static expression("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_5_pa.vhd":118)
+WARN  (EX3073) : Port 'hclk5_dbg' remains unconnected for this instance("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1893)
+Compiling module 'mcr23_console60k_top'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":13)
+WARN  (EX3780) : Using initial value of 'chk_allff' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":673)
+WARN  (EX3780) : Using initial value of 'chk_loff' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":674)
+WARN  (EX3780) : Using initial value of 'chk_hoff' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":675)
+Extracting RAM for identifier 'trail'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1694)
+Compiling module 'gowin_pll_core80'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_core80.v":23)
+Compiling module 'pll_27'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v":10)
+Compiling module 'gowin_pll_usb'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/gowin_pll_usb.v":10)
+Compiling module 'sd_reader'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_reader.sv":11)
+Compiling module 'sd_spi_phy'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_spi_phy.sv":6)
+Compiling module 'rom_loader(MAX_RETRY=3'd7,FAMILY=8'd2)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/rom_loader.sv":22)
+Compiling module 'sdram_gw(RFRSH_CYCLES=10'd600)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv":31)
+Compiling module 'dpram(aWidth=16,LOADABLE=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":15)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":34)
+Compiling module 'dpram(aWidth=14,LOADABLE=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":15)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":34)
+Compiling module 'usb_hid_host'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":12)
+Compiling module 'ukp'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":170)
+Compiling module 'usb_hid_host_rom'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host_rom.v":1)
+Extracting RAM for identifier 'mem'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host_rom.v":6)
+WARN  (EX3791) : Expression size 4 truncated to fit in target size 1("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":247)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":290)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":298)
+WARN  (EX3791) : Expression size 4 truncated to fit in target size 3("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":308)
+WARN  (EX3791) : Expression size 4 truncated to fit in target size 3("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":326)
+WARN  (EX3791) : Expression size 8 truncated to fit in target size 7("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":333)
+WARN  (EX3791) : Expression size 4 truncated to fit in target size 3("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":336)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":346)
+WARN  (EX3791) : Expression size 25 truncated to fit in target size 24("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":355)
+WARN  (EX3791) : Expression size 5 truncated to fit in target size 4("/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v":141)
+Compiling module 'spinner(INC_FAST=40)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/spinner.sv":21)
+Compiling module 'spinner(INC_NORMAL=12,INC_FAST=24,INC_SPINNER=12)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/spinner.sv":21)
+Compiling module 'spinner(INC_NORMAL=16,INC_FAST=32,INC_SPINNER=16)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/spinner.sv":21)
+WARN  (EX2420) : Latch inferred for net 'input_1[7]'; We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+Switching to VHDL mode to elaborate design unit 'mcr2'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1343)
+Processing 'mcr2(gfx2_init="",gfx_loadable=1)(1,0)(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":133)
+Processing 'T80s(rtl)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_6_s.vhd":73)
+Processing 'T80(iowait=1)(rtl)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_4_core.vhd":83)
+Processing 'T80_MCode(rtl)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_2_mcode.vhd":78)
+Processing 'T80_ALU(rtl)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_1_alu.vhd":74)
+Processing 'T80_Reg(rtl)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_3_reg.vhd":75)
+Processing 'z80ctc_top(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/z80ctc_top.vhd":7)
+Processing 'ctc_controler(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_controler.vhd":10)
+Processing 'ctc_counter(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_counter.vhd":10)
+Switching to Verilog mode to elaborate module 'dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":729)
+Compiling module 'dpram(aWidth=11)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":15)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":34)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":729)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":740)
+Compiling module 'gen_ram(aWidth=11)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":3)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":14)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":740)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":751)
+Compiling module 'gen_ram(aWidth=9)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":3)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":14)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":751)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":762)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":762)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":773)
+Compiling module 'gen_ram(aWidth=8)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":3)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":14)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":773)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":784)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":784)
+Switching to Verilog mode to elaborate module 'dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":815)
+Compiling module 'dpram(aWidth=15,LOADABLE=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":15)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":34)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":815)
+Processing 'mcr_sound_board(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":55)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":432)
+Compiling module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":3)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv":14)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":432)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd":455)
+Processing 'YM2149(RTL)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":63)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":167)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":220)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":256)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":478)
+'others' clause is never selected("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd":538)
+Processing 'midssio_82s123(prom)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd":4)
+Extracting RAM for identifier 'rom_data'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd":14)
+Switching to Verilog mode to elaborate module 'dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":862)
+Compiling module 'dpram(dWidth=9,aWidth=6)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":15)
+Extracting RAM for identifier 'ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv":34)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd":862)
+Returning to Verilog mode to proceed with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1343)
+Switching to VHDL mode to elaborate design unit 'mcr3'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1402)
+Processing 'mcr3(struct)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":133)
+Switching to Verilog mode to elaborate module 'dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":771)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":771)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":782)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":782)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":793)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":793)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":804)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":804)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":815)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":815)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":826)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":826)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":837)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":837)
+Switching to Verilog mode to elaborate module 'gen_ram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":848)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":848)
+Switching to Verilog mode to elaborate module 'dpram'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":901)
+Returning to VHDL mode to continue with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd":901)
+Returning to Verilog mode to proceed with elaboration("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1402)
+Compiling module 'osd(GAME_DEFAULT=5'd0,NUM_GAMES=5'd9,ROT_MASK=20'h00018,TITLE="   MCR2/MCR3 SELECT     ",NAME0="   TAPPER               ",NAME1="   TIMBER               ",NAME2="   DISCS OF TRON        ",NAME3="   SATANS HOLLOW        ",NAME4="   TRON                 ",NAME5="   WACKO                ",NAME6="   KOZMIK KROOZR        ",NAME7="   TWO TIGERS           ",NAME8="   DOMINO MAN           ")'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/osd.sv":35)
+Extracting RAM for identifier 'font_rom'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/osd.sv":480)
+WARN  (EX3670) : Actual bit length 4 differs from formal bit length 5 for port 'game_id'("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1460)
+Compiling module 'uart_beacon'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":11)
+WARN  (EX3073) : Port 'screen_width' remains unconnected for this instance("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":312)
+Compiling module 'ddr3_framebuffer(WIDTH=512,COLOR_BITS=12,PREFETCH_DELAY=44)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":33)
+Extracting RAM for identifier 'pixels'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":347)
+Compiling module 'pll_ddr3'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_ddr3.v":10)
+Compiling module 'gowin_pll_hdmi'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v":11)
+Compiling module '**'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_mDRP_intf.v":76)
+WARN  (EX3791) : Expression size 9 truncated to fit in target size 8("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":158)
+Compiling module 'DDR3_Memory_Interface_Top'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v":18520)
+Compiling module '**'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v":18519)
+WARN  (EX3670) : Actual bit length 32 differs from formal bit length 1 for port 'sr_req'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":205)
+WARN  (EX3670) : Actual bit length 32 differs from formal bit length 1 for port 'ref_req'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":206)
+WARN  (EX3670) : Actual bit length 15 differs from formal bit length 14 for port 'O_ddr_addr'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":219)
+Compiling module 'hdmi(VIDEO_ID_CODE=4,VIDEO_REFRESH_RATE=60.0,AUDIO_RATE=32000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":4)
+Compiling module 'packet_picker(VIDEO_RATE=74250000.0,IT_CONTENT=1'b1,AUDIO_BIT_WIDTH=16,AUDIO_RATE=32000,VENDOR_NAME=64'b0101010101101110011010110110111001101111011101110110111000000000,PRODUCT_DESCRIPTION=128'b01000110010100000100011101000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,SOURCE_DEVICE_INFORMATION=8'b00000000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":4)
+Extracting RAM for identifier 'audio_sample_word_buffer'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":84)
+Compiling module 'audio_clock_regeneration_packet(VIDEO_RATE=74250000.0,AUDIO_RATE=32000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv":5)
+Compiling module 'audio_sample_packet(SAMPLING_FREQUENCY=4'b0011,WORD_LENGTH=4'b0010)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":8)
+WARN  (EX3780) : Using initial value of 'CHANNEL_LEFT' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":63)
+WARN  (EX3780) : Using initial value of 'CHANNEL_RIGHT' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":64)
+Compiling module 'auxiliary_video_information_info_frame(IT_CONTENT=1'b1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv":5)
+Compiling module 'source_product_description_info_frame(VENDOR_NAME=64'b0101010101101110011010110110111001101111011101110110111000000000,PRODUCT_DESCRIPTION=128'b01000110010100000100011101000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,SOURCE_DEVICE_INFORMATION=8'b00000000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv":5)
+Compiling module 'audio_info_frame'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv":5)
+WARN  (EX1998) : Net 'headers[255][23]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":29)
+WARN  (EX1998) : Net 'subs[255][3][55]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":30)
+Compiling module 'packet_assembler'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv":4)
+Compiling module 'tmds_channel'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=2)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'serializer(VIDEO_RATE=74250000.0)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv":3)
+Compiling module 'asyncfifo(DATA_WIDTH=12,BUFFER_ADDR_WIDTH=3)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":603)
+Extracting RAM for identifier 'buffer'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":623)
+WARN  (EX3791) : Expression size 5 truncated to fit in target size 4("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":643)
+WARN  (EX3791) : Expression size 5 truncated to fit in target size 4("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":692)
+Compiling module 'crossdomain(SIZE=4)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":751)
+WARN  (EX3791) : Expression size 21 truncated to fit in target size 19("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":389)
+WARN  (EX3791) : Expression size 11 truncated to fit in target size 10("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":397)
+WARN  (EX3791) : Expression size 11 truncated to fit in target size 10("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":400)
+Compiling module 'asyncfifo(DATA_WIDTH=24,BUFFER_ADDR_WIDTH=6)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":603)
+Extracting RAM for identifier 'buffer'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":623)
+WARN  (EX3791) : Expression size 8 truncated to fit in target size 7("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":643)
+WARN  (EX3791) : Expression size 8 truncated to fit in target size 7("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":692)
+Compiling module 'crossdomain(SIZE=7)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":751)
+WARN  (EX3791) : Expression size 10 truncated to fit in target size 9("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":479)
+WARN  (EX3791) : Expression size 10 truncated to fit in target size 9("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":488)
+WARN  (EX3791) : Expression size 31 truncated to fit in target size 11("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":500)
+WARN  (EX3791) : Expression size 32 truncated to fit in target size 11("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":505)
+WARN  (EX3791) : Expression size 32 truncated to fit in target size 11("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":507)
+WARN  (EX3791) : Expression size 20 truncated to fit in target size 19("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":527)
+WARN  (EX3791) : Expression size 12 truncated to fit in target size 11("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":534)
+WARN  (EX3791) : Expression size 5 truncated to fit in target size 4("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v":580)
+Compiling module 'ds_dac'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/ds_dac.sv":2)
+WARN  (EX1998) : Net 'game_slot[3]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":240)
+WARN  (EX1998) : Net 'chk_first[31]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":693)
+WARN  (EX1998) : Net 'chk_full' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":694)
+NOTE  (EX0101) : Current top module is "mcr23_console60k_top"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+WARN  (DI0003) : Latch inferred for net 'input_1[7]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[6]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[5]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[4]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[3]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[2]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[1]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_1[0]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[7]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[6]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[5]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[4]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[3]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[2]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[1]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_2[0]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_3[7]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_3[6]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_3[5]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+WARN  (DI0003) : Latch inferred for net 'input_3[2]';We do not recommend the use of latches in FPGA designs, as they may lead to timing problems("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1259)
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "audio_info_frame" instantiated to "audio_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":147)
+WARN  (NL0002) : The module "audio_sample_packet" instantiated to "audio_sample_packet" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":135)
+WARN  (NL0002) : The module "auxiliary_video_information_info_frame" instantiated to "auxiliary_video_information_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":141)
+WARN  (NL0002) : The module "source_product_description_info_frame" instantiated to "source_product_description_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":144)
+WARN  (NL0002) : The module "spinner" instantiated to "sp_tt" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv":1114)
+[95%] Generate netlist file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/gwsynthesis/mcr23_console60k.vg" completed
+[100%] Generate report file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/gwsynthesis/mcr23_console60k_syn.rpt.html" completed
+GowinSynthesis finish

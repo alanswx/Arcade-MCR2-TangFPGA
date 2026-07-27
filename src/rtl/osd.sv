@@ -91,13 +91,16 @@ module osd #(
 
     // Game selection / loader handshake
     output reg [4:0]  game_id,        // game the core is running
-    output reg [3:0]  load_slot,      // SD pack slot for rom_loader
+    // ROSTER INDEX to load (not a pack slot). With a merged multi-family
+    // roster the two differ: the top translates index -> (family, slot).
+    // 5 bits to match the 20-slot roster.
+    output reg [4:0]  load_slot,
     output reg        loader_restart, // 1-cycle pulse: reload load_slot
     input             loader_done,
     input             loader_error,
-    input      [3:0]  loaded_slot,    // slot the loader actually loaded -
-                                      // at boot this may be the SD-saved
-                                      // preference, not GAME_DEFAULT
+    input      [4:0]  loaded_slot,    // roster index actually loaded - at boot
+                                      // this may be the SD-saved preference,
+                                      // not GAME_DEFAULT
     output reg        save_req,       // pulse: persist the selection to SD
     input             sd_ready,       // card initialised
 
@@ -202,7 +205,7 @@ always @(posedge clk) begin
         state     <= S_CLOSED;
         game_id   <= GAME_DEFAULT;
         cursor    <= GAME_DEFAULT;
-        load_slot <= {1'b0, GAME_DEFAULT};
+        load_slot <= GAME_DEFAULT;
         done_r    <= 1'b0;
     end else begin
         // Whatever the loader finished loading is what the core is running
@@ -210,7 +213,7 @@ always @(posedge clk) begin
         // SD-saved preference. ROMs and input map switch together, always.
         done_r <= loader_done;
         if (loader_done & ~done_r)
-            game_id <= loaded_slot[2:0];
+            game_id <= loaded_slot;
 
         case (state)
 
@@ -267,7 +270,7 @@ always @(posedge clk) begin
                 end
             end
             else if (ev_a) begin
-                load_slot      <= {1'b0, cursor};
+                load_slot      <= cursor;
                 loader_restart <= 1'b1;
                 state          <= S_LOAD;
             end

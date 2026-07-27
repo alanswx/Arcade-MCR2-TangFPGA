@@ -215,7 +215,9 @@ localparam [2:0] GAME_DEFAULT = 3'd0;   // Tapper
 // <= 8 games, so the input mux and beacon below take game_id[2:0] - exact
 // today, and an explicit narrowing rather than a silent truncation.
 wire [3:0] game_id;      // game the core is running (from the OSD)
-wire [3:0] game_slot;    // SD pack slot the loader (re)loads
+// 5-bit to match the OSD's widened roster index. On a single-family board
+// the roster index IS the pack slot, so the low 4 bits go to the loader.
+wire [4:0] game_slot;    // SD pack slot the loader (re)loads
 wire       osd_restart;  // OSD pulse: restart the loader with game_slot
 wire       osd_active;   // menu open -> game inputs masked below
 
@@ -335,7 +337,7 @@ sd_reader #(.CLK_HZ(40_000_000)) sd (
 rom_loader #(.PACK_BASE(32'd2048), .SLOT_SECTORS(256), .MAX_RETRY(3'd7),
              .FAMILY(8'd2)) loader (   // 2 = mcr3 entries in a v2 pack
     .clk(clk_sys), .rst(core_reset_raw | osd_restart),
-    .slot(game_slot),
+    .slot(game_slot[3:0]), .family(8'd2),   // single-core board: fixed family
     // Boot consults the SD-saved preference; an OSD-commanded reload
     // (menu open) loads exactly the slot the user picked.
     // INSERT CARD retries still honour the saved game (osd_active alone
@@ -1204,7 +1206,7 @@ osd #(
     .loader_restart(osd_restart),
     .loader_done(ldr_done),
     .loader_error(ldr_error),
-    .loaded_slot(ldr_slot),
+    .loaded_slot({1'b0, ldr_slot}),
     .save_req(osd_save),
     .sd_ready(sd_ready),
     .osd_active(osd_active), .osd_nocard(osd_nocard)

@@ -29,11 +29,17 @@ module rom_loader #(
     parameter [2:0]  MAX_RETRY   = 3'd3,
     // Which family's entries this core loads from a v2 pack
     // (0=mcr1, 1=mcr2, 2=mcr3)
+    // Default family for single-core boards. The MERGED top drives `family`
+    // instead, because which family to load is a runtime choice there.
     parameter [7:0]  FAMILY      = 8'd1
 )(
     input             clk,
     input             rst,
     input      [3:0]  slot,          // default slot (the baked-in game)
+    // Which family's pack entry to load. Single-core boards tie this to the
+    // FAMILY parameter; the merged top drives it from the OSD selection, so
+    // one bitstream can load MCR-2 and MCR-3 games from the same card.
+    input      [7:0]  family,
     input             use_prefs,     // boot path: consult the prefs sector;
                                      // low when the OSD demands `slot` verbatim
     input             save_req,      // pulse: persist cur_slot to the card
@@ -133,7 +139,7 @@ function [7:0] pref_byte(input [9:0] i);
     10'd6:   pref_byte = 8'h46;   // F
     10'd7:   pref_byte = 8'h31;   // 1
     10'd8:   pref_byte = {4'd0, cur_slot};
-    10'd9:   pref_byte = FAMILY;      // roadmap item 5: which CORE was
+    10'd9:   pref_byte = family;      // roadmap item 5: which CORE was
                                       // running when the pref was saved.
                                       // Multiboot (item 4) will read this
                                       // at boot and jump to that core's
@@ -249,7 +255,7 @@ always @(posedge clk) begin
                         4'd9:  ent_cnt[15:8]   <= sd_dout;
                         4'd10: ent_cnt[23:16]  <= sd_dout;
                         4'd11: ent_cnt[31:24]  <= sd_dout;
-                        4'd15: if (!v2_found && ent_fam == FAMILY && ent_typ == 8'd0
+                        4'd15: if (!v2_found && ent_fam == family && ent_typ == 8'd0
                                    && ent_slot == {4'd0, cur_slot}) begin
                                    v2_found <= 1'b1;
                                    v2_lba   <= ent_lba;
@@ -267,7 +273,7 @@ always @(posedge clk) begin
         L_HDRCHK: begin
             if (is_v2 && hdr == MAGIC_V2) begin
                 v2_mode <= 1'b1;
-                if (!v2_found) st <= L_ERR;   // no entry for (FAMILY, slot)
+                if (!v2_found) st <= L_ERR;   // no entry for (family, slot)
                 else begin
                     sector       <= v2_lba;
                     sect_left_hi <= v2_cnt;

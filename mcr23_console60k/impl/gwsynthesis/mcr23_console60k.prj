@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gowin-synthesis-project>
+<Project>
+    <Version>beta</Version>
+    <Device id="GW5AT-60B" package="PBGA484A" speed="1" partNumber="GW5AT-LV60PG484AC1/I0"/>
+    <FileList>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/src/mcr23_console60k_top.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/dpram.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gen_ram.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_core80.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sdram_gw.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/gowin_pll_usb.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/usb/usb_hid_host_rom.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/ds_dac.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_spi_phy.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/sd_reader.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/rom_loader.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/osd.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_framebuffer.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/ddr3_memory_interface.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_ddr3.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_mDRP_intf.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/spinner.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr3.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr2.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/mcr_sound_board.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/YM2149_linmix_sep.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/midssio_82s123.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/cmos_ram.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_1_alu.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_2_mcode.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_3_reg.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_4_core.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_5_pa.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/T80/t80_6_s.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_controler.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/ctc_counter.vhd" type="vhdl"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/Z80CTC/z80ctc_top.vhd" type="vhdl"/>
+    </FileList>
+    <OptionList>
+        <Option type="disable_insert_pad" value="0"/>
+        <Option type="global_freq" value="100.000"/>
+        <Option type="looplimit" value="2000"/>
+        <Option type="output_file" value="/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/gwsynthesis/mcr23_console60k.vg"/>
+        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="ram_rw_check" value="1"/>
+        <Option type="top_module" value="mcr23_console60k_top"/>
+        <Option type="vcc" value="0.9"/>
+        <Option type="verilog_language" value="sysv-2017"/>
+        <Option type="vhdl_language" value="vhdl-1993"/>
+    </OptionList>
+</Project>
