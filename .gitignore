@@ -67,3 +67,6 @@ sim/ascal_*_out*.txt
 # repo; a tarball of it would sneak the same data past that rule.
 mcrroms.tar
 *roms*.tar
+
+# throwaway resource-probe build outputs
+merge_probe/impl/

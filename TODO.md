@@ -174,22 +174,41 @@ next real milestone" within each section.
    flash slot map, no wire. See items 4a/4b below for the budget and the
    multiboot findings (kept: Scroll/Mono will need them).
 
-   **4a. Why merging fits (measured from the syn resource reports, 60K):**
-   Logic is a non-issue — ~23k of 60k LUT for all three cores plus shared
-   infra. BSRAM is the constraint (118 blocks):
-   | | LUT | BSRAM |
+   **4a. Merge budget — MEASURED, not estimated (2026-07-27).** A throwaway
+   two-core probe build (`merge_probe/`, MCR-3's top with an MCR-2 core
+   alongside sharing the CPU/sound ROM RAM) was built through PnR to get real
+   numbers, because the arithmetic was WRONG. Predicted 114, actual **122 —
+   PnR refused it: "ERROR (PA2017) The number(122) of BSRAM exceeds the
+   resource limit(118)"**. The gap: shared infrastructure is ~20 blocks, not
+   the 12 the synthesis per-module list suggests (PnR packing, plus the SD
+   reader / dump / audit RAMs that never show as named modules).
+   Logic is a non-issue throughout: the 2-core probe is 18.8k of 60k LUT.
+   Real per-board totals and the model they give:
+   | Build | BSRAM | = infra + ROMs + core |
    |---|---|---|
-   | shared infra (DDR3 fb 9, USB 2, OSD 1) | ~4.3k | 12 |
-   | MCR-1: cpu 16 + snd 8 + core 33 | 5.8k | 57 |
-   | MCR-2: cpu 32 + snd 8 + core 34 | 5.8k | 74 |
-   | MCR-3: cpu 32 + snd 8 + core 28 | 5.6k | 68 |
-   Naive merge = 211/118. But only ONE game runs at a time, so the ROM
-   storage can be shared: cpu max(16,32,32)=32 + snd 8 shared at top level
-   -> 147. Then move MCR-1/2 `sprite_graphics` (16 blocks each) to SDRAM
-   exactly as mcr3.vhd already does -> **115/118**. If that is too tight,
-   sharing the bg gfx RAMs (mcr1 4 + mcr2 8 + mcr3 16 = 28 -> 16) gives
-   **103/118**. Does NOT stretch to 5 families (adding Scroll+Mono working
-   RAMs ~12 each overshoots), hence multiboot survives for those.
+   | mcr3 alone | 88 | 20 + 40 + 28 |
+   | mcr2 alone | 94 | 20 + 40 + 34 |
+   | mcr1 alone | 77 | 20 + 24 + 33 (32K CPU ROM) |
+   | **mcr3+mcr2 probe** | **122** | 20 + 40 + 28 + 34 — **OVER by 4** |
+   Where that leaves each option:
+   | Plan | BSRAM | |
+   |---|---|---|
+   | 2-way (mcr3+mcr2), MCR-2 sprites -> SDRAM | **106** | fits, 12 spare |
+   | 3-way as-is | 155 | way over |
+   | 3-way, BOTH sprite sets -> SDRAM | 123 | still over |
+   | 3-way, + bg gfx shared (28 -> 16) | **111** | fits, 7 spare |
+   **So the sprite->SDRAM move is required even for a TWO-family merge** -
+   the earlier claim that mcr3+mcr2 "fits today with no SDRAM work" was based
+   on the bad arithmetic and is retracted. The 3-way additionally needs the bg
+   gfx RAMs shared, which means hoisting them out of the vendored cores.
+   Recommended order: (1) MCR-2 sprites -> SDRAM, (2) merge mcr3+mcr2 and
+   prove the architecture on 9 games, (3) MCR-1 sprites -> SDRAM + shared bg,
+   (4) fold MCR-1 in.
+   PROBE GOTCHA worth remembering: the first probe reported a comfortable 95
+   because the family-select signal was `game_id[3]`, which synthesis proved
+   constant 0 (the OSD only assigns loaded_slot[2:0]) - it killed MCR-2's
+   video path and pruned 27 of its 34 blocks. Any future probe must select on
+   something provably non-constant (a physical input).
 
    **4b. Multiboot mechanics — DECODED and partly VERIFIED on this
    toolchain (keep for Scroll/Mono).** The 2026-07-24 investigation's notes
