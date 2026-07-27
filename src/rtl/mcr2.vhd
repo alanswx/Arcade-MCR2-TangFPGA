@@ -138,8 +138,8 @@ entity mcr2 is
 -- (licensing - see TODO item 2). dpram needs LOADABLE whenever INIT_FILE is
 -- empty, or its port B silently goes read-only and the download dies.
 generic(
- GFX1_1_INIT  : string  := "rom_gfx1_1.hex";
- GFX1_2_INIT  : string  := "rom_gfx1_2.hex";
+ -- bg gfx generics are gone: those RAMs moved to the top (2026-07-27).
+ -- Only the SPRITE ROM is still inside the core.
  GFX2_INIT    : string  := "rom_gfx2.hex";
  GFX_LOADABLE : integer := 0
 );
@@ -177,6 +177,16 @@ port(
 
  snd_rom_addr   : out std_logic_vector(13 downto 0);
  snd_rom_do     : in std_logic_vector(7 downto 0);
+
+ -- Background tile graphics, HOISTED OUT of the core (2026-07-27) so the
+ -- merged multi-family top can share ONE pair of RAMs between cores - only
+ -- one core runs at a time. Pure port move: same 1-cycle read on the same
+ -- inverted clock, so tile timing is untouched. The top owns the RAMs and the
+ -- dl write decode, and must clock port A on NOT clock_40.
+ -- Unlike mcr3.vhd these are NOT crossed: bg1 (blob gfx1_1) -> bg_graphx1_do.
+ bg_addr        : out std_logic_vector(12 downto 0);
+ bg1_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_1
+ bg2_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_2
 
  dl_addr        : in  std_logic_vector(16 downto 0);
  dl_data        : in  std_logic_vector(7 downto 0);
@@ -301,8 +311,6 @@ architecture struct of mcr2 is
  signal ssio_iowe    : std_logic;
  signal ssio_do      : std_logic_vector(7 downto 0);
 
- signal bg_graphics_1_we    : std_logic;
- signal bg_graphics_2_we    : std_logic;
  signal sprite_graphics_we  : std_logic;
 
 begin
@@ -785,38 +793,10 @@ port map(
 --   0x14000-0x1BFFF  sprites gfx2
 --   0x1C000-0x1DFFF  background plane 1
 --   0x1E000-0x1FFFF  background plane 2
-bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(16 downto 13) = "1110" else '0';
-bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(16 downto 13) = "1111" else '0';
-
-bg_graphics_1 : entity work.dpram
-generic map( dWidth => 8, aWidth => 13, INIT_FILE => GFX1_1_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- addr_a => bg_code_line,
- d_a    => x"00",
- q_a    => bg_graphx1_do,
- clk_b  => clock_vid,
- we_b   => bg_graphics_1_we,
- addr_b => dl_addr(12 downto 0),
- d_b    => dl_data,
- q_b    => open
-);
-
-bg_graphics_2 : entity work.dpram
-generic map( dWidth => 8, aWidth => 13, INIT_FILE => GFX1_2_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- addr_a => bg_code_line,
- d_a    => x"00",
- q_a    => bg_graphx2_do,
- clk_b  => clock_vid,
- we_b   => bg_graphics_2_we,
- addr_b => dl_addr(12 downto 0),
- d_b    => dl_data,
- q_b    => open
-);
+-- Background tile graphics now live in the TOP (see the port comment above).
+bg_addr       <= bg_code_line;
+bg_graphx1_do <= bg1_do;
+bg_graphx2_do <= bg2_do;
 
 -- sprite graphics ROM 1E/1D/1B/1A
 sprite_graphics : entity work.dpram

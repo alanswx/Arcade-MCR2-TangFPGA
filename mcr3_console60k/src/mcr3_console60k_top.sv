@@ -1072,6 +1072,24 @@ wire [9:0] core_hcnt;
 wire [9:0] core_vcnt;
 wire       core_halt_n;
 
+// Background tile graphics RAMs, hoisted OUT of mcr3.vhd (2026-07-27) so the
+// merged top can share one pair between cores. Same 1-cycle read on the same
+// INVERTED clock the core used internally (clock_vidn = ~clock_40) - a pure
+// port move, no timing change. The core resolves the upstream bg1/bg2 crossing
+// internally, so here bg1 simply holds blob region gfx1_1 and bg2 holds gfx1_2.
+wire [13:0] bg_addr;
+wire [7:0]  bg1_do, bg2_do;
+dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg1_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg1_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(dl_addr[13:0]),
+    .d_b(dl_data), .q_b()
+);
+dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg2_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg2_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(dl_addr[13:0]),
+    .d_b(dl_data), .q_b()
+);
+
 mcr3 mcr3_core (
     .clock_40(clk_sys),
     .reset(core_reset),
@@ -1119,6 +1137,10 @@ mcr3 mcr3_core (
 
     // Download bus (16-bit on MCR-3). Held OFF here: CPU/sound/bg are baked;
     // the SD pack feeds sprites straight to SDRAM (see the sprite loader below).
+    .bg_addr(bg_addr),
+    .bg1_do(bg1_do),
+    .bg2_do(bg2_do),
+
     .dl_addr(core_dl_addr),
     .dl_wr(core_dl_wr),
     .dl_data(dl_data),

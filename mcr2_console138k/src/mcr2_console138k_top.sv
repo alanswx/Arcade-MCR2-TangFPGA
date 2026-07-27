@@ -140,6 +140,23 @@ wire       hblank, vblank;
 wire       hs, vs, cs;
 wire [15:0] audio_l_val, audio_r_val;
 
+// Background tile graphics RAMs, hoisted OUT of mcr2.vhd (2026-07-27) so the
+// merged top can share one pair between cores. Same 1-cycle read on the same
+// INVERTED clock the core used internally - a pure port move, no timing
+// change. This board stays BAKED on purpose (fixed-function single-game
+// board), so these keep their INIT_FILE rather than LOADABLE.
+wire [12:0] bg_addr;
+wire [7:0]  bg1_do, bg2_do;
+dpram #(.dWidth(8), .aWidth(13), .INIT_FILE("rom_gfx1_1.hex")) bg1_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg1_do),
+    // no SD loader on this board - port B tied off, contents come from INIT_FILE
+    .clk_b(clk_sys),  .we_b(1'b0), .addr_b(13'd0), .d_b(8'h00), .q_b()
+);
+dpram #(.dWidth(8), .aWidth(13), .INIT_FILE("rom_gfx1_2.hex")) bg2_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg2_do),
+    .clk_b(clk_sys),  .we_b(1'b0), .addr_b(13'd0), .d_b(8'h00), .q_b()
+);
+
 mcr2 mcr2_core (
     .clock_40(clk_sys),
     .reset(core_reset),
@@ -171,6 +188,10 @@ mcr2 mcr2_core (
     .cpu_rom_do(rom_do),
     .snd_rom_addr(snd_addr),
     .snd_rom_do(snd_do),
+
+    .bg_addr(bg_addr),
+    .bg1_do(bg1_do),
+    .bg2_do(bg2_do),
 
     // Disable HPS download interface
     .dl_addr(17'd0),

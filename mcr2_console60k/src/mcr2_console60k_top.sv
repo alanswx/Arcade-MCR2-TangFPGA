@@ -576,12 +576,29 @@ wire [15:0] audio_l_val, audio_r_val;
 wire [9:0] core_hcnt;
 wire [9:0] core_vcnt;
 
+// Background tile graphics RAMs, hoisted OUT of mcr2.vhd (2026-07-27) so the
+// merged top can share one pair between cores. Same 1-cycle read on the same
+// INVERTED clock the core used internally - a pure port move, no timing
+// change. dl map (mcr2 blob): 0x1C000-0x1DFFF = gfx1_1, 0x1E000-0x1FFFF = gfx1_2.
+wire [12:0] bg_addr;
+wire [7:0]  bg1_do, bg2_do;
+dpram #(.dWidth(8), .aWidth(13), .LOADABLE(1)) bg1_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg1_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && (dl_addr[16:13] == 4'b1110)),
+    .addr_b(dl_addr[12:0]), .d_b(dl_data), .q_b()
+);
+dpram #(.dWidth(8), .aWidth(13), .LOADABLE(1)) bg2_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg2_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && (dl_addr[16:13] == 4'b1111)),
+    .addr_b(dl_addr[12:0]), .d_b(dl_data), .q_b()
+);
+
 mcr2 #(
     // NO BAKED ROMs (licensing): the bitstream must carry no ROM data, so the
     // gfx dprams start blank and the SD pack is the only source. LOADABLE
     // keeps their port B writable - an empty INIT_FILE alone would select
     // dpram's read-only-port-B mode and silently kill the download.
-    .GFX1_1_INIT(""), .GFX1_2_INIT(""), .GFX2_INIT(""), .GFX_LOADABLE(1)
+    .GFX2_INIT(""), .GFX_LOADABLE(1)   // sprite ROM only; bg moved to the top
 ) mcr2_core (
     .clock_40(clk_sys),
     .reset(core_reset),
@@ -620,6 +637,10 @@ mcr2 #(
     .snd_rom_do(snd_do),
 
     // Disable HPS download interface
+    .bg_addr(bg_addr),
+    .bg1_do(bg1_do),
+    .bg2_do(bg2_do),
+
     .dl_addr(dl_addr),
     .dl_wr(dl_wr),
     .dl_data(dl_data),

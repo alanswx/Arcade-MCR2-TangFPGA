@@ -171,6 +171,17 @@ port(
 -- sp_graphx_do   : in std_logic_vector(7 downto 0);
  sp_graphx32_do : in std_logic_vector(31 downto 0);
 
+ -- Background tile graphics, HOISTED OUT of the core (2026-07-27) so the
+ -- merged multi-family top can share ONE pair of RAMs between cores - only one
+ -- core runs at a time, and these were 16 of the blocks that put the merged
+ -- build over the device limit. Pure port move: same 1-cycle read on the same
+ -- inverted clock, so sprite/tile timing is untouched.
+ -- The top owns the RAMs and the dl write decode; it must clock port A on
+ -- NOT clock_40 (this core reads them on clock_vidn).
+ bg_addr        : out std_logic_vector(13 downto 0);
+ bg1_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_1
+ bg2_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_2
+
  dl_addr        : in  std_logic_vector(15 downto 0);
  dl_data        : in  std_logic_vector(7 downto 0);
  dl_wr          : in  std_logic;
@@ -306,8 +317,6 @@ architecture struct of mcr3 is
  signal ssio_iowe : std_logic;
  signal ssio_do   : std_logic_vector(7 downto 0);
  
- signal dl_bg_graphics_1_we : std_logic;
- signal dl_bg_graphics_2_we : std_logic;
 begin
 
 clock_vid  <= clock_40;
@@ -838,48 +847,15 @@ port map(
  q    => sp_buffer_ram2b_do
 );
 
--- background graphics ROM 6F
-bg_graphics_1 : entity work.dpram
-generic map(
-	aWidth => 14,
-	dWidth => 8,
-	LOADABLE => 1   -- bg plane from SD (dl 0x0000-0x3FFF); NO bake (licensing)
-)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx2_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(13 downto 0),
- we_b   => dl_bg_graphics_2_we,
- d_b    => dl_data,
- q_b    => open
-);
-dl_bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(15 downto 14) = "01" else '0';
-
-
--- background graphics ROM 5F
-bg_graphics_2 : entity work.dpram
-generic map(
-	aWidth => 14,
-	dWidth => 8,
-	LOADABLE => 1   -- bg plane from SD (dl 0x4000-0x7FFF); NO bake (licensing)
-)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx1_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(13 downto 0),
- we_b   => dl_bg_graphics_1_we,
- d_b    => dl_data,
- q_b    => open
-);
-dl_bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(15 downto 14) = "00" else '0';
+-- Background tile graphics now live in the TOP (see the port comment): one
+-- shared address, two data returns. NOTE THE CROSSING, which is why this is
+-- resolved here rather than in the top: the RAM loaded from blob region
+-- gfx1_1 feeds bg_graphx2_do, and gfx1_2 feeds bg_graphx1_do. That is the
+-- upstream quirk commit 50b075e documents; keeping it inside the core means
+-- every top can wire bg1/bg2 to the obvious blob regions.
+bg_addr       <= bg_code_line;
+bg_graphx2_do <= bg1_do;
+bg_graphx1_do <= bg2_do;
 
 
 -- timber_sound_board 
