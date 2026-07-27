@@ -59,17 +59,22 @@ next real milestone" within each section.
    Feeds directly into item 4's merge — the freed BSRAM is what makes one
    bitstream hold all three cores.
 
-3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
+3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-27:
+   Tapper AND Timber both verified on hardware (MCR-3). Discs of Tron got
+   the same bg plane-order fix but is still completely untested.
+   Earlier notes:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries).
-   **TIMBER — TWO SEPARATE FAULTS, both diagnosed 2026-07-27.**
+   **TIMBER — TWO SEPARATE FAULTS, both FIXED and hardware-verified
+   2026-07-27. Timber now renders correctly; treat it as working.**
    (1) *Structural corruption* — FIXED by rewriting the SD card from a fresh
    `make_pack_v2.py` image. The old card's Timber payload was stale; Tapper
    on the same card was fine (each slot has its own start_lba/sector_count).
    Shapes came back correct immediately.
-   (2) *Wrong bg colours* — root-caused to the gfx1 PLANE ORDER in
-   merge_roms, fixed in the same session (see below). Awaits a card rewrite
-   to confirm on hardware.
+   (2) *Wrong bg colours* — the gfx1 PLANE ORDER in merge_roms (see below).
+   Fixed, card rewritten, CONFIRMED on hardware against MAME ground truth:
+   the TREES LEFT / TIME LEFT boxes are now black with an orange border and
+   orange text, bushes green, cabin red — all matching MAME.
    **gfx1 plane order is PER-CORE, not per-game** — the trap that caused
    this. Verified with `mame -listxml`:
    - MCR-3 (`mcr3.vhd`, crossed bg dpram wiring): `gfx1_1` = the ROM MAME
