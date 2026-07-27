@@ -47,17 +47,33 @@ next real milestone" within each section.
    power-on default and port B writes land normally. (CLAUDE.md's "port B
    is inert in the dpram ROM mode", and the same line in mcr2.vhd:768, are
    STALE — they describe an older dpram. Fixed 2026-07-27.)
-   Remaining work is therefore small:
-   - `dpram` needs a mode for "writable dual-port, NO init file": today the
-     generate picks `ram_mode` when INIT_FILE is empty, and that branch
-     makes port B READ-ONLY. Dropping the bakes without this would silently
-     break every download path.
-   - Delete the INIT_FILE bakes + the `rom_*.hex` generation they need,
-     and replace the card-less fallback (which currently boots a baked
-     game) with an "INSERT CARD" screen.
-   - Verify each family still boots from the v2 pack afterwards.
-   Feeds directly into item 4's merge — the freed BSRAM is what makes one
-   bitstream hold all three cores.
+   **DONE for all three 60K boards 2026-07-27** — no 60K bitstream contains
+   ROM data any more:
+   - `dpram` gained a `LOADABLE` mode ("writable dual-port, NO init file").
+     Needed because the generate picks `ram_mode` when INIT_FILE is empty
+     and there port B is READ-ONLY — dropping a bake without it silently
+     kills that ROM's download path. All three modes pinned in `sim/dpram/`.
+   - mcr3_console60k un-baked and **hardware-verified**: Tapper and Timber
+     both render correctly with a completely ROM-free bitstream.
+   - mcr1_console60k and mcr2_console60k un-baked; both build clean with
+     BSRAM unchanged (77/118 and 94/118 — the RAMs still exist, only their
+     initial contents are gone), TNS 0.000. **Neither run on hardware yet**
+     (MCR-1 never has been at all).
+   - Bake control is a per-board GENERIC on mcr1.vhd/mcr2.vhd
+     (`GFX1_1_INIT`/`GFX1_2_INIT`/`GFX2_INIT`/`GFX_LOADABLE`), defaults
+     baking, so mcr2_primer25k and mcr2_console138k are untouched. The 25K
+     stays baked on purpose — fixed-function single-game board.
+   Still owed:
+   - **"INSERT CARD" screen.** The card-less fallback used to boot a baked
+     game; on the 60K there is now nothing to fall back to, so a missing or
+     unreadable card needs a clear on-screen message rather than whatever
+     blank/garbage the core produces from empty RAM. `sim/tb_nocard.sv`
+     exists and is the place to drive it.
+   - `merge_roms` still emits `rom_*.hex` for the 25K/138K, and
+     `game_config.vh` is still needed on the 60K for `GAME_DEFAULT` (the
+     slot used when the prefs sector has no valid entry).
+   Feeds directly into item 4's merge — the shareable ROM RAM is what makes
+   one bitstream hold all three cores.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-27:
    Tapper AND Timber both verified on hardware (MCR-3). Discs of Tron got
