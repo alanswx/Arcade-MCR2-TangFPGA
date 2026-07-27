@@ -106,11 +106,13 @@ next real milestone" within each section.
    - NOT a pack region size/offset error: timber and tapper have
      byte-identical region sizes (main 57344, snd 16384, gfx1_1/2 16384,
      gfx2 131072), so v2 puts every region at the same offset.
-   - NOT the gfx1 plane order, and NOT 50b075e's bg routing fix. Both bg
-     ROMs are addressed by the SAME `bg_code_line` and combine as two
-     BITPLANES (`bg_palette_addr <= bg_attr & bg_graphx2_do(n) &
-     bg_graphx1_do(n)`), so swapping them can only change the colour index
-     — it cannot scramble shapes. The observed fault is shapes.
+   - NOT the gfx1 plane order, and NOT 50b075e's bg routing fix — *for the
+     SHAPE corruption*. Both bg ROMs are addressed by the SAME
+     `bg_code_line` and combine as two BITPLANES (`bg_palette_addr <=
+     bg_attr & bg_graphx2_do(n) & bg_graphx1_do(n)`), so swapping them can
+     only change the colour index. (The plane order WAS wrong — that was
+     fault 2 above — but it could never have produced fault 1's scrambled
+     shapes, and this reasoning is what let the two be told apart.)
    - NOT the core dl gating: `core_dl_wr` is correctly ANDed with
      (dl_bg1_rng || dl_bg2_rng), so no CPU/sprite bytes can splatter into
      the bg dprams.
