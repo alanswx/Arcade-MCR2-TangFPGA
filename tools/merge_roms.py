@@ -103,16 +103,34 @@ GAME_SPECS = {
         main_files=["loc-pg0.1c", "loc-pg1.2c", "loc-pg2.3c", "loc-pg1.4c"],
         snd_files=["sound0.a7", "sound1.a8", "sound2.a9", "sound3.a10"],
         snd_pad_to=16 * 1024,
-        gfx1_1_file="loc-bg2.6f",
-        gfx1_2_file="loc-bg1.5f",
+        # Same plane-order fix as timber (2026-07-27): MAME loads loc-bg2.6f
+        # at offset 0 and loc-bg1.5f at 0x2000, so the SECOND one goes in
+        # gfx1_1. See the timber comment below for why getting this backwards
+        # gives right shapes / wrong bg colours. NOT hardware-verified yet.
+        gfx1_1_file="loc-bg1.5f",   # MAME 0x2000 (loaded second)
+        gfx1_2_file="loc-bg2.6f",   # MAME 0x0000 (loaded first)
         gfx2_files=["loc-g.cp4", "loc-h.cp3", "loc-e.cp6", "loc-f.cp5",
                     "loc-c.cp8", "loc-d.cp7", "loc-a.cp0", "loc-b.cp9"],
     ),
-    # Timber (1984, mcr_91490 = the Tapper board, ROT0). MAME loads gfx1 as
-    # timbg1 at 0x0000 then timbg0 at 0x4000 - REVERSED vs tapper. Follow
-    # MAME's per-game load order, not a fixed bg0-first convention (the
-    # tapper color bug was assuming one). Sprites in MAME's pair-swapped
-    # order (fg1,fg0,fg3,fg2,...), 128 KB. Sound 3x4K padded to 16K.
+    # Timber (1984, mcr_91490 = the Tapper board, ROT0).
+    # gfx1 PLANE ORDER - fixed 2026-07-27, verified against `mame -listxml`.
+    # The previous comment here claimed MAME loads timber's gfx1 "REVERSED vs
+    # tapper". That was WRONG: MAME loads the '1' ROM at offset 0 and the '0'
+    # ROM at 0x4000 for BOTH games (tapper: bg_1 then bg_0; timber: timbg1
+    # then timbg0). The plane order is NOT per-game - it is PER-CORE, because
+    # mcr2.vhd and mcr3.vhd wire their two bg dprams differently (see the
+    # "crossed wiring" note in mcr3_console60k_top.sv, commit 50b075e):
+    #   MCR-3 (mcr3.vhd):  gfx1_1 = ROM MAME loads SECOND (higher offset)
+    #   MCR-2 (mcr2.vhd):  gfx1_1 = ROM MAME loads FIRST  (offset 0)
+    # Both are hardware-verified - tapper for MCR-3, and domino/shollow/tron/
+    # wacko/kroozr for MCR-2 (all of which are offset-0-first and correct).
+    # So timber must be timbg0 then timbg1, same as tapper. Having it
+    # backwards swapped the two bg BITPLANES; because both planes share
+    # bg_code_line and only supply the low 2 bits of bg_palette_addr, that
+    # shows up as correct SHAPES with wrong COLOURS on bg tiles only -
+    # sprites, sky and ground all look right. Exactly the reported symptom.
+    # Sprites in MAME's pair-swapped order (fg1,fg0,fg3,fg2,...), 128 KB.
+    # Sound 3x4K padded to 16K.
     "timber": dict(
         family="mcr3",
         define="GAME_TIMBER",
@@ -120,8 +138,8 @@ GAME_SPECS = {
         main_files=["timpg0.bin", "timpg1.bin", "timpg2.bin", "timpg3.bin"],
         snd_files=["tima7.bin", "tima8.bin", "tima9.bin"],
         snd_pad_to=16 * 1024,
-        gfx1_1_file="timbg1.bin",
-        gfx1_2_file="timbg0.bin",
+        gfx1_1_file="timbg0.bin",   # MAME 0x4000 (loaded second)
+        gfx1_2_file="timbg1.bin",   # MAME 0x0000 (loaded first)
         gfx2_files=["timfg1.bin", "timfg0.bin", "timfg3.bin", "timfg2.bin",
                     "timfg5.bin", "timfg4.bin", "timfg7.bin", "timfg6.bin"],
     ),

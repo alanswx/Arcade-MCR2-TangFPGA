@@ -62,8 +62,32 @@ next real milestone" within each section.
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-24:
    Timber and Discs of Tron added end-to-end (specs from MAME 0.265 source,
    input maps, OSD slots 1/2, pack entries).
-   **TIMBER REGRESSED — it used to run (owner played it); broken as of
-   2026-07-27.** Noticed because the board was booting slot 1 from the SD
+   **TIMBER — TWO SEPARATE FAULTS, both diagnosed 2026-07-27.**
+   (1) *Structural corruption* — FIXED by rewriting the SD card from a fresh
+   `make_pack_v2.py` image. The old card's Timber payload was stale; Tapper
+   on the same card was fine (each slot has its own start_lba/sector_count).
+   Shapes came back correct immediately.
+   (2) *Wrong bg colours* — root-caused to the gfx1 PLANE ORDER in
+   merge_roms, fixed in the same session (see below). Awaits a card rewrite
+   to confirm on hardware.
+   **gfx1 plane order is PER-CORE, not per-game** — the trap that caused
+   this. Verified with `mame -listxml`:
+   - MCR-3 (`mcr3.vhd`, crossed bg dpram wiring): `gfx1_1` = the ROM MAME
+     loads SECOND. Tapper proves it on hardware (MAME: bg_1@0, bg_0@0x4000;
+     merge_roms: gfx1_1=bg_0).
+   - MCR-2 (`mcr2.vhd`): `gfx1_1` = the ROM MAME loads FIRST. domino,
+     shollow, tron, wacko, kroozr are all offset-0-first and all correct on
+     hardware.
+   Timber and Discs of Tron were both entered with the MCR-2 convention on
+   the MCR-3 core, i.e. bg bitplanes swapped. Because both bg ROMs share
+   `bg_code_line` and supply only the low 2 bits of `bg_palette_addr`, a
+   swap gives CORRECT SHAPES with WRONG COLOURS on bg tiles only — sprites,
+   sky and ground look right. Confirmed against MAME: the "TREES LEFT" /
+   "TIME LEFT" boxes should be black with an orange border and orange text;
+   the board rendered them green with white. The old comment claiming MAME
+   reverses timber's gfx1 "vs tapper" was simply false — MAME loads the '1'
+   ROM at offset 0 for both.
+   Historical detail of the structural fault (fault 1) follows. Noticed because the board was booting slot 1 from the SD
    pref. Symptom: the sprite layer is fine (lumberjack, logs, bears in
    sensible positions, so the Z80 is running Timber correctly, and the audit
    sweep reads Timber's exact sprite tuple {0E74,1786,17FD,0FE1}), but the
