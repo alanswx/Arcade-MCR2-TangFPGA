@@ -86,36 +86,38 @@ next real milestone" within each section.
    cause was the gfx1 PLANE ORDER in merge_roms (see the per-core rule
    below). Confirmed against MAME: the TREES LEFT / TIME LEFT boxes are now
    black with an orange border and orange text, bushes green, cabin red.
-   (2) *Crashes on the BOOT load, runs fine from the OSD* — OPEN.
-   **Correction: this was previously written up here as "structural bg
-   corruption" caused by a stale SD card. Both parts of that were WRONG.**
-   What actually happens: loaded at boot (the `use_prefs` path) Timber runs
-   off the rails and the picture FREEZES - measured, not guessed: 3 distinct
-   frames in 80 captured over 40 s, vs 120/120 when healthy. The "garbage
-   tilemap" is just the frozen frame the Z80 left behind. Loaded from the
-   OSD (`use_prefs` low, slot taken verbatim) it runs perfectly. Rewriting
-   the card appeared to fix it only because the next load was an OSD load.
-   Ruled out with evidence:
-   - NOT the card. The pack image was decoded and compared byte-for-byte
-     against the ROMs - main/snd/gfx1_1/gfx1_2/gfx2 all MATCH. Two rewrites
-     changed nothing. (`write_pack_v2.py` now verifies the whole image
-     rather than just the 8-byte header, which was a real gap regardless.)
-   - NOT the INSERT CARD work, and not any 2026-07-27 RTL change: a
-     bitstream built BEFORE all of it (`bitstreams/console60k_mcr3_tapper.fs`)
-     freezes identically.
-   - NOT the sprite path: the audit reads Timber's exact tuple
-     {0E74,1786,17FD,0FE1} on every boot, including the failing ones.
-   - NOT Tapper-wide: Tapper boot-loads and runs fine, repeatedly.
-   So the fault is what the BOOT path delivers into the BSRAM regions
-   (cpu/snd/bg) for slot 1 specifically. The boot path differs from the OSD
-   path only in `use_prefs`: it reads the prefs sector (PACK_BASE-1) first,
-   then the pack header, and takes `cur_slot` from prefs.
-   IN FLIGHT: a TEMPORARY per-region checksum of the DOWNLOAD STREAM in
-   mcr3_console60k_top.sv (rotate-then-XOR over the bytes as they stream),
-   reported in beacon slots E5 cpu / E4 snd / E6 bg1 / E7 bg2. Expected
-   values from `python3 tools/ck.py`. Matching = the loader delivered that
-   region correctly and the fault is downstream; differing = the boot path
-   corrupts it, and which region narrows it further.
+   (2) *Boot-load renders corrupt bg tiles; OSD load is fine* — OPEN.
+   **Two earlier write-ups of this were WRONG and are corrected here:**
+   it is NOT a stale SD card (the pack image was decoded and compared
+   byte-for-byte against the ROMs - every region MATCHes, and two rewrites
+   changed nothing), and it is NOT a crash/freeze (the game animates: ~39
+   distinct non-black frames per 100 captured; an earlier "3 distinct
+   frames" reading caught a dropout-heavy window, not a frozen core).
+   MEASURED on a FAILING boot load, all with the TEMPORARY instruments now
+   in the top:
+   - download-stream checksums ALL CORRECT: cpu 8279, snd CB8C, bg1 773D,
+     bg2 5B14 - exactly what tools/ck.py predicts from the ROMs. So the
+     loader DELIVERS every byte of every region correctly.
+   - sprite audit bit-exact ({0E74,1786,17FD,0FE1}) on every boot.
+   - CPU is ALIVE: hwin = 0xFF (the code's own "running" signature) and
+     kick_n = 0, so the wedge watchdog never fires. Boot sequence normal
+     (rr_rises 2, rst_evts 2, boot_kicked 1).
+   - Not any 2026-07-27 RTL change: a bitstream built before all of it
+     behaves identically. Not Tapper: it boot-loads fine, repeatedly.
+   So the bytes are delivered correctly and the CPU runs, yet bg tiles are
+   wrong - which means the suspect is what actually LANDS IN the bg dprams,
+   not what was sent. That is the exact shape of the sprite bug fixed this
+   morning (stream correct, storage corrupted by an address/data pipeline
+   mismatch), so it is the obvious place to look.
+   NEXT STEP: a read-back audit of the two bg dprams after load, mirroring
+   the sprite audit that has worked so well - connect their port-B q_b,
+   sweep and checksum, compare against tools/ck.py. That distinguishes
+   "stored wrong" from "stored right but rendered wrong" in one boot.
+   Still unexplained and worth keeping in mind: why an OSD-commanded reload
+   of the same slot produces a correct picture when the boot path does not.
+   CAUTION: the board reaches ~57% black frames (thermal HDMI dropout, TODO
+   item 1) after hours of running - capture-based measurements get
+   unreliable, so prefer beacon counters over screenshots when it is warm.
    Discs of Tron remains completely untested. DoT's aim DIAL not wired yet (aim uses its
    dedicated IP2 buttons; spinner.sv WIRED 2026-07-24 - aim buttons rotate the dial; swap minus/plus if inverted on hardware).
    Remaining: Next: Timber, Discs of

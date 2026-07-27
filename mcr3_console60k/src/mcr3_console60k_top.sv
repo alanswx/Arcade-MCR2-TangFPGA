@@ -1512,6 +1512,20 @@ wire [15:0] diag_x = !aud_done_s      ? spw_count_s[23:8] :
                      diag_ph == 3'd6 ? ck_bg1 :
                      diag_ph == 3'd7 ? ck_bg2 :
                      diag_ph == 3'd4 ? ck_snd :
+                     // TEMPORARY (2026-07-27): the sprite audit has done its
+                     // job (bit-exact on every load), so slots E0/E1 now carry
+                     // the CORE-LIVENESS counters instead. Timber boot-loads
+                     // with every region's checksum correct yet freezes, and a
+                     // frozen picture is exactly what a repeatedly-reset core
+                     // looks like (hcnt/vcnt sit at 0 under reset, so the DDR3
+                     // framebuffer just holds the last frame).
+                     //   E0 = {kick_n, hwin[21:14]} - wedge-watchdog kicks
+                     //        this power-on, and HALT_n-high cycles/window.
+                     //        kick_n CLIMBING = the watchdog is resetting the
+                     //        core over and over; that is the freeze.
+                     //   E1 = {rr_rises[7:0], rst_evts[6:0], boot_kicked}
+                     diag_ph == 3'd0 ? {kick_n, hwin[21:14]} :
+                     diag_ph == 3'd1 ? {rr_rises, rst_evts[6:0], boot_kicked} :
                                        aud_lat_s[diag_ph[1:0]];
 wire [7:0]  diag_q = !aud_done_s ? spw_count_s[7:0]  :
                                    {5'h1C, diag_ph};   // 8'hE0 | ph
