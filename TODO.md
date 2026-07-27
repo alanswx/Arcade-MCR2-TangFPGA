@@ -193,7 +193,8 @@ next real milestone" within each section.
    Where that leaves each option:
    | Plan | BSRAM | |
    |---|---|---|
-   | 2-way (mcr3+mcr2), MCR-2 sprites -> SDRAM | **106** | fits, 12 spare |
+   | 2-way (mcr3+mcr2), bg gfx RAMs shared | **114** | **MEASURED, fits** |
+   | 2-way (mcr3+mcr2), MCR-2 sprites -> SDRAM | 106 | fits, but needs sprite surgery |
    | 3-way as-is | 155 | way over |
    | 3-way, BOTH sprite sets -> SDRAM | 123 | still over |
    | 3-way, + bg gfx shared (28 -> 16) | **111** | fits, 7 spare |
@@ -201,9 +202,18 @@ next real milestone" within each section.
    the earlier claim that mcr3+mcr2 "fits today with no SDRAM work" was based
    on the bad arithmetic and is retracted. The 3-way additionally needs the bg
    gfx RAMs shared, which means hoisting them out of the vendored cores.
-   Recommended order: (1) MCR-2 sprites -> SDRAM, (2) merge mcr3+mcr2 and
-   prove the architecture on 9 games, (3) MCR-1 sprites -> SDRAM + shared bg,
-   (4) fold MCR-1 in.
+   REVISED ORDER (2026-07-27, after looking at the sprite pipelines):
+   (1) DONE - hoist the bg gfx RAMs out of mcr2.vhd/mcr3.vhd and share them.
+       Re-probed at **114/118, PnR accepts it**. Chosen over the sprite
+       ->SDRAM move because MCR-2 has NO latency slack for SDRAM: MCR-3 has
+       8 phases between latching the sprite code and drawing the first pixel
+       (which is what absorbs the round trip), MCR-2 has 1. Moving its
+       sprites would mean restructuring the sprite pipeline - the same
+       surgery that produced the detached-sprite bug.
+   (2) Merge mcr3+mcr2 and prove the architecture on 9 games.
+   (3) MCR-1: hoist its bg too, and take on the sprite->SDRAM surgery with a
+       known-good merged reference to compare against.
+   (4) Fold MCR-1 in (111/118 with both sprite sets in SDRAM).
    PROBE GOTCHA worth remembering: the first probe reported a comfortable 95
    because the family-select signal was `game_id[3]`, which synthesis proved
    constant 0 (the OSD only assigns loaded_slot[2:0]) - it killed MCR-2's

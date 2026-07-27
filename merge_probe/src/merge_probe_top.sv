@@ -1072,6 +1072,25 @@ wire [9:0] core_hcnt;
 wire [9:0] core_vcnt;
 wire       core_halt_n;
 
+// Background tile graphics RAMs, hoisted OUT of mcr3.vhd (2026-07-27) so the
+// merged top can share one pair between cores. Same 1-cycle read on the same
+// INVERTED clock the core used internally (clock_vidn = ~clock_40) - a pure
+// port move, no timing change. The core resolves the upstream bg1/bg2 crossing
+// internally, so here bg1 simply holds blob region gfx1_1 and bg2 holds gfx1_2.
+wire [13:0] bg_addr;
+wire [13:0] bg_addr_shared;   // declared before use (Gowin implicit-wire trap)
+wire [7:0]  bg1_do, bg2_do;
+dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg1_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr_shared), .d_a(8'h00), .q_a(bg1_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(dl_addr[13:0]),
+    .d_b(dl_data), .q_b()
+);
+dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg2_ram (
+    .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr_shared), .d_a(8'h00), .q_a(bg2_do),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(dl_addr[13:0]),
+    .d_b(dl_data), .q_b()
+);
+
 mcr3 mcr3_core (
     .clock_40(clk_sys),
     .reset(core_reset),
@@ -1119,6 +1138,10 @@ mcr3 mcr3_core (
 
     // Download bus (16-bit on MCR-3). Held OFF here: CPU/sound/bg are baked;
     // the SD pack feeds sprites straight to SDRAM (see the sprite loader below).
+    .bg_addr(bg_addr),
+    .bg1_do(bg1_do),
+    .bg2_do(bg2_do),
+
     .dl_addr(core_dl_addr),
     .dl_wr(core_dl_wr),
     .dl_data(dl_data),
@@ -1539,19 +1562,20 @@ assign uart_tx = dump_active ? dump_txd : beacon_txd;
 
 
 // ===================== MERGE PROBE (throwaway) =============================
-// Measures what a merged MCR-3 + MCR-2 bitstream actually COSTS in BSRAM, so
-// the merge design is not built on arithmetic. Both cores are instantiated;
-// they share the top-level CPU/sound ROM RAM (which is the whole point - it
-// is 40 of the blocks) and their outputs are muxed by a runtime signal so
-// nothing gets optimised away. Functionally meaningless; resource-accurate.
-wire [2:0] p_r, p_g, p_b;
-wire       p_vblank, p_hblank, p_hs, p_vs, p_cs;
-wire [9:0] p_hcnt, p_vcnt;
+// Second probe: measures the merged MCR-3 + MCR-2 cost WITH the bg graphics
+// RAMs shared (they were hoisted out of both cores in the previous commit).
+// Both cores are live and share the top-level CPU/sound ROM RAM and the bg
+// pair; only one runs at a time in the real design, which is what makes
+// sharing legal. Functionally meaningless; resource-accurate.
+wire [12:0] p_bg_addr;
+wire [2:0]  p_r, p_g, p_b;
+wire        p_vblank, p_hblank, p_hs, p_vs, p_cs;
+wire [9:0]  p_hcnt, p_vcnt;
 wire [15:0] p_al, p_ar;
 wire [15:0] p_rom_addr;
 wire [13:0] p_snd_addr;
 mcr2 #(
-    .GFX1_1_INIT(""), .GFX1_2_INIT(""), .GFX2_INIT(""), .GFX_LOADABLE(1)
+    .GFX2_INIT(""), .GFX_LOADABLE(1)
 ) probe_mcr2 (
     .clock_40(clk_sys), .reset(core_reset),
     .video_r(p_r), .video_g(p_g), .video_b(p_b),
@@ -1564,21 +1588,22 @@ mcr2 #(
     .input_3(input_3), .input_4(input_4),
     .cpu_rom_addr(p_rom_addr), .cpu_rom_do(rom_do),   // SHARED cpu ROM
     .snd_rom_addr(p_snd_addr), .snd_rom_do(snd_do),   // SHARED snd ROM
-    .dl_addr(dl_addr), .dl_wr(core_dl_wr), .dl_data(dl_data),
+    .bg_addr(p_bg_addr), .bg1_do(bg1_do), .bg2_do(bg2_do),  // SHARED bg pair
+    // dl_wr MUST be live: tying it to 0 lets synthesis prove the LOADABLE
+    // sprite ROM is empty and prune all 16 of its blocks (probe_mcr2 read
+    // 10 instead of 26). Functionally wrong here, resource-correct.
+    .dl_addr(dl_addr[16:0]), .dl_wr(dl_wr), .dl_data(dl_data),
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
-// Keep both cores live: family select drives the ROM address mux and folds
-// the second core's outputs into observable signals.
-// MUST NOT be provably constant. The first attempt used game_id[3], but the
-// OSD only ever assigns loaded_slot[2:0], so synthesis proved it 0, killed
-// the MCR-2 video path and pruned 27 of its 34 BSRAM blocks - the probe
-// then reported a merged design far cheaper than it really is. Use a
-// physical input instead.
-wire probe_fam = key_s2;
-wire [8:0] probe_rgb = probe_fam ? {p_r,p_g,p_b} : 9'd0;
-wire       probe_syn = p_vblank ^ p_hblank ^ p_hs ^ p_vs ^ p_cs
-                       ^ (^p_hcnt) ^ (^p_vcnt) ^ (^p_al) ^ (^p_ar)
-                       ^ (^p_rom_addr) ^ (^p_snd_addr);
+// Family select MUST NOT be provably constant or synthesis prunes the second
+// core (the first probe used game_id[3], which is always 0, and under-reported
+// by 27 blocks). key_s2 is a real pin.
+wire        probe_fam = key_s2;
+assign      bg_addr_shared = probe_fam ? {1'b0, p_bg_addr} : bg_addr;
+wire [8:0]  probe_rgb = probe_fam ? {p_r,p_g,p_b} : 9'd0;
+wire        probe_syn = p_vblank ^ p_hblank ^ p_hs ^ p_vs ^ p_cs
+                        ^ (^p_hcnt) ^ (^p_vcnt) ^ (^p_al) ^ (^p_ar)
+                        ^ (^p_rom_addr) ^ (^p_snd_addr);
 // ===================== end MERGE PROBE =====================================
 
 uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
