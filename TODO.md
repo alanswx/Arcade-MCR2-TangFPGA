@@ -210,7 +210,26 @@ next real milestone" within each section.
        (which is what absorbs the round trip), MCR-2 has 1. Moving its
        sprites would mean restructuring the sprite pipeline - the same
        surgery that produced the detached-sprite bug.
-   (2) Merge mcr3+mcr2 and prove the architecture on 9 games.
+   (2) DONE - mcr23_console60k merges MCR-2 + MCR-3, 9 games in one
+       bitstream, 114/118 BSRAM, flashed as the power-on default. Confirmed
+       rendering: Tapper, Timber, DoT, Satan's Hollow, Wacko, Two Tigers.
+       NOT yet eyeballed: Tron, Kozmik Kroozr, Domino Man (the first two
+       have analogue controls whose wiring was ported wholesale).
+       Three bugs found and fixed during bring-up, all worth remembering:
+       - MCR-2's bg PLANE 2 landed 8 KB high in the shared 16 KB RAM: its
+         region starts at 0x1E000 and the write address sliced [13:0]
+         (=0x2000). MCR-3's bg2 is at 0x18000 where that is 0, so it only
+         showed on MCR-2 games - as "slightly wrong palette".
+       - a SAVE recorded the wrong family: rom_loader's `family` feeds both
+         the entry search and prefs byte 9, but the save runs after the menu
+         closes, so it wrote boot_family instead of the chosen game's.
+       - `ldr_family` was defined in terms of `run_family`, which latches on
+         the same edge - so it latched its own stale value and the wrong
+         CORE ran while the right DATA was loaded.
+       The first is the important one: the download-stream checksums matched
+       throughout, because they measure what the loader DELIVERS, not where
+       it LANDS. Same blindness that hid the sprite bug. A storage-side
+       read-back audit is still the missing instrument.
    (3) MCR-1: hoist its bg too, and take on the sprite->SDRAM surgery with a
        known-good merged reference to compare against.
    (4) Fold MCR-1 in (111/118 with both sprite sets in SDRAM).

@@ -18,6 +18,9 @@ MCR-1 run), Kick and Solar Fox not yet exercised. One pack-v2 SD card carries ev
 game for every family (`tools/make_pack_v2.py`); the product roadmap toward
 the full-series jukebox is at the top of `TODO.md`.
 
+**MCR-2 + MCR-3 ARE MERGED** (`mcr23_console60k`, 9 games, flashed as the
+power-on default 2026-07-27). MCR-1 folds in once its sprite gfx move to
+SDRAM - see TODO item 4a.
 **Direction (agreed 2026-07-27): MCR-1/2/3 will be MERGED into one
 bitstream** rather than switched by Gowin multiboot — core switching then
 becomes the same instant SD reload that game switching already is. Multiboot
@@ -32,6 +35,7 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr2_primer25k/` | Tang Primer 25K | GW5A-LV25MG121 | **Working** — Domino Man attract over HDMI, 56/56 BSRAM, timing met. **Deliberately still BAKED** (fixed-function board, not part of the jukebox) |
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs — Wacko verified loading from the card 2026-07-27 |
 | `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
+| `mcr23_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working — MERGED MCR-2 + MCR-3, 9 games in one bitstream.** This is what the SPI flash holds (power-on default). Roster index <-> (family, slot) translation in the top; both cores instantiated, inactive one held in reset; CPU/sound ROM + bg gfx pair shared. 114/118 BSRAM. Confirmed: Tapper, Timber, DoT, Satan's Hollow, Wacko, Two Tigers. Tron/Kroozr/Domino not yet eyeballed |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
 Shared, platform-independent code lives in `src/`:
