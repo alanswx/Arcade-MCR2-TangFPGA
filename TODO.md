@@ -45,10 +45,18 @@ next real milestone" within each section.
    overnight-cool-down test that took 28% -> 86% content also POWER CYCLED
    the board, which is itself a reconfiguration. Cooling and recalibration
    were never separated.
-   IN FLIGHT: scratchpad/soak.sh - soak 25 min on one configuration, measure,
-   then reconfigure WITHOUT touching thermals and measure immediately. If the
-   second is much lower, recalibration is the cure and a periodic/managed
-   DDR3 re-calibration becomes a real fix rather than "wait for it to cool".
+   **SOAK RESULT 2026-07-28 — recalibration IS a large lever, measured:**
+   after 25 min on one configuration the board sat at **52% dropout**;
+   reconfiguring WITHOUT touching thermals took it straight to **18%** - a
+   3x recovery in the ~30 s a reconfig takes, over which the board cannot
+   meaningfully cool. So the degradation is substantially recoverable in
+   GATEWARE. It is not the whole story (18% is still far from the 0-2% seen
+   on a cool board, so temperature matters too), but "wait for it to cool"
+   is not the only fix, and it is not one a cabinet owner can apply.
+   NEXT: a managed/periodic DDR3 re-calibration, or at minimum re-calibrate
+   on a trigger. Caveat on the measurement: the reconfig also loaded a
+   slightly newer bitstream (same design plus a post-load audit sweep), which
+   cannot plausibly account for a 3x change but is worth repeating cleanly.
    ALSO RULED OUT: the merged core is NOT worse than the single-family build.
    An A/B/A (merged 20%, mcr3 2%, merged 0%) shows the spread is time
    variation, not the extra 54% of logic - do not chase clock-gating for this.

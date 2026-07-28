@@ -964,16 +964,23 @@ always @(posedge clk_sys) begin
         ck_cpu <= 16'd0; ck_snd <= 16'd0; ck_bg1 <= 16'd0; ck_bg2 <= 16'd0;
         sr_st <= 2'd1;
     end
-    2'd1: begin                             // one cycle of read latency
-        ck_cpu <= rox(ck_cpu, q_cpu[7:0]);
-        if (sr_i == 17'h0FFFF) begin sr_i <= 17'd0; sr_st <= 2'd2; end
+    // q_b lags addr_b by one cycle, so at step k the data on the bus is for
+    // address k-1. Skip the accumulate at k=0 (that sample is stale from the
+    // load) and run one step PAST the last address, or the final byte is
+    // never folded in - which showed up as every checksum being the true
+    // value rotated right once, because that last byte is ROM padding (0).
+    2'd1: begin                             // CPU ROM, 64K
+        if (sr_i != 17'd0) ck_cpu <= rox(ck_cpu, q_cpu[7:0]);
+        if (sr_i == 17'h10000) begin sr_i <= 17'd0; sr_st <= 2'd2; end
         else sr_i <= sr_i + 1'd1;
     end
     2'd2: begin                             // sound 16K + both bg planes 16K
-        ck_snd <= rox(ck_snd, q_snd[7:0]);
-        ck_bg1 <= rox(ck_bg1, q_bg1[7:0]);
-        ck_bg2 <= rox(ck_bg2, q_bg2[7:0]);
-        if (sr_i == 17'h03FFF) begin sr_run <= 1'b0; sr_st <= 2'd3; end
+        if (sr_i != 17'd0) begin
+            ck_snd <= rox(ck_snd, q_snd[7:0]);
+            ck_bg1 <= rox(ck_bg1, q_bg1[7:0]);
+            ck_bg2 <= rox(ck_bg2, q_bg2[7:0]);
+        end
+        if (sr_i == 17'h04000) begin sr_run <= 1'b0; sr_st <= 2'd3; end
         else sr_i <= sr_i + 1'd1;
     end
     default: ;                              // done; hold the results
