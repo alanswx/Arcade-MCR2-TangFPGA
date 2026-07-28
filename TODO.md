@@ -86,6 +86,10 @@ next real milestone" within each section.
    one bitstream hold all three cores.
 
 3. **Add MCR titles until the series is complete.** PROGRESS 2026-07-27:
+   **NINE GAMES SHIP IN ONE BITSTREAM** (mcr23_console60k, the flashed
+   power-on default): all six MCR-2 titles plus all three MCR-3 titles, each
+   verified on hardware, switchable from the OSD with the choice persisted
+   across power cycles and across families.
    **ALL THREE MCR-3 TITLES NOW WORK ON HARDWARE** - Tapper, Timber and
    Discs of Tron. Timber plays perfectly when chosen from the OSD (only the
    boot-load caveat below is outstanding). Discs of Tron renders correctly
@@ -211,10 +215,12 @@ next real milestone" within each section.
        sprites would mean restructuring the sprite pipeline - the same
        surgery that produced the detached-sprite bug.
    (2) DONE - mcr23_console60k merges MCR-2 + MCR-3, 9 games in one
-       bitstream, 114/118 BSRAM, flashed as the power-on default. Confirmed
-       rendering: Tapper, Timber, DoT, Satan's Hollow, Wacko, Two Tigers.
-       NOT yet eyeballed: Tron, Kozmik Kroozr, Domino Man (the first two
-       have analogue controls whose wiring was ported wholesale).
+       bitstream, 114/118 BSRAM, flashed as the power-on default.
+       **ALL NINE GAMES VERIFIED ON HARDWARE**: Tapper, Timber, Discs of
+       Tron, Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers,
+       Domino Man - including the analogue-control ones (Tron's aim
+       spinner, Kroozr's dial + synthesised stick), whose wiring was ported
+       wholesale from the standalone MCR-2 top.
        Three bugs found and fixed during bring-up, all worth remembering:
        - MCR-2's bg PLANE 2 landed 8 KB high in the shared 16 KB RAM: its
          region starts at 0x1E000 and the write address sliced [13:0]
