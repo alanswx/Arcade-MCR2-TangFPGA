@@ -245,6 +245,35 @@ next real milestone" within each section.
    video path and pruned 27 of its 34 blocks. Any future probe must select on
    something provably non-constant (a physical input).
 
+   **4c. CPU/sound ROM in SDRAM — TRIED 2026-07-27, PARTIAL RESULT.**
+   The two biggest BSRAM consumers are the shared 64 KB CPU ROM (32 blocks)
+   and 16 KB sound ROM (8). `sdram_gw` already has three CPU READ ports
+   (cpu1/cpu2/cpu3) on banks 0,1 - a different bank group from the sprite
+   port on banks 2,3, so no contention - and every top had them tied to
+   zero. Upstream MiSTer's Arcade-MCR3 runs CPU+sound from SDRAM this way.
+   Wiring it up took 114 -> **74 blocks**, i.e. 44 spare, which would fit
+   MCR3Scroll (~16 incl. FX68K) and MCR-1 (~13) with room over.
+   RESULT:
+   - **CPU ROM in SDRAM FAILS.** Colour bars, no game - the Z80 is running
+     on stale data. Matches the timing sum: the controller needs ~7 clk_sys
+     worst case (up to a 7-cycle clk_sdram round to launch plus 7 to commit,
+     and clk_sdram is 2x clk_sys), and the main Z80 has cpu_ena every 8
+     clk_sys, ~16 across a T1->T3 read. Too little margin, and the port1
+     group round-robins between port1/cpu1/cpu2/cpu3 so a port can wait
+     extra rounds.
+   - **Sound ROM in SDRAM: NOT DISPROVEN, not verified either.** Its Z80
+     runs at 2 MHz (mcr_sound_board divides by 20), ~3x the margin. The
+     build rendered identically to the known-good one - but the only game
+     the prefs would boot was TIMBER, which has its own boot-load bug, so
+     the comparison proves nothing. Retest with a cleanly-booting game
+     selected (Tapper or Satan's Hollow) before trusting it. Worth 8 blocks.
+   Experiment reverted; it lives in git history (both moves were behind
+   independent `CPU_ROM_IN_SDRAM` / `SND_ROM_IN_SDRAM` switches so either
+   can be re-enabled). If the CPU ROM is ever wanted in SDRAM it needs real
+   latency hiding - a prefetch or a small cache - not just wiring.
+   NOTE: this experiment also confirmed **Timber's boot-load corruption is
+   still present in the MERGED core** - the merge did not fix it.
+
    **4b. Multiboot mechanics — DECODED and partly VERIFIED on this
    toolchain (keep for Scroll/Mono).** The 2026-07-24 investigation's notes
    were never actually committed (1b25a33 staged only RTL), so they are
