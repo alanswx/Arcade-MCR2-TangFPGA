@@ -224,6 +224,7 @@ wire [3:0] game_id;      // game the core is running (from the OSD)
 //   idx 3..8 -> family 1 (MCR-2): shollow, tron, wacko, kroozr, twotiger, domino
 // ---------------------------------------------------------------------------
 localparam [7:0] FAM_MCR2 = 8'd1, FAM_MCR3 = 8'd2;
+localparam [4:0] OSD_DEFAULT_IDX = 5'd0;   // Tapper
 localparam [4:0] N_MCR3   = 5'd3;          // MCR-3 entries come first
 
 function [7:0] idx_family(input [4:0] idx);
@@ -237,8 +238,7 @@ function [4:0] fam_slot_to_idx(input [7:0] fam, input [3:0] slot);
                                         : ({1'b0, slot} + N_MCR3);
 endfunction
 
-wire [3:0] game_slot;    // SD pack slot the loader (re)loads
-wire       osd_restart;  // OSD pulse: restart the loader with game_slot
+wire       osd_restart;  // OSD pulse: restart the loader
 wire       osd_active;   // menu open -> game inputs masked below
 
 // DIAGNOSTIC: count reset events and rom_ready rises so the beacon can say
@@ -344,9 +344,20 @@ wire [3:0] osd_slot   = idx_slot(osd_idx);
 wire       pref_fam_ok = ldr_pref_valid &&
                          (ldr_pref_core == FAM_MCR2 || ldr_pref_core == FAM_MCR3);
 wire [7:0] boot_family = pref_fam_ok ? ldr_pref_core : FAM_MCR3;
-wire [7:0] ldr_family  = osd_active ? osd_family : boot_family;
+// The loader uses this both to FIND the pack entry during a load and to write
+// prefs byte 9 on a save. Those happen at different times, so it has to hold:
+//   during an OSD load  -> osd_family (the menu is still open)
+//   during the boot load -> boot_family (from prefs; osd closed, no load done)
+//   after any load      -> run_family, the family actually loaded
+// Without the last case the SAVE ran after the menu closed and recorded
+// boot_family instead of the game just chosen - picking an MCR-2 game wrote
+// family 2, so the next boot came up on an MCR-3 game.
+wire [7:0] ldr_family  = osd_active ? osd_family
+                       : (ldr_done  ? run_family : boot_family);
 wire       ldr_is_mcr2 = (ldr_family == FAM_MCR2);   // declared before use
-wire [3:0] ldr_slot_req = osd_active ? osd_slot : game_slot;
+// Boot fallback slot, used only when the prefs sector has no valid entry.
+// (game_slot is gone: the OSD now emits a roster INDEX, not a pack slot.)
+wire [3:0] ldr_slot_req = osd_active ? osd_slot : idx_slot(OSD_DEFAULT_IDX);
 // The family actually running: latched when a load completes, so a failed
 // load leaves the previous core selected and playable.
 reg  [7:0] run_family = FAM_MCR3;
@@ -1274,15 +1285,24 @@ wire       core_halt_n;
 // port move, no timing change. The core resolves the upstream bg1/bg2 crossing
 // internally, so here bg1 simply holds blob region gfx1_1 and bg2 holds gfx1_2.
 wire [13:0] bg_addr;
+// bg WRITE address must be family-aware. The shared RAMs are 16 KB (MCR-3's
+// size); MCR-2's planes are 8 KB and its bg2 region starts at 0x1E000, whose
+// dl_addr[13:0] is 0x2000 - so slicing 14 bits put MCR-2's second plane 8 KB
+// too high while the core read the bottom, leaving plane 2 BLANK (wrong
+// colours, and garbage where the background should be empty). MCR-3's bg2 is
+// at 0x18000 where [13:0] is 0, which is why it never showed there.
+// The stream checksums could not catch this: they measure what the loader
+// DELIVERS, not where it LANDS - the same blindness as the sprite bug.
+wire [13:0] bg_wr_addr = ldr_is_mcr2 ? {1'b0, dl_addr[12:0]} : dl_addr[13:0];
 wire [7:0]  bg1_do, bg2_do;
 dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg1_ram (
     .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg1_do),
-    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(dl_addr[13:0]),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(bg_wr_addr),
     .d_b(dl_data), .q_b()
 );
 dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg2_ram (
     .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg2_do),
-    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(dl_addr[13:0]),
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(bg_wr_addr),
     .d_b(dl_data), .q_b()
 );
 

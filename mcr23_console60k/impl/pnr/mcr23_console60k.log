@@ -8,7 +8,7 @@ Running placement......
 [10%] Placement Phase 0 completed
 [20%] Placement Phase 1 completed
 [30%] Placement Phase 2 completed
-WARN  (TA1132) :  'n5688_21' was determined to be a clock but was not created.
+WARN  (TA1132) :  'n5696_21' was determined to be a clock but was not created.
 [50%] Placement Phase 3 completed
 Running routing......
 [60%] Routing Phase 0 completed
@@ -28,5 +28,5 @@ Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/pnr
 Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/pnr/mcr23_console60k.rpt.html" completed
 Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/pnr/mcr23_console60k.rpt.txt" completed
 Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/mcr23_console60k/impl/pnr/mcr23_console60k.tr.html" completed
-Mon Jul 27 19:51:33 2026
+Mon Jul 27 20:20:19 2026
 
