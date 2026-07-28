@@ -26,6 +26,33 @@ next real milestone" within each section.
    has a stray indented EOF line from the heredoc - harmless, cleanable
    with: sudo cp 99-mcr-capture.rules /etc/udev/rules.d/ (clean copy in
    the repo root).
+   **NEW LEAD 2026-07-27/28 — a RECONFIG recovers it, which cooling cannot
+   explain.** Measured repeatedly across one long session on the same board:
+   | when | dropout | context |
+   |---|---|---|
+   | cold, post-reconfig | 1% | |
+   | after hours on ONE config | 57% | |
+   | post-reconfig | 1% | no cooling |
+   | after sitting on one config | 20% | |
+   | post-reconfig (mcr3) | 2% | minutes later |
+   | post-reconfig (merged) | 0% | minutes later |
+   EVERY low reading follows a reconfiguration; every high one follows a long
+   run on a single configuration. A reconfig does not cool the board, but it
+   DOES re-run DDR3 calibration and re-lock the PLLs - so the degradation
+   looks like calibration DRIFT that re-calibration fixes, rather than an
+   analog TMDS margin that only cooling fixes.
+   This also puts a confound in the existing "board thermal" conclusion: the
+   overnight-cool-down test that took 28% -> 86% content also POWER CYCLED
+   the board, which is itself a reconfiguration. Cooling and recalibration
+   were never separated.
+   IN FLIGHT: scratchpad/soak.sh - soak 25 min on one configuration, measure,
+   then reconfigure WITHOUT touching thermals and measure immediately. If the
+   second is much lower, recalibration is the cure and a periodic/managed
+   DDR3 re-calibration becomes a real fix rather than "wait for it to cool".
+   ALSO RULED OUT: the merged core is NOT worse than the single-family build.
+   An A/B/A (merged 20%, mcr3 2%, merged 0%) shows the spread is time
+   variation, not the extra 54% of logic - do not chase clock-gating for this.
+
    Original notes: Mechanism cornered: audio data islands, 48 kHz
    divider actually emits 48,027 Hz vs ACR constants claiming 48,000 →
    sinks periodically resync. The 32 kHz quick-try killed sync because ONLY
