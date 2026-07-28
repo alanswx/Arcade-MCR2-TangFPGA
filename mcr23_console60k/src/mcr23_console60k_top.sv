@@ -352,9 +352,17 @@ wire [7:0] boot_family = pref_fam_ok ? ldr_pref_core : FAM_MCR3;
 // Without the last case the SAVE ran after the menu closed and recorded
 // boot_family instead of the game just chosen - picking an MCR-2 game wrote
 // family 2, so the next boot came up on an MCR-3 game.
-wire [7:0] ldr_family  = osd_active ? osd_family
-                       : (ldr_done  ? run_family : boot_family);
-wire       ldr_is_mcr2 = (ldr_family == FAM_MCR2);   // declared before use
+// The family THIS load is using. Kept free of any dependency on run_family,
+// which is latched FROM it - the previous version read
+// `ldr_done ? run_family : boot_family`, and since run_family latches on the
+// same edge that ldr_done rises, it latched its own stale value. The data
+// loaded fine (the entry search runs while ldr_done is still low) but the
+// index and the ACTIVE CORE came out wrong.
+wire [7:0] load_family = osd_active ? osd_family : boot_family;
+// What the loader sees: the load family during a load, then the family that
+// was actually loaded, so a save records the right one after the menu closes.
+wire [7:0] ldr_family  = ldr_done ? run_family : load_family;
+wire       ldr_is_mcr2 = (load_family == FAM_MCR2);  // declared before use
 // Boot fallback slot, used only when the prefs sector has no valid entry.
 // (game_slot is gone: the OSD now emits a roster INDEX, not a pack slot.)
 wire [3:0] ldr_slot_req = osd_active ? osd_slot : idx_slot(OSD_DEFAULT_IDX);
@@ -364,7 +372,7 @@ reg  [7:0] run_family = FAM_MCR3;
 reg        ldr_done_d = 1'b0;
 always @(posedge clk_sys) begin
     ldr_done_d <= ldr_done;
-    if (ldr_done && !ldr_done_d) run_family <= ldr_family;
+    if (ldr_done && !ldr_done_d) run_family <= load_family;
 end
 wire run_is_mcr3 = (run_family == FAM_MCR3);
 wire [3:0]  ldr_slot;      // slot actually loaded (SD-saved pref at boot)
@@ -1482,7 +1490,7 @@ osd #(
     .loader_restart(osd_restart),
     .loader_done(ldr_done),
     .loader_error(ldr_error),
-    .loaded_slot(fam_slot_to_idx(ldr_family, ldr_slot)),
+    .loaded_slot(fam_slot_to_idx(load_family, ldr_slot)),
     .save_req(osd_save),
     .sd_ready(sd_ready),
     .osd_active(osd_active), .osd_nocard(osd_nocard)
