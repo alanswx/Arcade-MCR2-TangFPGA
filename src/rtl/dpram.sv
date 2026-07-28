@@ -52,11 +52,15 @@ generate
             end
             q_a <= ram[addr_a];
         end
+        // Read only when NOT writing. Reading and writing port B in the same
+        // cycle infers write-through (WRITE_MODE 2'b10), which the Gowin
+        // BSRAM rejects with PA2122 as soon as q_b is actually connected -
+        // "no change on write" is both supported and the right semantics,
+        // since anything reading port B (the stored-ROM audit) does so after
+        // the load, never during it.
         always @(posedge clk_b) begin
-            if (we_b) begin
-                ram[addr_b] <= d_b;
-            end
-            q_b <= ram[addr_b];
+            if (we_b) ram[addr_b] <= d_b;
+            else      q_b <= ram[addr_b];
         end
     end else begin: ram_mode
         // Simple Dual-Port RAM mode (Writes only on Port A to ensure clean BSRAM inference)

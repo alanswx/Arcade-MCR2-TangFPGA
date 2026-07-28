@@ -454,31 +454,6 @@ wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
 // is dl_bg1_rng, NOT dl_bg2_rng. Getting this backwards made CARD-loaded
 // games show the old swapped bg colors while baked boots were correct
 // (exactly the first v2-card session's report).
-// TEMPORARY DIAGNOSTIC (2026-07-27): per-region checksums of the DOWNLOAD
-// STREAM. Timber runs when loaded from the OSD but crashes when loaded at
-// BOOT (use_prefs path) - sprites audit bit-exact either way, so the fault is
-// in what the loader DELIVERS for one of the BSRAM regions. Checksum the
-// bytes as they stream past, position-sensitive (rotate-then-XOR), and
-// compare against the value computed offline from the ROM:
-//   tools/ck.py  (prints cpu/snd/bg1/bg2 for a game)
-// Matching = the loader delivered that region correctly and the fault is
-// downstream; differing = the boot path corrupts it. Beacon slots E5/E6/E7.
-reg [15:0] ck_cpu = 16'd0, ck_snd = 16'd0, ck_bg1 = 16'd0, ck_bg2 = 16'd0;
-always @(posedge clk_sys) begin
-    // Restart on the first byte of a payload, NOT just at power-on: an
-    // OSD-commanded reload must produce a value comparable with the boot
-    // load, and accumulating across both would make them differ for a
-    // meaningless reason.
-    if (core_reset_raw || (dl_wr && dl_addr == 18'd0)) begin
-        ck_cpu <= 16'd0; ck_snd <= 16'd0; ck_bg1 <= 16'd0; ck_bg2 <= 16'd0;
-    end else if (dl_wr) begin
-        if (dl_cpu_rng) ck_cpu <= {ck_cpu[14:0], ck_cpu[15]} ^ {8'd0, dl_data};
-        if (dl_snd_rng) ck_snd <= {ck_snd[14:0], ck_snd[15]} ^ {8'd0, dl_data};
-        if (dl_bg1_rng) ck_bg1 <= {ck_bg1[14:0], ck_bg1[15]} ^ {8'd0, dl_data};
-        if (dl_bg2_rng) ck_bg2 <= {ck_bg2[14:0], ck_bg2[15]} ^ {8'd0, dl_data};
-    end
-end
-
 wire [15:0] core_dl_addr = {1'b0, dl_bg1_rng, dl_addr[13:0]};
 
 // ------------------------------------------------------------------------
@@ -941,6 +916,70 @@ wire [7:0]  rom_do;
 wire [13:0] snd_addr;
 wire [7:0]  snd_do;
 
+// bg WRITE address must be family-aware. The shared RAMs are 16 KB (MCR-3's
+// size); MCR-2's planes are 8 KB and its bg2 region starts at 0x1E000, whose
+// dl_addr[13:0] is 0x2000 - so slicing 14 bits put MCR-2's second plane 8 KB
+// too high while the core read the bottom, leaving plane 2 BLANK (wrong
+// colours, and garbage where the background should be empty). MCR-3's bg2 is
+// at 0x18000 where [13:0] is 0, which is why it never showed there.
+// The stream checksums could not catch this: they measure what the loader
+// DELIVERS, not where it LANDS - the same blindness as the sprite bug.
+wire [13:0] bg_wr_addr = ldr_is_mcr2 ? {1'b0, dl_addr[12:0]} : dl_addr[13:0];
+
+// ===========================================================================
+// STORED-ROM AUDIT (post-load read-back)
+// ---------------------------------------------------------------------------
+// The download-stream checksums this replaces measured what the loader
+// DELIVERED. Three separate bugs this project has hit - the sprite one-word
+// shift, MCR-2's bg plane 2 landing 8 KB high, and Timber's colours - were all
+// "delivered correctly, STORED wrongly", and the stream checksums matched
+// throughout every one of them. This sweeps what actually LANDED.
+//
+// Uses each RAM's port B, which is the download port and is idle once the load
+// finishes, so the core's port A is untouched. ~112K reads at 40 MHz = ~3 ms.
+// Compare against tools/ckstore.py.
+// ---------------------------------------------------------------------------
+reg  [15:0] ck_cpu = 16'd0, ck_snd = 16'd0, ck_bg1 = 16'd0, ck_bg2 = 16'd0;
+reg  [1:0]  sr_st  = 2'd0;
+reg  [16:0] sr_i   = 17'd0;
+reg         sr_run = 1'b0;
+reg         sr_q1 = 1'b0, sr_q2 = 1'b0;
+wire [15:0] q_cpu, q_snd, q_bg1, q_bg2;
+// Port-B address: the loader owns it during a load, the audit afterwards.
+wire [15:0] pb_cpu = sr_run ? sr_i[15:0] : dl_addr[15:0];
+wire [13:0] pb_snd = sr_run ? sr_i[13:0] : dl_addr[13:0];
+wire [13:0] pb_bg  = sr_run ? sr_i[13:0] : bg_wr_addr;
+
+function [15:0] rox(input [15:0] v, input [7:0] d);
+    rox = {v[14:0], v[15]} ^ {8'd0, d};
+endfunction
+
+always @(posedge clk_sys) begin
+    sr_q1 <= ldr_done; sr_q2 <= sr_q1;
+    if (!sr_q2) begin                       // re-arm for every load
+        sr_st <= 2'd0; sr_run <= 1'b0;
+    end else case (sr_st)
+    2'd0: begin                             // CPU ROM, 64K
+        sr_run <= 1'b1; sr_i <= 17'd0;
+        ck_cpu <= 16'd0; ck_snd <= 16'd0; ck_bg1 <= 16'd0; ck_bg2 <= 16'd0;
+        sr_st <= 2'd1;
+    end
+    2'd1: begin                             // one cycle of read latency
+        ck_cpu <= rox(ck_cpu, q_cpu[7:0]);
+        if (sr_i == 17'h0FFFF) begin sr_i <= 17'd0; sr_st <= 2'd2; end
+        else sr_i <= sr_i + 1'd1;
+    end
+    2'd2: begin                             // sound 16K + both bg planes 16K
+        ck_snd <= rox(ck_snd, q_snd[7:0]);
+        ck_bg1 <= rox(ck_bg1, q_bg1[7:0]);
+        ck_bg2 <= rox(ck_bg2, q_bg2[7:0]);
+        if (sr_i == 17'h03FFF) begin sr_run <= 1'b0; sr_st <= 2'd3; end
+        else sr_i <= sr_i + 1'd1;
+    end
+    default: ;                              // done; hold the results
+    endcase
+end
+
 dpram #(
     .dWidth(8),
     .aWidth(16),
@@ -958,9 +997,9 @@ dpram #(
 
     .clk_b(clk_sys),
     .we_b(cpu_rom_we),
-    .addr_b(dl_addr[15:0]),
+    .addr_b(pb_cpu),
     .d_b(dl_data),
-    .q_b() // port B is the ROM download port
+    .q_b(q_cpu)   // download port during a load; audit read-back after
 );
 
 dpram #(
@@ -976,9 +1015,9 @@ dpram #(
 
     .clk_b(clk_sys),
     .we_b(snd_rom_we),
-    .addr_b(dl_addr[13:0]),
+    .addr_b(pb_snd),
     .d_b(dl_data),
-    .q_b() // port B is the ROM download port
+    .q_b(q_snd)
 );
 
 // --- USB HID host (gamepad on USB-A port 1) -----------------------------------
@@ -1293,25 +1332,16 @@ wire       core_halt_n;
 // port move, no timing change. The core resolves the upstream bg1/bg2 crossing
 // internally, so here bg1 simply holds blob region gfx1_1 and bg2 holds gfx1_2.
 wire [13:0] bg_addr;
-// bg WRITE address must be family-aware. The shared RAMs are 16 KB (MCR-3's
-// size); MCR-2's planes are 8 KB and its bg2 region starts at 0x1E000, whose
-// dl_addr[13:0] is 0x2000 - so slicing 14 bits put MCR-2's second plane 8 KB
-// too high while the core read the bottom, leaving plane 2 BLANK (wrong
-// colours, and garbage where the background should be empty). MCR-3's bg2 is
-// at 0x18000 where [13:0] is 0, which is why it never showed there.
-// The stream checksums could not catch this: they measure what the loader
-// DELIVERS, not where it LANDS - the same blindness as the sprite bug.
-wire [13:0] bg_wr_addr = ldr_is_mcr2 ? {1'b0, dl_addr[12:0]} : dl_addr[13:0];
 wire [7:0]  bg1_do, bg2_do;
 dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg1_ram (
     .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg1_do),
-    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(bg_wr_addr),
-    .d_b(dl_data), .q_b()
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg1_rng), .addr_b(pb_bg),
+    .d_b(dl_data), .q_b(q_bg1)
 );
 dpram #(.dWidth(8), .aWidth(14), .LOADABLE(1)) bg2_ram (
     .clk_a(~clk_sys), .we_a(1'b0), .addr_a(bg_addr), .d_a(8'h00), .q_a(bg2_do),
-    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(bg_wr_addr),
-    .d_b(dl_data), .q_b()
+    .clk_b(clk_sys),  .we_b(dl_wr && dl_bg2_rng), .addr_b(pb_bg),
+    .d_b(dl_data), .q_b(q_bg2)
 );
 
 // ===========================================================================
@@ -1819,6 +1849,7 @@ end
 // detached-handle artifact was, fixed by aligning dl_data's pipeline depth
 // with the address's).
 wire [15:0] diag_x = !aud_done_s      ? spw_count_s[23:8] :
+                     // E4..E7 = STORED (read-back) checksums, not stream
                      diag_ph == 3'd5 ? ck_cpu :
                      diag_ph == 3'd6 ? ck_bg1 :
                      diag_ph == 3'd7 ? ck_bg2 :
