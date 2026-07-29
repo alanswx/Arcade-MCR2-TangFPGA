@@ -141,11 +141,30 @@ with `unable to open ftdi device: -3 (device not found)`. There is no offline
 dry-run — the cable is opened before the `.fs` is ever parsed.
 
 ### Post-build sanity checks (do these every build)
-1. **No `PA1019`** (PLL VCO out of range) warning in the log — with ONE
-   accepted exception on the 60K: `gowin_pll_hdmi` (27 MHz x 55 = 1485 MHz
-   VCO for 720p TMDS) always warns. That is NESTang's standard config,
-   confirmed working on this hardware; a PA1019 naming any OTHER PLL
-   (especially `gowin_pll_mcr2`) is still a build-breaker.
+1. **No `PA1019`** (PLL VCO out of range) warning in the log — **NO
+   EXCEPTIONS.** Any PA1019, naming any PLL, is a build-breaker.
+   **This reverses earlier guidance (corrected 2026-07-28).** `gowin_pll_hdmi`
+   used to warn (27 MHz x 55 = 1485 MHz VCO, outside the GW5A 700–1400 MHz
+   range) and that was written off as "NESTang's standard config, confirmed
+   working". **It was not working.** It was the cause of the long-standing
+   HDMI dropout: the link held sync perfectly for a few minutes after
+   configuration, then went marginal (black/frozen frames), and recovered on
+   every reconfig — which is why every measurement taken just after flashing
+   looked clean. Analog VGA never dropped, because it runs off
+   `gowin_pll_mcr2`, not this chain, and picture CONTENT stayed correct
+   throughout, so only the link was failing.
+   Fixed in `src/ddr3fb/gowin_pll_hdmi27.v`: `MDIV_SEL=41, MDIV_FRAC_SEL=2`
+   (41.25) with `ODIV0_SEL=3` gives the SAME 371.25 MHz TMDS clock from a
+   VCO of 1113.75 MHz, in spec. **Soak-verified: 30 min with no
+   reconfiguration, 0 black intervals, 0.000% black** (the old PLL degraded
+   within minutes), confirmed on the monitor as well as the capture card.
+   The PLL is shared, so this fixes `mcr2_console60k`, `video_test60k`,
+   `merge_probe` and `ascal_test60k` alike.
+   **Measuring dropouts:** record TIME SINCE CONFIGURATION and soak for tens
+   of minutes — a fresh flash hides this class of fault. Give ffmpeg
+   exclusive use of the capture device (a second process on `/dev/video4`
+   manufactures dropouts), and discard events before t=0.5 s (capture-card
+   lock-up).
 2. 25K only: `BSRAM ... 56/56` in `impl/pnr/*.rpt.txt` — must not exceed 56.
 3. Positive SETUP and HOLD slack in `impl/pnr/*.timing_paths`.
 4. **`grep -i "Undeclared symbol" impl/gwsynthesis/*.log` must be empty.**

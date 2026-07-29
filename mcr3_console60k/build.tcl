@@ -47,7 +47,14 @@ add_file ../src/rtl/rom_loader.sv
 add_file ../src/rtl/osd.sv
 
 # DDR3 framebuffer + 720p HDMI w/ audio (vendored from nand2mario/gbatang)
-add_file ../src/ddr3fb/ddr3_framebuffer.v
+# ddr3_framebuffer.v is DELIBERATELY NOT in this list. It instantiates its own
+# pll_ddr3, gowin_pll_hdmi and DDR3_Memory_Interface_Top; leaving it compiled
+# alongside ascal_fb gives the tools two copies competing for the PLL/DDR3 IP.
+# To revert to ddr3_framebuffer, re-add it here and change the module name in
+# the top (and drop .i_ce/.i_de).
+add_file ../src/video/ascal_fb.sv
+add_file ../src/video/ascal_v.sv
+add_file ../src/ascal/ascal_avl_ddr3.sv
 add_file ../src/ddr3fb/ddr3_memory_interface.v
 add_file ../src/ddr3fb/pll_27.v
 add_file ../src/ddr3fb/pll_ddr3.v

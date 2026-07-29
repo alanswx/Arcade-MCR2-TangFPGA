@@ -119,8 +119,8 @@ sub(
     "\tdbg_o_hacc   <= std_logic_vector(to_unsigned(o_hacc,16));\n"
     "\tdbg_o_dcpt   <= std_logic_vector(to_unsigned(o_dcptv(14),12));\n"
     "\tdbg_i_himax  <= i_himax;\n"
-    "\tdbg_i_hsize  <= o_hburst;                -- bursts per input line\n"
-    "\tdbg_o_ihsize <= o_copylev*64 + o_hbcpt;  -- {copy queue level, burst idx}\n"
+    "\tdbg_i_hsize  <= o_off(0)*16 + o_pshift;  -- {burst offset, shift count}\n"
+    "\tdbg_o_ihsize <= to_integer(o_hacpt);     -- source pixels consumed so far\n"
     "\tdbg_i_hdown  <= i_hdown;\n\n"
     "\t----------------------------------------------------------------------------\nEND ARCHITECTURE rtl;",
     "debug tap assignments",

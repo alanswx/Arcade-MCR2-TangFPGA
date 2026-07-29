@@ -1575,7 +1575,12 @@ uart_beacon #(.CLK_HZ(40_000_000), .BAUD(115200)) beacon (
     .txd(beacon_txd)
 );
 
-ddr3_framebuffer #(
+// SCALER SWAP: ascal_fb is a drop-in for ddr3_framebuffer built on ascal_v.
+// Adds triple buffering, input auto-detect, parameterised output timing and
+// better scaling (0.333 duplicate rate vs 0.385). Costs ~117 LUT / ~10 BSRAM;
+// this core sits at 88/118 BSRAM so there is room. Revert by changing the
+// module name back and dropping the .i_ce/.i_de connections.
+ascal_fb #(
     .WIDTH(512),
     .HEIGHT(480),
     .COLOR_BITS(12),
@@ -1587,6 +1592,12 @@ ddr3_framebuffer #(
                           // (see TODO item 1), and the residual is board thermal.
 ) fb_inst (
     .hclk_dbg(fb_hclk),
+    .hclk5_dbg(),
+    // ascal_v needs the pixel tick and active-video level SEPARATELY; fb_we
+    // is their AND and drops between pixels, which would look like one line
+    // per pixel to the input capture.
+    .i_ce(pixel_tick),
+    .i_de(cap_active),
     .clk_27(clk27),
     .pll_lock_27(1'b1),
     .clk_g(clk50_pll),        // PLL-buffered 50 MHz (global clock net)

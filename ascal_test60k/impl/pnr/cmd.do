@@ -1,4 +1,4 @@
--d /home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/impl/gwsynthesis/ascal_test60k.vg
+-d /home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/impl/gwsynthesis/ascalv.vg
 -p GW5AT-60B-PBGA484A-1
 -pn GW5AT-LV60PG484AC1/I0
 -cst /home/alans/mister/Arcade-MCR2-TangFPGA/ascal_test60k/src/ascal_test60k.cst

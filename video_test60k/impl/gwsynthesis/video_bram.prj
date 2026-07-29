@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE gowin-synthesis-project>
+<Project>
+    <Version>beta</Version>
+    <Device id="GW5AT-60B" package="PBGA484A" speed="1" partNumber="GW5AT-LV60PG484AC1/I0"/>
+    <FileList>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/bram_top.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/video/bram_scaler.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/testpat/mcr_testpattern.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_mcr2.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv" type="verilog"/>
+        <File path="/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv" type="verilog"/>
+    </FileList>
+    <OptionList>
+        <Option type="disable_insert_pad" value="0"/>
+        <Option type="global_freq" value="100.000"/>
+        <Option type="looplimit" value="2000"/>
+        <Option type="output_file" value="/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_bram.vg"/>
+        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="ram_rw_check" value="0"/>
+        <Option type="top_module" value="bram_top"/>
+        <Option type="vcc" value="0.9"/>
+        <Option type="verilog_language" value="sysv-2017"/>
+        <Option type="vhdl_language" value="vhdl-1993"/>
+    </OptionList>
+</Project>

@@ -1,0 +1,31 @@
+Reading netlist file: "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_ddr3.vg"
+Parsing netlist file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_ddr3.vg" completed
+WARN  (PA1019) : Invalid VCO frequency 'FCLKIN*FBDIV_SEL*(MDIV_SEL+MDIV_FRAC_SEL/8)/IDIV_SEL' to 'PLLA_inst'(PLL) set by 'gowin_pll_hdmi' of module, suitable range is from 700MHz to 1400MHz.
+Processing netlist completed
+Reading constraint file: "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/ddr3.cst"
+Physical Constraint parsed completed
+Running placement......
+[10%] Placement Phase 0 completed
+[20%] Placement Phase 1 completed
+[30%] Placement Phase 2 completed
+[50%] Placement Phase 3 completed
+Running routing......
+[60%] Routing Phase 0 completed
+[70%] Routing Phase 1 completed
+[80%] Routing Phase 2 completed
+WARN  (PR1014) : Generic routing resource will be used to clock signal 'sys_clk_d' by the specified constraint. And then it may lead to the excessive delay or skew
+[90%] Routing Phase 3 completed
+Running timing analysis......
+[95%] Timing analysis completed
+Placement and routing completed
+Bitstream generation in progress......
+Bitstream generation completed
+Running power analysis......
+[100%] Power analysis completed
+Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/video_ddr3.power.html" completed
+Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/video_ddr3.pin.html" completed
+Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/video_ddr3.rpt.html" completed
+Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/video_ddr3.rpt.txt" completed
+Generate file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/video_ddr3.tr.html" completed
+Tue Jul 28 06:30:52 2026
+

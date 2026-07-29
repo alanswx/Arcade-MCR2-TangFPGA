@@ -398,7 +398,7 @@ module ascal_test60k_top (
     reg ovs_p = 0, ode_p = 0;
     reg [15:0] probe_hacc = 0;
     reg [11:0] probe_dcpt = 0;
-    reg [11:0] probe_lev = 0;
+    reg [11:0] probe_lev = 0, probe_hsz = 0;
     always @(posedge hclk) begin
         ovs_p <= o_vs; ode_p <= o_de;
         if (o_vs && !ovs_p) pline <= 0;
@@ -408,14 +408,16 @@ module ascal_test60k_top (
         if (o_de && pline == PROBE_Y && ppix == PROBE_X) begin
             probe_hacc <= dbg_hacc;
             probe_dcpt <= dbg_dcpt;
-            probe_lev  <= dbg_ihsize;   // {o_copylev, o_hbcpt}
+            probe_lev  <= dbg_ihsize;   // o_hacpt  (source px consumed)
+            probe_hsz  <= dbg_hsize;    // o_ihsizem (line-end threshold)
         end
     end
     reg [15:0] probe_hacc_s;
-    reg [11:0] probe_dcpt_s, probe_lev_s;
+    reg [11:0] probe_dcpt_s, probe_lev_s, probe_hsz_s;
     always @(posedge clk_sys) begin
         probe_hacc_s <= probe_hacc; probe_dcpt_s <= probe_dcpt;
         probe_lev_s  <= probe_lev;
+        probe_hsz_s  <= probe_hsz;
     end
     //-------------------------------------------------------------------------
     // Diagnostics
@@ -472,12 +474,17 @@ module ascal_test60k_top (
         // means the FPGA is transmitting and a dark screen is a sink or
         // cabling problem.
         // PROBE at (line 100, pixel 300) - compare against the GHDL sim.
-        .aux(probe_dcpt_s[7:0]),          // o_dcpt @probe: sim says 241/242 (F1)
+        // d = {o_off(0), o_pshift} @probe. Both are 0..15; o_pshift should
+        // equal o_off(0)-1. A large o_off(0) means sSHIFT runs long and
+        // over-advances o_hacpt independently of the carry logic.
         // L = {mode15, detected input height[10:8], detected width[11:8]}.
         // Expect 0x11 for 31 kHz (512x480 -> hdmax 511, vdmax 479) and
         // 0x81 for 15 kHz (512x240 -> vdmax 239).
 
-        .aux2(probe_lev_s[11:4]),         // {copylev,hbcpt} @probe: sim says 04
+        .aux(probe_hsz_s[7:0]),
+        // L = o_hacpt[11:4] @probe. Correct = 140*512/960 = 75 -> 04.
+        // 4x too fast would be ~300 -> 12.
+        .aux2(probe_lev_s[11:4]),
         .txd(uart_tx)
     );
 

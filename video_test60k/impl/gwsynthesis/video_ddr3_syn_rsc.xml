@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="ddr3_top" Register="136" Alu="113" Lut="26" T_Register="4858(136)" T_Alu="514(113)" T_Lut="3944(26)" T_MULTALU27X18="2(0)" T_MULT12X12="2(0)" T_Bsram="9(0)" T_Ssram="18(0)">
+ <SubModule name="pll_inst"/>
+ <SubModule name="pll27_inst"/>
+ <SubModule name="pattern" Register="47" Alu="43" Lut="137" MULT12X12="2" T_Register="47(47)" T_Alu="43(43)" T_Lut="137(137)" T_MULT12X12="2(2)"/>
+ <SubModule name="tone" Register="5" Alu="4" Lut="45" MULTALU27X18="2" T_Register="5(5)" T_Alu="4(4)" T_Lut="45(45)" T_MULTALU27X18="2(2)"/>
+ <SubModule name="fb_inst" Register="533" Alu="104" Lut="296" T_Register="4591(533)" T_Alu="330(104)" T_Lut="3600(296)" T_Bsram="9(0)" T_Ssram="18(0)">
+  <SubModule name="pll_ddr3_inst"/>
+  <SubModule name="pll_hdmi27_inst"/>
+  <SubModule name="u_ddr3" Register="3307" Alu="125" Lut="2112" Bsram="8" T_Register="3307(3307)" T_Alu="125(125)" T_Lut="2112(2112)" T_Bsram="8(8)"/>
+  <SubModule name="hdmi" Register="68" Alu="19" Lut="48" T_Register="637(68)" T_Alu="79(19)" T_Lut="1052(48)">
+   <SubModule name="true_hdmi_output.packet_picker" Register="439" Lut="329" T_Register="482(439)" T_Alu="20(0)" T_Lut="337(329)">
+    <SubModule name="audio_clock_regeneration_packet" Register="43" Alu="20" Lut="8" T_Register="43(43)" T_Alu="20(20)" T_Lut="8(8)"/>
+   </SubModule>
+   <SubModule name="true_hdmi_output.packet_assembler" Register="45" Alu="4" Lut="349" T_Register="45(45)" T_Alu="4(4)" T_Lut="349(349)"/>
+   <SubModule name="tmds_gen[0].tmds_channel" Register="14" Alu="12" Lut="117" T_Register="14(14)" T_Alu="12(12)" T_Lut="117(117)"/>
+   <SubModule name="tmds_gen[1].tmds_channel" Register="14" Alu="12" Lut="103" T_Register="14(14)" T_Alu="12(12)" T_Lut="103(103)"/>
+   <SubModule name="tmds_gen[2].tmds_channel" Register="14" Alu="12" Lut="98" T_Register="14(14)" T_Alu="12(12)" T_Lut="98(98)"/>
+   <SubModule name="serializer"/>
+  </SubModule>
+  <SubModule name="u_asyncfifo" Register="28" Alu="8" Lut="34" Ssram="6" T_Register="44(28)" T_Alu="8(8)" T_Lut="34(34)" T_Ssram="6(6)">
+   <SubModule name="read_ptr_grey_sync" Register="8" T_Register="8(8)"/>
+   <SubModule name="write_ptr_grey_sync" Register="8" T_Register="8(8)"/>
+  </SubModule>
+  <SubModule name="pixel_fifo" Register="42" Alu="14" Lut="106" Bsram="1" Ssram="12" T_Register="70(42)" T_Alu="14(14)" T_Lut="106(106)" T_Bsram="1(1)" T_Ssram="12(12)">
+   <SubModule name="read_ptr_grey_sync" Register="14" T_Register="14(14)"/>
+   <SubModule name="write_ptr_grey_sync" Register="14" T_Register="14(14)"/>
+  </SubModule>
+ </SubModule>
+ <SubModule name="beacon" Register="79" Alu="24" Lut="136" T_Register="79(79)" T_Alu="24(24)" T_Lut="136(136)"/>
+</Module>

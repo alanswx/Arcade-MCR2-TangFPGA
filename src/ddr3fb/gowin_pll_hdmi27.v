@@ -60,7 +60,7 @@ defparam PLLA_inst.FCLKIN = "27";
 defparam PLLA_inst.IDIV_SEL = 1;
 defparam PLLA_inst.FBDIV_SEL = 1;
 defparam PLLA_inst.CLKFB_SEL = "INTERNAL";
-defparam PLLA_inst.ODIV0_SEL = 4;
+defparam PLLA_inst.ODIV0_SEL = 3;
 defparam PLLA_inst.ODIV0_FRAC_SEL = 0;
 defparam PLLA_inst.ODIV1_SEL = 8;
 defparam PLLA_inst.ODIV2_SEL = 8;
@@ -68,8 +68,21 @@ defparam PLLA_inst.ODIV3_SEL = 8;
 defparam PLLA_inst.ODIV4_SEL = 8;
 defparam PLLA_inst.ODIV5_SEL = 8;
 defparam PLLA_inst.ODIV6_SEL = 8;
-defparam PLLA_inst.MDIV_SEL = 55;
-defparam PLLA_inst.MDIV_FRAC_SEL = 0;
+// VCO WAS OUT OF SPEC. MDIV=55 / ODIV0=4 gives VCO = 27 x 55 = 1485 MHz,
+// outside the GW5A PLLA range of 700-1400 MHz - the PA1019 warning that was
+// long recorded as an "accepted exception" because NESTang ships it.
+// Symptom it produced: HDMI held sync perfectly right after configuration and
+// went marginal minutes later (black/frozen frames), recovering on every
+// reconfig, while analog VGA - which runs off gowin_pll_mcr2, not this chain -
+// never dropped at all. Picture CONTENT stayed correct throughout, so the data
+// path was fine and only the link was failing.
+// MDIV = 41 + 2/8 = 41.25 with ODIV0 = 3 gives the SAME 371.25 MHz TMDS clock
+// from VCO = 1113.75 MHz, comfortably in spec (742.5 MHz via MDIV 27.5 /
+// ODIV0 2 also works, but a higher VCO generally means lower jitter).
+// PA1019 must now be ABSENT from the build log - it is a real failure signal
+// again, not a known-ignorable warning.
+defparam PLLA_inst.MDIV_SEL = 41;
+defparam PLLA_inst.MDIV_FRAC_SEL = 2;
 defparam PLLA_inst.CLKOUT0_EN = "TRUE";
 defparam PLLA_inst.CLKOUT1_EN = "FALSE";
 defparam PLLA_inst.CLKOUT2_EN = "FALSE";

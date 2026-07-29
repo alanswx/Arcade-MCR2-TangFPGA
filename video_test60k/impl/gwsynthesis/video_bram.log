@@ -1,0 +1,82 @@
+GowinSynthesis start
+Running parser ...
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/bram_top.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/video/bram_scaler.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv'
+WARN  (EX2478) : Non-net output port 'left' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":25)
+WARN  (EX2478) : Non-net output port 'right' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":26)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/testpat/mcr_testpattern.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_mcr2.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv'
+WARN  (EX2478) : Non-net output port 'txd' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":22)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv'
+WARN  (EX2478) : Non-net output port 'cx' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":81)
+WARN  (EX2478) : Non-net output port 'cy' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":82)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv'
+WARN  (EX2478) : Non-net output port 'clk_audio_counter_wrap' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv":13)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv'
+WARN  (EX2478) : Non-net output port 'counter' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv":11)
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv'
+Analyzing Verilog file '/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv'
+WARN  (EX2478) : Non-net output port 'tmds' cannot be initialized at declaration in SystemVerilog mode("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":16)
+WARN  (EX3073) : Port 'screen_width' remains unconnected for this instance("/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/bram_top.sv":153)
+Compiling module 'bram_top'("/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/bram_top.sv":27)
+Compiling module 'gowin_pll_mcr2'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/gowin_pll_mcr2.v":11)
+Compiling module 'pll_27'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/pll_27.v":10)
+Compiling module 'gowin_pll_hdmi'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/gowin_pll_hdmi27.v":11)
+Compiling module 'mcr_testpattern'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/testpat/mcr_testpattern.sv":33)
+Compiling module 'bram_scaler'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/video/bram_scaler.sv":37)
+Extracting RAM for identifier 'mem'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/video/bram_scaler.sv":66)
+Compiling module 'sine_gen'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":18)
+Extracting RAM for identifier 'quarter'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":31)
+WARN  (EX3780) : Using initial value of 'i' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":33)
+WARN  (EX1998) : Net 'phase[26]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/src/audio/sine_gen.sv":41)
+Compiling module 'hdmi(VIDEO_ID_CODE=4,VIDEO_REFRESH_RATE=60.0,AUDIO_RATE=32000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/hdmi.sv":4)
+Compiling module 'packet_picker(VIDEO_RATE=74250000.0,IT_CONTENT=1'b1,AUDIO_BIT_WIDTH=16,AUDIO_RATE=32000,VENDOR_NAME=64'b0101010101101110011010110110111001101111011101110110111000000000,PRODUCT_DESCRIPTION=128'b01000110010100000100011101000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,SOURCE_DEVICE_INFORMATION=8'b00000000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":4)
+Extracting RAM for identifier 'audio_sample_word_buffer'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":84)
+Compiling module 'audio_clock_regeneration_packet(VIDEO_RATE=74250000.0,AUDIO_RATE=32000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_clock_regeneration_packet.sv":5)
+Compiling module 'audio_sample_packet(SAMPLING_FREQUENCY=4'b0011,WORD_LENGTH=4'b0010)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":8)
+WARN  (EX3780) : Using initial value of 'CHANNEL_LEFT' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":63)
+WARN  (EX3780) : Using initial value of 'CHANNEL_RIGHT' since it is never assigned("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_sample_packet.sv":64)
+Compiling module 'auxiliary_video_information_info_frame(IT_CONTENT=1'b1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/auxiliary_video_information_info_frame.sv":5)
+Compiling module 'source_product_description_info_frame(VENDOR_NAME=64'b0101010101101110011010110110111001101111011101110110111000000000,PRODUCT_DESCRIPTION=128'b01000110010100000100011101000001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000,SOURCE_DEVICE_INFORMATION=8'b00000000)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/source_product_description_info_frame.sv":5)
+Compiling module 'audio_info_frame'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/audio_info_frame.sv":5)
+WARN  (EX1998) : Net 'headers[255][23]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":29)
+WARN  (EX1998) : Net 'subs[255][3][55]' does not have a driver("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":30)
+Compiling module 'packet_assembler'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_assembler.sv":4)
+Compiling module 'tmds_channel'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=1)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'tmds_channel(CN=2)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/tmds_channel.sv":4)
+Compiling module 'serializer(VIDEO_RATE=74250000.0)'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/serializer.sv":3)
+Compiling module 'uart_beacon'("/home/alans/mister/Arcade-MCR2-TangFPGA/src/rtl/uart_beacon.sv":11)
+NOTE  (EX0101) : Current top module is "bram_top"
+[5%] Running netlist conversion ...
+Running device independent optimization ...
+[10%] Optimizing Phase 0 completed
+[15%] Optimizing Phase 1 completed
+[25%] Optimizing Phase 2 completed
+Running inference ...
+[30%] Inferring Phase 0 completed
+[40%] Inferring Phase 1 completed
+[50%] Inferring Phase 2 completed
+[55%] Inferring Phase 3 completed
+Running technical mapping ...
+[60%] Tech-Mapping Phase 0 completed
+[65%] Tech-Mapping Phase 1 completed
+[75%] Tech-Mapping Phase 2 completed
+[80%] Tech-Mapping Phase 3 completed
+[90%] Tech-Mapping Phase 4 completed
+WARN  (NL0002) : The module "audio_info_frame" instantiated to "audio_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":147)
+WARN  (NL0002) : The module "audio_sample_packet" instantiated to "audio_sample_packet" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":135)
+WARN  (NL0002) : The module "auxiliary_video_information_info_frame" instantiated to "auxiliary_video_information_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":141)
+WARN  (NL0002) : The module "source_product_description_info_frame" instantiated to "source_product_description_info_frame" is swept in optimizing("/home/alans/mister/Arcade-MCR2-TangFPGA/src/ddr3fb/hdmi/packet_picker.sv":144)
+[95%] Generate netlist file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_bram.vg" completed
+[100%] Generate report file "/home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_bram_syn.rpt.html" completed
+GowinSynthesis finish

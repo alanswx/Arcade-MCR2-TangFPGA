@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Module name="ascalv_top" Register="149" Alu="82" Lut="56" Ssram="7" T_Register="4967(149)" T_Alu="526(82)" T_Lut="4095(56)" T_MULTALU27X18="3(0)" T_MULT12X12="2(0)" T_Bsram="14(0)" T_Ssram="7(7)">
+ <SubModule name="pll_inst"/>
+ <SubModule name="pll27_inst"/>
+ <SubModule name="pattern" Register="47" Alu="43" Lut="139" MULT12X12="2" T_Register="47(47)" T_Alu="43(43)" T_Lut="139(139)" T_MULT12X12="2(2)"/>
+ <SubModule name="pll_hdmi27_inst"/>
+ <SubModule name="pll_ddr3_inst"/>
+ <SubModule name="u_ddr3" Register="3355" Alu="125" Lut="2112" Bsram="8" T_Register="3355(3355)" T_Alu="125(125)" T_Lut="2112(2112)" T_Bsram="8(8)"/>
+ <SubModule name="u_ascal" Register="663" Alu="170" Lut="484" MULTALU27X18="1" Bsram="6" T_Register="663(663)" T_Alu="170(170)" T_Lut="484(484)" T_MULTALU27X18="1(1)" T_Bsram="6(6)"/>
+ <SubModule name="u_bridge" Register="42" Lut="92" T_Register="42(42)" T_Lut="92(92)"/>
+ <SubModule name="tone" Register="5" Alu="4" Lut="45" MULTALU27X18="2" T_Register="5(5)" T_Alu="4(4)" T_Lut="45(45)" T_MULTALU27X18="2(2)"/>
+ <SubModule name="hdmi_out" Register="59" Alu="10" Lut="59" T_Register="627(59)" T_Alu="78(10)" T_Lut="1021(59)">
+  <SubModule name="true_hdmi_output.packet_picker" Register="438" Lut="332" T_Register="481(438)" T_Alu="20(0)" T_Lut="340(332)">
+   <SubModule name="audio_clock_regeneration_packet" Register="43" Alu="20" Lut="8" T_Register="43(43)" T_Alu="20(20)" T_Lut="8(8)"/>
+  </SubModule>
+  <SubModule name="true_hdmi_output.packet_assembler" Register="45" Alu="4" Lut="344" T_Register="45(45)" T_Alu="4(4)" T_Lut="344(344)"/>
+  <SubModule name="tmds_gen[0].tmds_channel" Register="14" Alu="14" Lut="107" T_Register="14(14)" T_Alu="14(14)" T_Lut="107(107)"/>
+  <SubModule name="tmds_gen[1].tmds_channel" Register="14" Alu="15" Lut="88" T_Register="14(14)" T_Alu="15(15)" T_Lut="88(88)"/>
+  <SubModule name="tmds_gen[2].tmds_channel" Register="14" Alu="15" Lut="83" T_Register="14(14)" T_Alu="15(15)" T_Lut="83(83)"/>
+  <SubModule name="serializer"/>
+ </SubModule>
+ <SubModule name="beacon" Register="79" Alu="24" Lut="146" T_Register="79(79)" T_Alu="24(24)" T_Lut="146(146)"/>
+</Module>

@@ -30,7 +30,12 @@
 //-----------------------------------------------------------------------------
 `default_nettype none
 
-module mcr_testpattern (
+module mcr_testpattern #(
+    // 1 = hold the moving bar still. Simulation only: a per-line signature
+    // comparison across frames is useless if an animated overlay touches
+    // every line every frame. Hardware leaves this 0.
+    parameter FREEZE_BAR = 0
+) (
     input  wire        clk,          // 40 MHz clk_sys, as the core uses
     input  wire        rst,          // active high
     input  wire        mode15,       // 1 = 15 kHz 240p, 0 = 31 kHz 480p
@@ -123,7 +128,7 @@ module mcr_testpattern (
     endcase
 
     // moving bar: 8 px wide, wraps across the 512-px window once per ~8.5 s
-    wire [9:0] barpos = {frame[8:0], 1'b0} % 10'd512;
+    wire [9:0] barpos = FREEZE_BAR ? 10'd200 : ({frame[8:0], 1'b0} % 10'd512);
     wire in_movbar = (x >= barpos) && (x < barpos + 10'd8);
 
     // 1-px white border around the active area

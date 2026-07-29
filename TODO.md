@@ -369,6 +369,930 @@ next real milestone" within each section.
 
 ---
 
+## Scaler plan — docs first, port second (2026-07-28)
+
+Two documents now capture everything, so neither path restarts from zero:
+  * `docs/ascal_port_notes.md` - all ascal knowledge: architecture, our
+    integration, the exact fault, the ten eliminated hypotheses, the confirmed
+    sim-vs-hardware divergences, the four GowinSynthesis defects, and a staged
+    Verilog port plan with a TRIPWIRE (port to nearest-neighbour only and test
+    on hardware BEFORE writing any interpolator).
+  * `docs/scaler_features.md` - the fallback/parallel track: triple buffering,
+    burst reads into a ping-pong line buffer, input auto-detect, and
+    parameterised output timing, specified against our own working scalers.
+
+`src/video/ascal_v.sv` - hand Verilog port, nearest-neighbour. Interface
+matches ascal_gw.vhd so it drops into ascal_test60k and sim/vsynth unchanged.
+Key simplification: 16 bpp so 8 pixels fit a 128-bit word exactly and a line
+is a whole number of words - which removes ascal's o_off/o_pshift/sSHIFT
+burst-offset machinery entirely, and that machinery is where its SECOND,
+carry-independent `o_hacpt` increment lives. Triple buffering built in AND
+ENABLED (`.triple_buf(1'b1)`).
+
+**TRIPWIRE PASSED 2026-07-28 — it renders a correct picture on hardware,
+which ascal itself never did.** Capture-card measured: active window
+x=160..1119 (960 px), 8 colour bars of 118-122 px (expect 120), six equal
+vertical bands of ~120 lines, all six pattern bands correct. Build is clean:
+~4.3k registers, 28/118 BSRAM, no undeclared symbols, no setup/hold
+violations, only the accepted `gowin_pll_hdmi` PA1019.
+Full bring-up log (six bugs, in the order they bit) in
+`docs/ascal_port_notes.md` §6. Two of them are worth repeating here because
+they are methodology, not RTL:
+  * a weak checker passed a broken design for several iterations - an
+    under-run line buffer returns STALE data, and on a repetitive test
+    pattern stale data still measures as plausible colour bars.
+    `tools/scaler_check.py` now validates a whole frame.
+  * the DDR3 sim model was too kind (fixed 12-cycle latency), so the reader
+    always won a race it loses on silicon. Stalls added, `STALL` parameter -
+    **and even so neither model configuration reproduced the fault.** The old
+    design still passes under stalls; cranking the stall to 250 starves the
+    WRITE path and the frame just goes black. What settled it was an on-chip
+    tap read over UART, exactly as with ascal itself. Simulation guided the
+    fix; it did not prove it.
+
+### Is ascal_v ready to replace `ddr3_framebuffer`? Not yet (assessed 2026-07-28)
+
+The trade is NOT "ascal instead of triple buffering" - ascal_v has ALREADY
+done the triple buffering, and `ddr3_framebuffer` has no buffering concept at
+all (grep finds no buffer/base-address logic; it is single-buffered). So
+`scaler_features.md` §1 would be ~50 lines of work thrown away if ascal_v
+clears its gate. **HOLD the ddr3_framebuffer triple-buffering work as the
+fallback; do not start it.**
+
+Against promoting ascal_v today: hours old, has rendered exactly one test
+pattern, never run a game core, audio entirely unproven, three open defects.
+`ddr3_framebuffer` is what the merged 9-game core runs on, verified across
+the whole roster. For it long-term: triple buffering, input auto-detect,
+parameterised output timing, and full-line burst reads instead of the
+4-pixel prefetch that §2 already fingers as the likely artifact source.
+
+**Open symptom: HDMI looks more stable than the old path but SHIMMERS, with
+a vertical wobble/jump every so many frames.** Ranked suspects:
+  1. **Unsynchronised multi-bit CDC on the geometry.** `o_iw`/`o_ih` are
+     latched from `i_hdmax`/`i_vdmax` (input clock domain) by one `o_clk`
+     edge at `ocx==0 && ocy==0`, no handshake. `line_words` is derived from
+     `o_iw`, so a glitched sample corrupts the stride for that frame. How
+     often depends on the beat between the clocks - "every so many frames".
+     NOTE the probability argument cuts against this: if i_hdmax only
+     updates once per source frame, the coincidence window is ~1e-6/frame,
+     i.e. hours, not seconds. **Verify what actually drives i_hdmax before
+     believing this.**
+  2. **60.09 Hz source vs 60.00 Hz output** - a ~0.09 Hz beat repeats or
+     drops a frame every ~11 s. Triple buffering removes the TEAR but cannot
+     remove this judder; only genlocking output to source can.
+  3. **Nearest-neighbour at 1.5x** - 480->720 maps lines 1,2,1,2..., so any
+     motion crawls. Inherent; this is what bilinear/polyphase exists to fix
+     and it is the part NOT ported.
+
+### Promotion gate - do in order
+
+  * **A1. DONE 2026-07-28 - both CDC suspects ELIMINATED by measurement.**
+    Three sticky saturating counters added to `ascal_v` (`dbg_cdc`) and read
+    over UART for 95 s (~5700 frames), build marker D:
+    | counter | reading | meaning |
+    |---|---|---|
+    | `cdc_fly` | **0** | buffer index never sampled mid-change |
+    | `cdc_bad` | **0** | never an invalid index (>2) |
+    | `cdc_geo` | **2**, not growing | exactly the power-on transient |
+    Suspect 1 was doubly wrong. First, `i_hdmax`/`i_vdmax` are written the
+    SAME value every vsync (511/479) with a stable source, so those registers
+    never transition and the crossing is inert - `cdc_geo`'s 2 counts are just
+    `o_iw` initialising 512 -> 1 -> 512 at power-on.
+    Second, the replacement theory - incoherent multi-bit sampling of
+    `latest` (which rotates 0->1->2, and 1->2 flips BOTH bits, so a 2FF sync
+    stops metastability per bit but not incoherence across bits) - is real but
+    far too RARE. The beat phase advances ~2475 cycles per frame while the
+    hazard window is ONE cycle out of 1.65M, so it steps over the hazard
+    almost every time: expect ~1 hit per 8 minutes, not one per few seconds.
+    **Still worth fixing for robustness** (cross a single-bit toggle and
+    capture the stable data on the synced edge); the same flaw exists in the
+    OTHER direction on `rd_buf` -> `rdbuf_a2`, where an incoherent sample
+    makes `free_buf` wrong and the writer could pick the buffer being read.
+    But it is NOT the wobble. Retitled as A2b below.
+  * **A2. Wobble suspects, revised after A1.** Leading candidate is now
+    **frame-start write alignment**: `wr_ptr` resets at `a_frame_start`, and
+    any words still in the write FIFO from the previous frame then land at the
+    TOP of the new buffer, shifting the whole image by a sub-line offset that
+    varies frame to frame - which would read as exactly "shimmer plus a
+    vertical wobble every so many frames". The counting argument says leftover
+    should be 0 (30720 words/frame, bursts of 8, 64 words/line), so this needs
+    MEASURING not assuming: add a per-frame written-word counter and flag any
+    frame != 30720. Then re-test suspects 2 (60.09 vs 60.00 beat) and 3
+    (nearest-neighbour 1.5x line crawl), which remain live and are inherent
+    rather than bugs.
+  * **A2 UPDATE 2026-07-28 - shimmer QUANTIFIED, two theories killed.**
+    90 raw (yuyv, not mjpeg) frames captured off the card and compared:
+    | measurement | result |
+    |---|---|
+    | band-boundary y over 90 frames | **121 / 122 / 123** - moves 1-2 px |
+    | left-border x over 90 frames | **160 in every good frame** - stable |
+    | consecutive pixel-identical pairs | 6/89 (~8% of pixels change) |
+    | highest-variance rows | 252, 297 (h-stripe band), 495-531 (checker) |
+    The shimmer is **purely VERTICAL**. Horizontal never moves, and the bands
+    that flicker are exactly the vertical-shift-sensitive ones (h-stripes,
+    checkerboard) while the VERTICAL-stripe band is steady. A sub-line offset
+    would smear horizontally too; a whole-line offset moves only vertically.
+    This KILLS suspects 2 and 3 as the cause: nearest-neighbour mapping is
+    deterministic per frame (the vertical Bresenham resets at ocy==VTOTAL-1),
+    and repeating/dropping a frame of a STATIC pattern changes nothing.
+    **The write-alignment fix (deferred buffer switch + short end-of-frame
+    burst, `frame_pend`/`drain_cnt`) made NO measurable difference** - the
+    distribution is unchanged. Kept anyway (it is correct, lint/sim clean, and
+    removes a real residue path) but it is NOT the cause.
+    **NEW LEADING THEORY: three buffers <-> three discrete vertical positions.**
+    Each triple-buffer slot appears to hold the image at a slightly different
+    vertical offset, so the picture jumps as `rd_buf` rotates 0->1->2.
+    **Experiment RUN (marker F, `.triple_buf(1'b0)`) - PARTIALLY confirms:**
+    | config | band-edge positions | spread |
+    |---|---|---|
+    | triple (E) | 121x60, 122x20, **123x3** | 2 px |
+    | single (F) | 121x64, 122x19 | **1 px** |
+    The THIRD position disappears with one buffer, so the triple-buffer slots
+    ARE misaligned relative to each other - a real bug, worth fixing (suspect
+    the per-buffer base address or a per-buffer write-start offset). But the
+    dominant 121/122 jitter SURVIVES single-buffering, so that part is not
+    buffer-related. Note single-buffering also introduces tearing, so the two
+    configs are not perfectly comparable.
+    **CONTROL RUN 2026-07-28 - the instrument is FINE and the fault is OURS:**
+    | build | band-edge | spread | med changed px/pair |
+    |---|---|---|---|
+    | ascal_v triple (E) | 121x60, 122x20, 123x3 | 2 px | 72298 |
+    | ascal_v single (F) | 121x64, 122x19 | 1 px | 53233 |
+    | **ddr3_framebuffer (DD)** | **120x83** | **0 px** | **22091** |
+    The capture card resolves vertical position EXACTLY on the known-good
+    path, so the 7/90 detection failures are a benign capture artifact and
+    the jitter is real. ascal_v also churns 2.4-3.3x more pixels per pair.
+
+    **IT IS NOT A SHIFT.** Diffing a y=121 frame against a y=122 frame:
+    shifting by +-1 row makes them match WORSE (15.0% / 17.7% differing) than
+    shift 0 (9.3%), and only **70 of 720 rows differ**, scattered as isolated
+    single/double rows clustered in the high-detail bands. The picture does
+    not move - **individual output LINES are sporadically wrong.**
+
+    **`dbg_underrun` was TRUTHFUL; dismissing it as "a lying instrument" was
+    wrong.** It reads F (saturated, >=15/frame) because lines really do
+    starve. Making the swap unconditional (to break the A2 deadlock) turned a
+    late prefetch from a hang into a wrong line.
+
+    **ROOT CAUSE FOUND: the one-line lookahead was worth ZERO cycles.** The
+    lookahead advance and the prefetch issue are in two separate always
+    blocks that BOTH fire at `ocx == 0`. With non-blocking assignment the
+    prefetch read the PRE-update `sy_a` - the line needed by the line being
+    displayed right now, not the next one. So the intended full-line lead
+    collapsed back to the 160 px pillarbox: the exact race A2 was supposed to
+    have fixed, reintroduced by scheduling rather than by addressing.
+    FIX APPLIED: expose the next value as a wire (`sy_a_nxt`, with `vstep_a`
+    /`in_vwin`) so both blocks see the same view, and prefetch on that.
+    Lints clean, sim still passes (79 good bar rows, 0 bad), builds clean.
+    **VERIFIED ON HARDWARE (marker 7) - THE LOOKAHEAD FIX DID NOT WORK.**
+    It corrected the band edge to 120 (matching the control, so it did fix the
+    A3 off-by-one as a side effect) but the corruption is unchanged: 59
+    differing rows/pair vs 55 before, and underruns still read F.
+
+    **BEST METRIC FOUND - adjacent-row duplication in the 1px h-stripe band.**
+    Clean 480->720 nearest-neighbour must give ~0.333; excess duplication is
+    lines repeating because their prefetch never landed:
+    | build | duplicate rate |
+    |---|---|
+    | ddr3_framebuffer control | **0.385** (near-ideal) |
+    | ascal_v before (E) | 0.551 |
+    | ascal_v after lookahead fix (7) | 0.586 |
+    ~17% of lines are EXTRA duplicates. **Starvation is real and quantified.**
+    Use this metric, not band-edge position - the "vertical wobble" reading was
+    an artifact of a starved line landing on the band boundary. The picture
+    never moves: diffing two frames, shift 0 matches best (9.3%) and +-1 row
+    matches WORSE (15.0%/17.7%).
+
+    **The bridge is NOT the bottleneck.** `ascal_avl_ddr3.sv` issues read
+    commands back-to-back (`rd_go = state==ST_READ && app_rdy`, one per
+    cycle), so 64 words should land in ~80 cycles of the 1650 available.
+    So the deadline is met on paper yet missed in practice - the next step is
+    to MEASURE the actual fetch latency on chip (a cycle counter from rq_tog
+    to rd_done, max-latched onto the beacon) rather than reason about it.
+
+    **ROOT CAUSE FOUND AND FIXED IN SIM 2026-07-28 - it was the FETCH GATE.**
+
+    First, the test bench was testing the wrong design: `sim/vsynth/av_top.v`
+    ran a **640x480** output with `vmax=479`, i.e. **1:1 vertical scaling**,
+    while hardware is 720p with `vmax=719`, i.e. **1.5x**. The line-repeat
+    path, the 1650-cycle line timing and the 960-wide window were NEVER
+    simulated. That is why the sim passed a design that starved on hardware.
+    Fixed: av_top now uses HTOTAL=1650/VTOTAL=750/HDISP=1280/VDISP=720,
+    hmin=160 hmax=1119 vmax=719, and DUMP_LINES=720 (DUMP_FRAME lowered to 8
+    - a 720p frame is 1.24M cycles, 3x the old raster, and 24 frames times
+    out). **With that geometry the sim REPRODUCES the fault**: h-stripe
+    duplication 0.544 vs hardware 0.586. Iterate here, not on the board.
+
+    **Best diagnostic: run-length histogram of identical adjacent rows** in
+    the 1px h-stripe band. At 1.5x every run must be 1 or 2. Observed:
+    `[(1,16), (2,26), (4,10), (7,1)]` - runs of **4**, and no 3s. A 4 is two
+    2-runs merged: one source line is skipped entirely and its predecessor
+    covers both slots. Only 53 of 76 expected source lines appeared.
+
+    **The bug:**
+    ```
+    if (!swap_req || !rd_busy) begin      // swap_req is the PRE-update value
+    ```
+    Right after a swap `swap_req` is still 1, so `!swap_req` is 0 and the gate
+    collapses to `!rd_busy`. Whenever the previous fetch's completion toggle
+    had not cleared, the NEXT line's fetch was never issued - so that source
+    line was skipped. ~19% of line transitions. Removing the gate gives
+    **duprate 0.333 exactly, runs = only 1s and 2s (39 ones, 38 twos)** -
+    better than the ddr3_framebuffer control's 0.385 - with colour bars at
+    exactly 120 px and all six bands correct.
+
+    **CONFIRMED ON HARDWARE 2026-07-28 (marker 9) - ascal_v now MATCHES the
+    control exactly.**
+    | build | dup rate | run lengths | differing rows/pair |
+    |---|---|---|---|
+    | ddr3_framebuffer control | 0.385 | 1s and 2s only | 0/720 |
+    | ascal_v before | 0.551 | 1s, 2s, **804 fours, 23 sevens** | 55/720 |
+    | **ascal_v fixed** | **0.385** | **1s and 2s only** | **1/720** |
+    Run-length distribution is now identical to the control (3237 ones, 3154
+    twos, zero 4s). Beacon confirms the mechanism: **481 fetches/frame**
+    (expect 480, was ~390) and **96-cycle worst fetch latency** against the
+    1650-cycle line budget - 6% utilisation, so latency was never the issue
+    and an unguarded fetch issue is safe by a wide margin.
+    (The 0.385-vs-0.333 gap between hardware and sim is the capture path -
+    the control reads 0.385 too, so 0.385 is what a perfect result looks
+    like through this card.)
+
+    **RESIDUAL AFTER THE GATE FIX (marker 9) - two SEPARATE faults, do not
+    conflate them again (I did, for hours):**
+
+    **(i) PLATFORM SYNC LOSS - NOT the scaler.** Black-frame rate is
+    IDENTICAL across all three builds: ddr3_framebuffer control **7/90 (8%)**,
+    ascal_v before **7/90**, ascal_v after **7/90**. The known-good
+    framebuffer drops sync at exactly the same rate, so this lives in the
+    HDMI/TMDS path downstream of both scalers. **This is what makes the DDR3
+    path unusable, and fixing ascal_v cannot fix it.** It is roadmap item 1
+    and deserves its own attack - it matters more than the residual below.
+
+    **(ii) ascal_v line-selection jitter at content transitions.** Excluding
+    black frames:
+    | build | clean pairs | med wrong rows | band-edge |
+    |---|---|---|---|
+    | ddr3 control | **82/82** | 0 | 120 always |
+    | ascal_v triple | 35/82 | 1 (p90 4) | 120x80, 122x3 |
+    | ascal_v single | 25/82 | 2 (p90 5) | 120x81, 122x2 |
+    **Single buffering is WORSE, so per-buffer misalignment is NOT the cause**
+    - the earlier "3 buffers <-> 3 positions" theory is dead. Keep triple.
+    Only **37 distinct rows** ever fail; 21 are within 3 of a band boundary
+    (120/240/360/480/600) and account for 92/142 hits, the rest cluster at the
+    top border (rows 2-6). Each fails in ~7% of frames. A wrong line is only
+    VISIBLE where adjacent source lines differ, so this is an occasional
+    off-by-one in WHICH line is displayed at a transition - the h-stripe band
+    run-lengths are otherwise perfect (1s and 2s only).
+    Beacon is steady through all of it: **x01E1 = 481 fetches/frame**,
+    **q0C-0D = 96-104 cycle worst latency** vs a 1650-cycle budget, no spikes.
+    So every fetch IS issued and memory IS fast - this is not starvation.
+    **Lead suspect: the first output line of each frame.** At `ocy==0` the
+    code forces `nsy = 12'hFFF` and fetches `sy_a_nxt` (the line for ocy==1),
+    so output line 0 displays whatever was already in the buffer and source
+    line 0 is never fetched for it. That is an off-by-one at frame top, and
+    it fits the row 2-6 cluster. NEXT: dump 3+ consecutive frames from the
+    720p sim (it reproduces now) and check whether the band edge jitters
+    there - debug with full internal visibility rather than on the board.
+
+    **SIM NOW REPRODUCES THE RESIDUAL DEFECT - debug here, not on the board.**
+    Two changes made it usable: `mcr_testpattern` got a `FREEZE_BAR`
+    parameter (default 0, hardware unaffected) because a per-line signature
+    comparison is useless when an animated overlay touches every line every
+    frame; and the harness now dumps a **per-line FNV-1a hash** for 20 frames
+    plus `dbg_sy` (source line displayed) instead of pixels - 24 full frames
+    of pixels is ~22M lines of text. Also: the old 200 ms sim-time cap only
+    allowed ~12 frames (raised to 700 ms), and ASAN is not needed (the old
+    constructor segfault does not occur in this harness) - `-O2` is ~5x faster.
+
+    Findings, all from simulation with a STATIC source:
+    * Most frames are **bit-identical**; 12 of 20 frames carry 1-6 wrong
+      lines. Deterministic, so a glitch frame can be re-dumped at will.
+    * **`dbg_sy` is CORRECT on every glitching line** (`sy == ideal`
+      everywhere; the only deviation is row 0, which is the deliberate
+      `nsy=12'hFFF` frame-start force). **So the addressing/Bresenham is
+      RIGHT and the DATA is stale** - do not go looking at sy again.
+    * The stale content is an EARLIER SOURCE LINE, not the previous frame:
+      at rows 120/121/123/124 the pixels are all-white (colour-bar band,
+      ~line 79) where the vertical-stripe pattern belongs. With a static
+      source, previous-frame staleness would be invisible - so this is
+      line-level, not frame-level.
+    * **Buffer parity is the pattern.** Rows 120,121 (line 80) and 123,124
+      (line 82) are stale; row 122 (line 81) is fine. Lines 80 and 82 both
+      live in ping-pong half Y, line 81 in half X. **The fetches targeting Y
+      did not land; X was always correct.** Same shape at every other
+      cluster (360/361/363/364, 240/241/242/245, 3/4/6/7).
+    * Note `avl_clk == o_clk` in the sim harness, so this is NOT a CDC race -
+      it is deterministic logic.
+
+    **A4 SETTLED: `dbg_underrun` is measuring nothing - DELETE IT.** Measured
+    78-410 underruns per frame against ~480 fetches, with ZERO correlation to
+    glitches (frame 7: und=410, 0 wrong lines; frame 18: und=78, 1 wrong
+    line). The toggle-based `rd_busy` is not a valid completion signal.
+    Replace with a word-count completion (count `avl_readdatavalid` against
+    `rq_len_l`) before relying on any guard that uses it.
+
+    **ROUND 2 - four integrity checks ALL PASS, so the fault is PHASE, not data:**
+    * **Write path clean.** ddr3_model now asserts that with a STATIC source a
+      location is never rewritten with a different value: 600k+ writes,
+      **0 mismatches**. DDR3 holds correct data at correct addresses.
+    * **No short fetches.** Every fetch delivers exactly `rq_len` (64) words
+      into its half - counter `short_cnt` = 0 across 20 frames.
+    * **No fill/display collisions.** A fill never targets the half currently
+      displayed - counter `collide_cnt` = 0.
+    * **All fetches issued** (481/frame) and worst latency 96 cycles of 1650.
+
+    **THE ACTUAL MECHANISM: the fetch/display schedule is NOT frame-invariant.**
+    Traced with `+define+ASCALV_TRACE` (guarded, off by default):
+    ```
+    frame A:  issue ocy=116 sy_nxt=77 ... swap ocy=117 sy_have=77
+    frame B:  issue ocy=115 sy_nxt=77 ... swap ocy=116 sy_have=77
+    ```
+    Same source line, but frame B runs the whole schedule ONE OUTPUT LINE
+    ahead of frame A. Addresses are right in both (4928 / 136000 / 70464 =
+    line 77 at buffer bases 0 / 65536 / 131072, so triple buffering rotates
+    correctly). What drifts is the PHASE of the ping-pong relative to the
+    raster - which is why a given line is stale in one frame and fine in the
+    next, and why glitches cluster by buffer parity.
+
+    **FRAME-START THEORY REFUTED BY EXPERIMENT 2026-07-28.** A deterministic
+    frame start WAS implemented (at `ocy==VTOTAL-1`: set `rd_buf<=nrd`,
+    `disp_buf<=1`, fetch source line 0 into half 0, `swap_req<=1`,
+    `sy_have<=12'hFFF`; the old `ocy==0` forced-`nsy` refetch removed). Proved
+    to execute (25 times, once per frame, rd_buf rotating 0->2->1). **The
+    glitches are byte-identical: same 12 frames, same rows.** So frame-start
+    phase is NOT the cause. The change is KEPT anyway - it is correct, it puts
+    source line 0 on output line 0 (it previously landed on line 1), and it
+    makes the line-0 fetch use the NEW rd_buf instead of the pre-update one.
+    Note `sy` deviations from ideal are now **0** including row 0.
+
+    **Where that leaves it - every per-fetch invariant holds, yet data is
+    stale.** Verified simultaneously: DDR3 content correct, address correct,
+    fetch issued, exactly 64 words delivered, target half never the displayed
+    one, sy == ideal. If all of those are true the displayed half MUST hold
+    the right line - so one of the checks is not measuring what it claims, or
+    the staleness enters between the fill and the read. Next things to try,
+    cheapest first: (a) log the actual 64 words of a fetch for a known glitch
+    line and compare against DDR3 contents at that address - this
+    distinguishes "wrong data fetched" from "right data, wrong half read";
+    (b) check the `linebuf` read pipeline across the swap (`lb_word`/`px_sel`
+    are registered, so the half select is sampled a cycle before use);
+    (c) widen the ping-pong to 4 slots so a late or misrouted fill cannot
+    alias onto the half about to be displayed.
+
+    **Bridge protocol hazard CHECKED and refuted.** `avl_waitrequest` in
+    `ascal_avl_ddr3.sv` is `!(wr_go || (rd_go && beat==0))`, i.e. it goes LOW
+    on WRITE beats - so a master sitting in its read state could read that as
+    "read accepted", drop the request, and leave the half stale. Instrumented
+    the bridge (`+define+ASCALV_TRACE`): **read-while-writing = 0**. It cannot
+    happen here because ascal_v only enters `A_RD` from `A_IDLE`, and it would
+    have been stalled in `A_WR` if the bridge were mid-write. Reads started
+    tracks the expected ~481/frame. **Still worth hardening** - the waitrequest
+    encoding is a latent trap for any future master that pipelines.
+
+    (superseded) Suspected cause - frame-start state is never reset. At `ocy==0` the
+    code forces `nsy = 12'hFFF`, but a fetch for line 0 has usually ALREADY
+    been issued at `ocy==VTOTAL-1` (sy_a_nxt=0 vs the last line's sy) and
+    swapped in. The forced value makes line 0 fetch a SECOND time,
+    redundantly, and that extra fetch flips the ping-pong parity. Whether it
+    happens depends on carry-over state - `swap_req`, `disp_buf`, `sy_have`,
+    `sy_fill` are NOT reset at frame start - so the phase can differ frame to
+    frame. **FIX DIRECTION: reset the whole line-buffer state machine
+    deterministically at frame start** (or stop forcing `nsy` and let the
+    normal comparison run), so every frame begins from an identical phase.
+
+    (superseded) NEXT: count fetches ISSUED vs read COMPLETIONS in sim, per ping-pong
+    half, and assert that a half is fully written before it is displayed.
+    Also fix (separately, currently invisible with a static source because
+    the buffers hold identical content): at `ocy==0` the fetch uses
+    `base_of(rd_buf)` with the PRE-update `rd_buf`, so the first fetch of
+    each frame reads the previous frame's buffer.
+
+    **STILL OPEN (A4): `rd_busy` is unreliable.** The gate only misfired
+    because the completion toggle was still set 1650 cycles after issue. With
+    the gate gone this no longer affects the picture, but `dbg_underrun`
+    remains meaningless until it is fixed, and issuing a fetch is now
+    UNGUARDED - safe at one fetch per 1650-cycle line against ~80-cycle
+    reads, but it should be given a correct guard rather than none.
+
+    (superseded) Structural fix if latency turns out to be jittery: the control has no
+    per-line deadline at all - `ddr3_framebuffer` streams with a 32-entry
+    prefetch buffer and PREFETCH_DELAY=44. ascal_v's per-line burst gives it a
+    hard deadline every line. Deepening to 4 line-buffer slots and prefetching
+    2 lines ahead would double the budget and absorb jitter.
+
+    **Wrong theories this session, recorded so they are not retried:**
+    geometry CDC (values are constant); triple-buffer index CDC (real but ~1
+    hit per 8 min, far too rare); frame-start write alignment (fix made no
+    measurable difference); the capture card (control proves it resolves
+    position exactly, spread 0px). Also: `dbg_underrun` was TRUTHFUL - calling
+    it a lying instrument was wrong, and cost time.
+
+    (superseded) INSTRUMENT SUSPICION: exactly 7 of 90 frames fail detection
+    in all captures (before the write fix, after it, and single-buffered) -
+    a constant that survives unrelated RTL changes belongs to the measuring
+    apparatus, not the design. **NEXT: run the identical 90-frame measurement
+    against a `video_test60k/ddr3_top` build as a CONTROL.** If the known-good
+    production framebuffer shows the same 121/122 split and the same 7/90,
+    the capture card cannot resolve 1 px of vertical position and this whole
+    line of measurement needs a different instrument (e.g. photograph the
+    monitor, or compare a long-exposure capture). Only if the control is
+    CLEAN is the residual jitter real and ours.
+  * A2b. Fix both multi-bit CDCs (toggle + stable data), robustness.
+  * **A5 SCOPED: MiSTer's audio system is NOT transplantable.** `sys_top.v`
+    drives HDMI_TX_D[23:0]+HS/VS/DE/CLK and HDMI_I2S into an **external
+    ADV7513 transmitter**; `sys/i2s.v` is a ~40-line serialiser and there is
+    NO data-island, ACR, CTS or audio-sample-packet logic anywhere in
+    `sys/` - the ADV7513 does all of it in silicon. We generate TMDS
+    ourselves via OSER10, so hdl-util/hdmi (already vendored, already
+    carrying audio for all nine shipping games) is the only real option.
+    Remaining work is the raster-ownership swap: `hdmi.sv` is the timing
+    MASTER (cx/cy are outputs), while `ascal_v` generates its own raster, so
+    ascal_v needs external-raster inputs driven from cx/cy. Use the INTEGER
+    `AUDIO_CLK_DELAY = 74250*1000/AUDIO_RATE/2` divider from
+    ddr3_framebuffer - a fractional-exact one made dropouts WORSE (roadmap
+    item 1) and a declared-vs-actual mismatch was the original 50% rate lie.
+  * A3. Fix the `vmax` off-by-one - the bottom white border is missing
+    (top/left/right render). Static, not a wobble source.
+  * A4. Fix or remove `dbg_underrun`: it reads F (>=15/frame) while the
+    picture is correct, so it is lying. A lying instrument is worse than
+    none. Suspect the read-completion toggle, not real starvation.
+  * A5. **Add the 1 kHz sine + `tools/audio_dropout_check.py` to the ascal
+    rig** (it has HDMI audio clock plumbing but no tone and no measurement).
+    Gate: match BRAM's 0 lost cycles in 15 s, or at least DDR3's 1.
+  * A6. Run a REAL core (MCR-2 Domino) through it, not a test pattern.
+  * A7. Soak-test a FLASHED build - also settles the production-reboot
+    question below.
+  * Only if promoted: bilinear / sharp-bilinear (suspect 3's real fix, and
+    where CK3001 and the DSPs live - this is the risky part of the port).
+
+**Production-reboot question (asked 2026-07-28).** Needing frequent reboots
+during this session is most likely a DEVELOPMENT artifact: each
+`openFPGALoader` SRAM load restarts five PLLs and the DDR3 controller
+mid-flight, dozens of times per session, whereas production configures once
+from SPI flash and stays up. The chip is cool to the touch (not thermal) and
+the FT2232 re-enumerated mid-session, pointing at USB/reset. **This is a
+hypothesis, not a result** - A7 is what would actually settle it. Note it
+also lines up with the "a RECONFIG recovers it" lead in roadmap item 1.
+
+## STATUS 2026-07-29 — read this first
+
+### ascal_v IN THE MCR-3 CORE — IT FITS (2026-07-29)
+`src/video/ascal_fb.sv` is a **drop-in replacement for `ddr3_framebuffer`**
+built on ascal_v: same port list plus two extra inputs (`i_ce`, `i_de`),
+because ascal_v needs the pixel tick and the active-video LEVEL separately -
+`fb_we` is their AND and drops between pixels, which would look like one line
+per pixel to the input capture. Swapping a core is a module-name change plus
+two wires (`pixel_tick`, `cap_active` already exist in the MCR tops).
+
+**Builds clean in `mcr3_console60k`** - no errors, PA1019 absent, no
+undeclared symbols:
+| resource | ddr3_framebuffer | ascal_fb | delta |
+|---|---|---|---|
+| Logic | 13338 | 13590 | +252 |
+| Registers | 8613 | 8688 | +75 |
+| CLS | 9893 | 10096 | +203 |
+| **BSRAM** | **88/118** | **98/118 (84%)** | **+10** |
+| DSP | 1 | 2 | +1 |
+**20 BSRAM blocks to spare.** (The merged 9-game core at 114/118 would NOT
+fit - 124 needed. Halving `MAX_WIDTH` reclaims nothing: Gowin allocates BSRAM
+by WIDTH, and both the line buffer and write FIFO are 128 bits. Narrowing
+`N_DW` to 64 is the lever if those blocks are ever needed.)
+
+**RUNNING — TAPPER RENDERS CORRECTLY THROUGH ascal_v (2026-07-29).** Clean
+colours, sprites and text, no visible glitches. This is the first time ascal_v
+has scaled REAL GAME CONTENT rather than the test pattern.
+
+**Root cause of the calibration failure: ascal_v was not held in reset until
+DDR3 finished training.** `ddr3_framebuffer` holds its own state machines in
+reset via `ddr_rst`; my wrapper reset ascal_v on `rst_n` alone, so it started
+issuing Avalon reads and writes DURING the training sequence and calibration
+never completed. Fix:
+```
+.reset_n(rst_n & init_calib_complete & ~ddr_rst)
+```
+Measured: **6/6 loads calibrate**, matching the control's 8/8 (before the fix
+it was 0/many). **Any future master on this DDR3 controller must stay quiet
+until `init_calib_complete`** - the app interface is not tolerant of traffic
+during training, and the symptom is silent (builds clean, times clean, video
+path perfect, memory simply dead).
+
+**Debugging note worth keeping:** the control and the ascal build share the
+same top and therefore the SAME beacon format, so a silent SRAM load failure
+is indistinguishable from a real result. Four "c0" readings that looked like
+the control failing were actually leftover ascal bitstreams. **When A/B-ing
+two builds of the same core, give them distinguishable beacon markers.**
+
+(historical) NOT YET RUNNING: DDR3 does not calibrate (beacon stuck at `c0`, black
+screen). The core itself runs - beacon counters advance and the format is
+the mcr3 one (`d0D LBA`), so this is bring-up of the wrapper, not the scaler.
+Already checked and matched against BOTH references
+(`ddr3_framebuffer.v` and `ascalv_top.sv`): DDR3 controller `rst_n` tied to
+`1'b1` (feeding the core reset in was wrong and was fixed), `pll_ddr3.reset`,
+`pll_mDRP_intf.rst_n(1'b1)`, `syn_keep` on `clk_x1` ONLY (adding it to `hclk`
+breaks the merge with the top's `fb_hclk` that the SDC constrains, giving
+TA2003/TA2004).
+**The VIDEO PATH IS PROVEN GOOD** - user reports HDMI SYNC with **grey
+borders and a black window**. Grey is ascal_v's own pillarbox fill (`0x20`),
+so its raster, the HDMI stack and the TMDS output are all working; black in
+the window is the line buffer returning zeros because DDR3 never calibrates.
+**Only the DDR3 link is broken.**
+
+**Ruled out by experiment (do not repeat):**
+  * `place_option` - already 2 in mcr3's build.tcl (CLAUDE.md's documented
+    "builds clean, DDR3 never trains" cause).
+  * DDR3 controller port wiring - diffed against `ddr3_framebuffer.v`
+    lines 185-220, equivalent.
+  * Controller `rst_n` - was wrongly fed the core reset; now `1'b1` like both
+    references. Real bug, fixed, but not the cause.
+  * `ddr3_framebuffer.v` left compiled alongside `ascal_fb` (it instantiates
+    its own pll_ddr3/gowin_pll_hdmi/DDR3 IP) - removed from `build.tcl`.
+    Correct hygiene, not the cause.
+  * PLL exhaustion - PLLA reports 5/8.
+  * `rw_check_on_ram` (mcr3 uses 1, the working ascal rig uses 0) - tried 0,
+    no change; reverted.
+
+**Still to try:** the ascal rig and this core differ mainly in DENSITY
+(13.6k logic / 98 BSRAM vs 4.7k / 28), and the Gowin DDR3 IP is known to be
+placement-sensitive. Suspect physical placement pressure rather than RTL -
+try constraining/floorplanning the DDR3 IP, or build a cut-down mcr3 (one
+game, no USB/SDRAM) to see whether calibration returns as density drops.
+Also worth diffing `clk50_pll`/`clk27` net properties (global vs local
+routing) between the two designs, since `clk_g` feeds calibration.
+
+### SCALER BACKLOG (after the line-glitch fix)
+**Cleanups (small, do first):**
+  * **DELETE `dbg_underrun`** - it measured 78-410 hits/frame with zero
+    correlation to real glitches; a lying instrument is worse than none.
+  * Remove the `ASCALV_TRACE` scaffolding and the leftover debug counters
+    (`cdc_*`, `short_cnt`, `collide_cnt`, fetch/latency) - they are compiled
+    into the current numbers and cost logic.
+  * Audio tone reads **982.6 Hz** instead of 1000 (-1.7%). The audio clock is
+    right (32004 Hz), so suspect truncation in `sine_gen`'s phase increment.
+    Cosmetic for a tone, but a systematic pitch error would carry into games.
+**Validation not yet done:**
+  * **Run a REAL game core through `ascal_v`** - it has only ever scaled the
+    test pattern.
+  * Soak-test a FLASHED (not SRAM) build; also settles the production-reboot
+    question.
+**Features:** see `docs/scaler_options.md` "Modes worth adding" - rotation for
+ROT90 cabinets is the highest-value one for this project, then interpolation,
+scanlines, integer scaling, aspect/overscan, 240p verification.
+
+### *** ascal_v LINE GLITCH FIXED *** (marker 5)
+Root cause was **two bugs in the Avalon handshake, not in the scaler logic**:
+
+1. **`rd_pending` was a ONE-CYCLE PULSE treated as a LEVEL.**
+   ```
+   always @(posedge avl_clk) begin
+       rq_s1 <= rq_tog; rq_s2 <= rq_s1;   // 2FF sync advances rq_s2 EVERY cycle
+       ...
+       A_RD: rq_s2 <= rq_s1;              // "consume"
+   wire rd_pending = (rq_s1 != rq_s2);    // therefore true for ONE cycle only
+   ```
+   The synchroniser itself advances `rq_s2`, so a request was visible for a
+   single cycle. **Any read issued while the FSM was not sitting in A_IDLE was
+   silently dropped** - the line never arrived and the raster showed stale
+   data. Fixed with a proper request LATCH (`rd_req`), set on the toggle edge
+   and cleared on acceptance, with SET taking priority over CLEAR.
+2. **`avl_waitrequest` was not transaction-specific.** It was
+   `!(wr_go || (rd_go && beat==0))`, so it went low on WRITE beats too; a
+   master sitting in its read state could mistake a write acceptance for its
+   own read and consume a request the bridge never saw. Now
+   `avl_read ? !(rd_go && beat==0) : avl_write ? !wr_go : 1'b1`.
+
+**Measured on hardware, exclusive capture device:**
+| metric | before (E) | after (5) |
+|---|---|---|
+| clean frame pairs | 94/292 | **342/342** |
+| wrong rows per pair | median 2, p90 6 | **0** |
+| band edge over 120 frames | 120/121/122 | **120 every frame** |
+| h-stripe duplicate rate | 0.333 | 0.333 (ideal) |
+Colour bars: 8, correct colours, 118-120 px. Picture verified LIVE (0
+identical consecutive pairs - always check this, a frozen image also scores
+0 wrong rows). **ascal_v now matches the shipping framebuffer's stability
+while scaling better than it (0.333 vs 0.385).**
+
+Both fixes are in `src/ascal/ascal_avl_ddr3.sv` and `src/video/ascal_v.sv`.
+The 4-slot ring is NOT needed for this and was set aside (WIP at
+`scratchpad/ascal_v.ring_wip`); the ping-pong is correct once requests stop
+being dropped. Note the ring exposed the bug precisely because it issues reads
+back-to-back - a good stress pattern to keep in mind.
+
+### MERGED 9-GAME CORE REBUILT WITH THE PLL FIX — user-verified good
+Rebuilt `mcr23_console60k` (PA1019 absent, no negative slack, no undeclared
+symbols, 10684 registers / 18%, 114/118 BSRAM as documented) and SRAM-loaded it.
+**User played Timber with HDMI audio and reported NO dropouts - "1000% better".**
+That is the acceptance signal; take it over any number below.
+
+**METHOD WARNING - `blackdetect` IS INVALID ON GAME CONTENT.** The soak
+reported 22 intervals / 5.21% black, but games legitimately go dark (attract
+transitions, level changes, dark scenes) and every OSD game switch reloads ROMs
+and intentionally drops the raster. The test pattern was a valid subject
+precisely because it never goes black. **For game cores, use the user's eyes or
+a content-independent signal (e.g. TMDS lock, or a frozen-frame detector), not
+black-frame counting.**
+
+One transient seen mid-session: video went black while the core stayed alive
+(beacon counters advancing, `c1 r0`), and a reconfiguration brought it back.
+Unexplained, seen once, and not reproduced after the clean reload - watch for
+it rather than treat it as closed.
+
+### OPEN: picture not centred, on BOTH VGA and HDMI (reported 2026-07-29)
+Affects analog VGA as well as HDMI. VGA is driven straight from the core's
+raster and never passes through the framebuffer, so **this is in the CORE's
+active-window placement, not the scaler**. `ddr3_framebuffer` centres a
+`disp_width=960` window at x=160 of 1280 automatically, so the HDMI side is
+symmetric by construction. Look at the per-game hstart/vstart / active-window
+constants in the core, not at the video path. Cosmetic, separate from the
+scaler work.
+
+**Landed and verified:**
+  * **HDMI sync loss FIXED across every core** - `gowin_pll_hdmi27.v` VCO was
+    1485 MHz, outside the 700-1400 MHz spec, recorded for months as an
+    "accepted PA1019 warning". Now `MDIV_SEL=41, MDIV_FRAC_SEL=2,
+    ODIV0_SEL=3` (VCO 1113.75 MHz, same 371.25 MHz out). PA1019 is gone from
+    the log; soak-verified **30 min / 0.000% black**, confirmed on the monitor.
+    The PLL is SHARED - `mcr2_console60k`, `video_test60k`, `merge_probe` and
+    the shipping game cores all get this fix. **Re-testing the merged 9-game
+    core is the highest-value open item.**
+  * **`dvi_tx_ext` -> hdl-util `hdmi`** in `ascal_test60k`: raw DVI measured
+    21.7% black, HDMI 0.00%. Brought **working audio** (1 kHz tone, 0
+    dropouts) to that rig for the first time.
+  * **`ascal_v` scales pixel-exactly** - h-stripe duplicate rate 0.333
+    (ideal; the shipping framebuffer is 0.385), colour bars at exactly 120 px,
+    all six pattern bands correct. From "ascal cannot be compiled on this
+    toolchain" to this in one session.
+  * **The simulation is now trustworthy** - deterministic (explicit `ram[]`
+    init) and representative (two independent 74.25 MHz clocks). This is the
+    single most useful artifact for whoever continues.
+
+**Open:** ~2 wrong rows per frame in `ascal_v` (details below), the 4-slot
+ring that should fix it (31-line producer wedge), and the interpolators that
+were never ported.
+
+**New doc:** `docs/scaler_options.md` - decision guide comparing all four
+scaler paths with measured numbers, plus the measurement discipline. Start
+there if you are new to this area.
+
+## ascal_v — forward plan (agreed 2026-07-28)
+
+Four things are outstanding beyond the last rendering defect. Ordered by what
+blocks use of the core, not by how interesting they are.
+
+### 1. Sync loss — HIGHEST PRIORITY
+**CORRECTION 2026-07-28: the "7/90 black frames on every build" figure was
+WRONG and must not be quoted.** Those 7 frames are at indices **0-6 of every
+capture** - the capture card's lock-up time at the start of a recording, not
+dropouts. A 90-frame grab is only ~1.5 s, far too short to catch a fault the
+user sees "every so often". Any future dropout measurement must (a) discard
+the first ~10 frames and (b) run for MINUTES. Use
+`ffmpeg -vf blackdetect=d=0.02:pix_th=0.08 -f null -`, which reports black
+intervals directly, rather than grabbing frames and thresholding.
+**MEASURED PROPERLY 2026-07-28 (5 min each, same method, back to back):**
+| build | black intervals in 300 s | black time |
+|---|---|---|
+| ascal_v (marker 9) | **26** | **6.5%** |
+| **ddr3_framebuffer control** | **0** | **0.0%** |
+**The sync loss is ascal_v's output path, NOT the platform.** The earlier
+"identical on every build, therefore downstream of both scalers" conclusion
+was wrong - it came from the capture lock-up artifact above.
+Corroborating: the user's analog **VGA output never drops**, and VGA is driven
+straight from the source raster, bypassing scaler, DDR3 and TMDS. So the core
+and its timing are fine. The FPGA also keeps running throughout (643 beacon
+lines logged across the control run).
+
+**PRIME SUSPECT: the rig emits raw DVI, not HDMI.**
+| | control | ascal rig |
+|---|---|---|
+| output stage | hdl-util `hdmi`, `DVI_MODE(0)` | `dvi_tx_ext` |
+| signalling | HDMI: AVI InfoFrames + data islands | raw DVI, no infoframes |
+| 5-min sync | 0% black | 6.5% black |
+Many HDMI sinks re-lock periodically without AVI InfoFrames inside a timeout,
+which matches the symptom (irregular 0.4-2.4 s blackouts on BOTH the monitor
+and the capture card).
+**So roadmap items 1 and 2 are ONE job:** swapping `dvi_tx_ext` -> hdl-util
+`hdmi` should fix the sync loss AND deliver audio, with a module already
+proven on this silicon across nine shipping games. Do that next.
+**HDMI SWAP DONE AND MEASURED (marker C).** `dvi_tx_ext` replaced with
+hdl-util `hdmi` (VIDEO_ID_CODE 4, DVI_OUTPUT 0, AUDIO_RATE 32000) + the 1 kHz
+`sine_gen` tone + the INTEGER `AUDIO_CLK_DELAY` divider. `ascal_v` gained
+`ext_rast`/`ext_cx`/`ext_cy` so the hdmi module is the timing MASTER and the
+scaler follows its cx/cy (hmin/hmax shifted 2 px to absorb the scaler's
+2-cycle pixel pipeline). Build clean: 4968 registers (was 4284), 28/118 BSRAM,
+no undeclared symbols. **Audio now exists in this rig for the first time.**
+Result, one consistent parser over all three 5-minute logs:
+| build | intervals | black time |
+|---|---|---|
+| ascal_v + raw DVI | 31 | **21.7%** |
+| ascal_v + hdl-util HDMI | 32 | **7.8%** |
+| ddr3_framebuffer control | **0** | **0.0%** |
+**A real ~3x improvement, but NOT a fix.** (Note: an earlier hand parse of the
+DVI log gave 6.5%; that parse was faulty - always use the same extractor for
+both sides of a comparison.)
+
+**SYNC LOSS IS FIXED 2026-07-28 - and the residual was MY MEASUREMENT.**
+Exclusive-device 3-minute blackdetect on the HDMI build: **0 intervals,
+0.00% black.** The user independently confirmed on the monitor that it no
+longer cuts out. The earlier "7.8% residual" was self-inflicted: a SECOND
+ffmpeg was grabbing a frame from `/dev/video4` 25 s into that run, and two
+processes contending for one v4l2 device produce exactly that signature.
+**Measurement discipline for this rig, learned twice now:**
+  * nothing else may touch `/dev/video4` during a dropout measurement -
+    `pgrep -f ffmpeg` first, and never grab a preview frame mid-run;
+  * discard events starting at t<0.5 s (capture card lock-up);
+  * use ONE parser for both sides of any comparison.
+So: `dvi_tx_ext` -> hdl-util `hdmi` took ascal_v from 21.7% black to **0.00%**,
+matching the ddr3_framebuffer control. Raw DVI without AVI InfoFrames was the
+whole cause.
+
+**AUDIO NOW EXISTS in the rig, and the first measurement found a real bug.**
+Captured off the MiraBox (`arecord -D hw:3,0`, MS2109): tone present but at
+**7852 Hz instead of 1000**, with 628k waveform glitches. Cause: `sine_gen`'s
+`sample_en` is a ONE-CYCLE ENABLE but was fed `clk_audio`, which is a real
+50%-duty CLOCK for the hdmi module - so the phase accumulator advanced ~1160
+times per sample period. Fixed by deriving a single-cycle tick from
+`clk_audio`'s rising edge. **Keep the two signals distinct: hdmi needs the
+clock, sine_gen needs the pulse.**
+
+**2026-07-28 LATE — THE REAL FAULT IS TIME-DEPENDENT AND LOOKS LIKE DDR3.**
+Sequence observed with the user watching: the ddr3_framebuffer CONTROL build
+(marker DD - the framebuffer all nine shipping games use) looked **perfect
+immediately after flashing**, then began **flashing/dropping a few minutes
+later on the same configuration**. That is exactly the "degrades on one
+config, a RECONFIG recovers it" pattern in roadmap item 1.
+**This invalidates the freshness of every dropout number measured so far** -
+including "control = 0.00% black over 5 min", which was taken right after a
+flash, i.e. precisely when the fault is absent. **Any future dropout
+measurement must record TIME SINCE CONFIGURATION and run long enough to cross
+the degradation point.**
+
+Correlation that points at the cause:
+| path | uses DDR3? | behaviour |
+|---|---|---|
+| analog VGA (straight off the source raster) | **no** | **never drops** |
+| ascal_v -> HDMI | yes | degrades |
+| ddr3_framebuffer -> HDMI | yes | degrades |
+Everything that touches DDR3 degrades and recovers on reconfig; the one path
+that bypasses it is flawless. A reconfig re-runs DDR3 calibration, which is
+the obvious thing that would heal on reload and drift while sitting. The
+beacon still reports `c1 r0` (calib complete, no reset) while degraded, so the
+controller does NOT know it has a problem - do not trust that flag alone.
+**Also note a monitor-compatibility layer on top of this:** one HDMI monitor
+would not lock at all while a second monitor and the capture card were both
+perfect on the same bitstream. Keep that separate from the DDR3 drift.
+
+**PRIME SUSPECT FOUND: the HDMI PLL VCO IS OUT OF SPEC.**
+Captured the board WHILE DEGRADED (40 s, control build): 51 black frames and
+44 frozen frames - but the colour bars in a surviving frame are **perfect**
+(8 bars, 118-120 px, exactly correct RGB). **So DDR3 data is fine; the LINK
+drops.** That redirects suspicion from memory to clocking.
+`src/ddr3fb/gowin_pll_hdmi27.v` runs `MDIV_SEL=55, ODIV0_SEL=4` from 27 MHz:
+**VCO = 1485 MHz, outside the GW5A PLLA spec range of 700-1400 MHz.** This is
+the PA1019 warning `CLAUDE.md` records as the single ACCEPTED exception
+("NESTang's standard config, confirmed working"). **That acceptance now looks
+wrong** - an out-of-spec VCO is exactly what works cold and goes marginal with
+time/temperature.
+It explains every observation: analog VGA never drops (different PLL,
+`gowin_pll_mcr2`); both scalers degrade identically (both share this chain);
+recovers on reconfig (PLL relocks cold); degrades while sitting; and the
+picture content is intact whenever there IS a picture.
+**FIXED AND SOAK-VERIFIED 2026-07-28.** `MDIV_SEL=41, MDIV_FRAC_SEL=2,
+ODIV0_SEL=3` applied to `src/ddr3fb/gowin_pll_hdmi27.v`. **PA1019 is now
+ABSENT from the build log**, and a 30-minute soak with NO reconfiguration
+gave **0 black intervals / 0.000% black**, independently confirmed on the
+monitor. The old PLL degraded within a few minutes of every configuration.
+Build otherwise unchanged (4969 registers, 28/118 BSRAM).
+`CLAUDE.md` updated: the "accepted PA1019 exception" is deleted and PA1019 is
+a build-breaker again with no exceptions. The PLL is shared, so this should
+fix HDMI dropout on `mcr2_console60k`, `video_test60k`, `merge_probe` and the
+shipping game cores too - **worth re-testing the merged 9-game core next.**
+
+(historical) FIX - same 371.25 MHz with an in-spec VCO:
+| MDIV | ODIV0 | VCO | out | |
+|---|---|---|---|---|
+| 55 + 0/8 | 4 | **1485.00** | 371.25 | out of spec (current) |
+| **41 + 2/8** | **3** | **1113.75** | 371.25 | **in spec - use this** |
+| 27 + 4/8 | 2 | 742.50 | 371.25 | in spec (fallback) |
+Set `MDIV_SEL=41, MDIV_FRAC_SEL=2, ODIV0_SEL=3`. **Verify PA1019 disappears
+from the build log** (that warning becomes a real pass/fail signal again), then
+soak-test for >30 min WITHOUT reconfiguring. If it holds, update `CLAUDE.md` -
+the "accepted PA1019 exception" section is then actively harmful advice, and
+the same PLL is used by the shipping game cores, so this would fix them too.
+
+**IF THE PLL FIX DOES NOT HOLD:** `src/ascal/avl_ddr3_memtest.sv` already exists and
+drives the same bridge with an address-derived payload (a wrong ADDRESS fails
+as loudly as wrong DATA); it previously ran zero mismatches over thousands of
+passes. **Run it for tens of minutes without reconfiguring** and watch for
+errors appearing over time. If they do, this is DDR3 calibration drift and the
+fix belongs in the controller (periodic recalibration / read-leveling), not in
+any scaler. If it stays clean while HDMI still degrades, the drift is in the
+HDMI/TMDS clocking instead.
+
+**AUDIO MEASURED GOOD after the tick fix** (build marker E), captured off the
+MiraBox MS2109 at 48 kHz for 20 s:
+| metric | before tick fix | after |
+|---|---|---|
+| tone | 7852 Hz | **982.6 Hz** (expect 1000) |
+| waveform glitches | 628160 (31408/s) | **87** (4.35/s) |
+| real dropouts | - | **0** |
+The one "dropout" the checker reports sits at **t=0.003 s** and is the
+`arecord` lock-up at capture start - the exact analogue of the video capture
+artifact. After t=1 s the stream is continuous (the 4.2% "silence" is just the
+sine's zero crossings). **So: HDMI video holds sync 100%, and audio runs clean
+with no dropouts.** Both A5 gates met.
+
+**Minor open item:** the tone reads 982.6 Hz rather than 1000 (-1.7%). The
+audio clock itself is right (`AUDIO_CLK_DELAY`=1160 -> 32004 Hz, +0.013%), so
+this is most likely truncation in `sine_gen`'s phase increment, or the capture
+card's 32->48 kHz resampling. Cosmetic for a test tone; worth checking before
+real game audio goes through, since a systematic pitch error would carry. **This is what makes the platform
+unusable** - it is why the DDR3 path was rejected, and no amount of scaler
+work touches it. Ties directly into roadmap item 1 (HDMI dropout) and the
+"a RECONFIG recovers it" lead. Attack this before polishing the scaler.
+
+### 2. HDMI instead of DVI + AUDIO (one job, not two)
+`ascal_test60k` uses `dvi_tx_ext`, which is **DVI-only - there is no audio
+path at all** (see the note at the top of `ascalv_top.sv`). Both items are the
+same piece of work: bring in hdl-util `hdmi.sv`.
+  * **MiSTer's audio is NOT transplantable** - `sys_top.v` drives an external
+    **ADV7513** over parallel RGB + I2S, and `sys/i2s.v` is a ~40-line
+    serialiser. There is NO data-island/ACR/CTS/audio-packet logic anywhere in
+    MiSTer's `sys/` because the ADV7513 does it in silicon. We generate TMDS
+    ourselves via OSER10, so hdl-util (already vendored, already carrying
+    audio for all nine shipping games) is the only real option.
+  * **The work is raster ownership.** `hdmi.sv` is the timing MASTER (`cx`/`cy`
+    are outputs); `ascal_v` generates its own raster. Give ascal_v external
+    raster inputs driven from `cx`/`cy` - both are 720p/1650x750 on the same
+    74.25 MHz clock, so everything downstream is unchanged (costs a 2-pixel
+    horizontal offset from the pixel pipeline, correctable).
+  * **Use the INTEGER divider** `AUDIO_CLK_DELAY = 74250*1000/AUDIO_RATE/2`
+    copied from `ddr3_framebuffer.v`. A fractional-exact divider made dropouts
+    WORSE (roadmap item 1) and a declared-vs-actual rate mismatch was the
+    original 50% rate lie. Then add the 1 kHz sine +
+    `tools/audio_dropout_check.py`; gate on BRAM's 0 lost cycles in 15 s.
+
+### 3. Interpolation — the feature we deliberately removed
+The port is **nearest-neighbour only**. At 1.5x that maps 480->720 as
+1,2,1,2..., so anything in motion crawls - this is inherent, not a bug, and it
+is a real part of the "shimmer". ascal's answer is bilinear / sharp-bilinear /
+bicubic / polyphase (`mode[2:0]`, with `MASK` deciding which are BUILT).
+Restore cheapest-first: **nearest -> bilinear -> sharp-bilinear**, leaving
+bicubic/polyphase last. **Risk to plan for:** that is where all the DSPs go and
+the likely `CK3001` trigger (see the four GowinSynthesis defects above), and it
+is the reason the port was scoped to nearest in the first place. Sharp-bilinear
+is the accepted sweet spot for arcade content, so stopping there is a
+legitimate end state.
+
+### 4. Cleanups carried by the current code
+  * **DELETE `dbg_underrun`** - measured 78-410 hits/frame with ZERO
+    correlation to real glitches. The toggle-based `rd_busy` is not a valid
+    completion signal; replace with a word count if a guard is ever needed.
+  * Remove the `+define+ASCALV_TRACE` scaffolding once the last defect is
+    closed (it is `ifdef`-guarded, so it costs nothing meanwhile).
+  * `sim/vsynth/obj_dir/` build artifacts are tracked in git - add a
+    `.gitignore` entry.
+  * `mcr_testpattern` gained a `FREEZE_BAR` parameter (default 0, hardware
+    unaffected); keep it, the multi-frame signature comparison needs it.
+
+## Video dropout A/B rig — `video_test60k/` (2026-07-28)
+
+Matched pair, same test pattern + same 1 kHz sine + same hdl-util HDMI stack,
+differing ONLY in framebuffer architecture. Build with
+`gw_sh build_bram.tcl` / `gw_sh build_ddr3.tcl` from `video_test60k/`.
+
+  * `bram_top.sv` - nestang architecture ported from nes2hdmi.sv:
+    dual-port BRAM, writer frame-stateless, 1-cycle read, ONE output clock
+    domain. New `src/video/bram_scaler.sv`.
+  * `ddr3_top.sv` - the same test through gbatang `ddr3_framebuffer`.
+
+RESULTS (capture card video + `arecord` from the MS2109, analysed with
+`tools/audio_dropout_check.py`):
+
+| | BRAM | DDR3 |
+|---|---|---|
+| Logic | 1788 (3%) | ~4500 (8%) |
+| BSRAM | 90/118 | ~9 |
+| hclk Fmax | **106.6 MHz** | 82-83 MHz |
+| picture | correct | correct |
+| audio, 15 s | **0 lost cycles** | **1 lost cycle** |
+
+Both scale CORRECTLY (unlike ascal). The BRAM build has ~24 MHz more hclk
+margin and measurably cleaner audio - one lost cycle in 15 s on DDR3 matches
+the "slight clicks" heard on hardware. BRAM cost is 90/118 BSRAM at
+512x480x6 (RGB222); a palette index would cut that as it does for nestang.
+Both show a slowly drifting TEAR LINE - expected and benign: single-buffered
+and free-running, exactly like nestang, so a 60.09 vs 60.00 Hz mismatch
+tears rather than dropping frames.
+
+NOT reproduced: "raining white pixels" at the left edge seen on a real
+monitor does not appear through the capture card (MJPEG likely smooths
+single-pixel noise). Frame-to-frame instability measures the same on both.
+
+NOTE the test rig is reportedly much cleaner than the PRODUCTION core, which
+shares this same DDR3 framebuffer. That points at something the rig does not
+have - the core's own audio path, SDRAM contention, OSD, or ROM loader -
+rather than at the framebuffer itself. Worth bisecting there next.
+
 ## ascal (MiSTer scaler) evaluation — `ascal_test60k/`
 
 **Status 2026-07-25: PROVEN ON HARDWARE.** A standalone bring-up rig
@@ -635,6 +1559,28 @@ Open items:
    physical NIC (`enp4s0`, d8:5e:d3:81:75:af). Docker bridge MACs are
    regenerated when the network is recreated, so the licence can silently
    stop working. Consider re-requesting it against enp4s0.
+
+   **BRESENHAM REFORMULATION (2026-07-28) — ALSO NO CHANGE.** ascal's carry
+   decision emulates a SIGNED compare inside an unsigned `natural` via
+   `(acc_next - 2*o_hsize + 8*OHRESH) MOD 8*OHRESH >= 4*OHRESH`. Decoded that
+   is plain Bresenham, so it was replaced with the direct form
+   `IF o_hacc_next >= 2*o_hsize THEN ... - 2*o_hsize` - no MOD, no sign trick,
+   the exact formulation in src/video/bram_scaler.sv which Gowin compiles
+   CORRECTLY on this device. Verified semantically identical via
+   ghdl synth + verilator (bars at 81-158,161-238,... unchanged). Built clean
+   (0 errors, 0 setup/0 hold). Hardware: byte-identical wrong output.
+
+   **KEY OBSERVATION.** The carry arithmetic has now been rewritten FOUR ways
+   - original modular form, explicit-width unsigned expression, unsigned
+   signals with wraparound, and plain compare - and hardware output is
+   byte-identical every time. If the arithmetic itself were being miscompiled,
+   changing its form should change the failure somehow. That it does not
+   suggests the carry is computed CORRECTLY and something downstream is wrong.
+   BEST REMAINING PROBE (untested): `o_ihsizem <= o_ihsize + o_off(0) - 2`,
+   which sets when a line ENDS (`o_last <= o_hacpt >= o_ihsizem`). A line
+   ending at ~1/4 of the source is precisely our symptom, and o_ihsizem has
+   never been observed on hardware. It is also one of the three signals the
+   GHDL sim guard patches, so sim and hardware differ there by construction.
 
    **WHERE THIS STOPS.** Every targeted hypothesis is exhausted. The fault
    is a GowinSynthesis miscompile of ascal's horizontal Bresenham advance;

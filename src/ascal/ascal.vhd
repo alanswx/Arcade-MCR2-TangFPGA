@@ -3063,8 +3063,8 @@ BEGIN
 	dbg_o_hacc   <= std_logic_vector(to_unsigned(o_hacc,16));
 	dbg_o_dcpt   <= std_logic_vector(to_unsigned(o_dcptv(14),12));
 	dbg_i_himax  <= i_himax;
-	dbg_i_hsize  <= o_hburst;                -- bursts per input line
-	dbg_o_ihsize <= o_copylev*64 + o_hbcpt;  -- {copy queue level, burst idx}
+	dbg_i_hsize  <= o_off(0)*16 + o_pshift;  -- {burst offset, shift count}
+	dbg_o_ihsize <= to_integer(o_hacpt);     -- source pixels consumed so far
 	dbg_i_hdown  <= i_hdown;
 
 	----------------------------------------------------------------------------

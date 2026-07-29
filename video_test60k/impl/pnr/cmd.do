@@ -1,0 +1,18 @@
+-d /home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/gwsynthesis/video_ddr3.vg
+-p GW5AT-60B-PBGA484A-1
+-pn GW5AT-LV60PG484AC1/I0
+-cst /home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/ddr3.cst
+-cfg /home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/impl/pnr/device.cfg
+-sdc /home/alans/mister/Arcade-MCR2-TangFPGA/video_test60k/src/ddr3.sdc
+-bit
+-tr
+-ph
+-timing
+-cst_error
+-convert_sdp32_36_to_sdp16_18
+-place_option 2
+-route_option 0
+-clock_route_order 0
+-correct_hold 1
+-route_maxfan 23
+-global_freq 100.000
