@@ -77,12 +77,13 @@ this layout, and the roster order (kick, solarfox, kickman) matches NAME12–14.
 
 Build: `tools/gw_build.sh mcr123s_console60k`.
 
-## HARDWARE 2026-07-30: Wacko, Kick, Kickman, Solar Fox and Spy Hunter all play
+## HARDWARE 2026-07-30: 7 of 15 confirmed — ALL of MCR-1 and ALL of MCR3Scroll
 
-Five of the fifteen confirmed on the first session, including **Kick and Solar
-Fox for the first time on any build**, and **Spy Hunter WITH SOUND** - which is
-the FX68K running on this platform for the first time. Between them they
-exercise nearly everything that was unproven:
+Wacko, Kick, Kickman, Solar Fox, Spy Hunter, Turbo Tag and Crater Raider all
+play. **Kick, Solar Fox, Turbo Tag and Crater Raider had never run on any
+build**, and **Spy Hunter runs WITH SOUND** - the FX68K on this platform for the
+first time. Between them they exercise everything that was structurally
+unproven:
 
 | Mechanism | Exercised by |
 |---|---|
@@ -94,7 +95,10 @@ exercise nearly everything that was unproven:
 | Timing closure from the new build options | all |
 | **FX68K / Cheap Squeak Deluxe**, the `fx68k_lc` binding workaround, `$readmemb` finding the microcode | Spy Hunter sound |
 | **CSD 68000 ROM read from SDRAM** (`cpu2`) and its 16-bit byte-lane split (u17/u18 low, u7/u8 high) | Spy Hunter sound |
-| MCR3Scroll roster, decode, char plane, sprite plane assembly | Spy Hunter |
+| MCR3Scroll roster, decode, char plane, sprite plane assembly | all three titles |
+| MCR3Scroll **bg plane order** - the uncrossed guess that could have cost a day, as it did on Timber | crater, spyhunt, turbotag |
+| Landscape-cabinet handling (excluded from ROT_MASK) | Crater Raider |
+| MRA byte patch at 0x0B2C and the repeated-ttprog5 CPU layout | Turbo Tag |
 | **Sound ROM read from SDRAM (`cpu3`)** - the 8 blocks that made 15 games fit | Kick + Kickman, which are SSIO-ONLY so their audio cannot come from a CSD |
 
 Still open:
@@ -102,14 +106,13 @@ Still open:
 * A **regression pass over the nine MCR-2/MCR-3 games** in THIS build (Wacko
   aside) - they were verified in `mcr23_console60k`, but the shared scratch
   RAM, the trimmed CPU ROM and the SDRAM sound ROM are all new since.
-* **Turbo Tag** - the harshest CSD test, because `mod_turbo` disables the SSIO
-  board entirely, so it is silent unless the Cheap Squeak Deluxe carries it
-  alone. Also the only game needing the MRA byte patch at 0x0B2C.
-* **Crater Raider** - SSIO-only, no CSD, and the only LANDSCAPE cabinet in the
-  roster (not in `ROT_MASK`).
-* **MCR3Scroll bg plane order** - Spy Hunter looking right is good evidence the
-  uncrossed guess was correct, but Crater Raider and Turbo Tag are separate
-  ROM sets and could still be wrong.
+* Whether **Turbo Tag has AUDIO** specifically. It is the only game with no
+  SSIO board at all (`mod_turbo` disables it), so it is silent unless the CSD
+  carries it alone. Spy Hunter already proved the CSD path, so this is a
+  nice-to-confirm rather than a risk.
+* Everything else here is polish, not risk: see `TODO.md` for the HDMI soak,
+  retiring the bring-up diagnostics, control/DIP tuning and the scaler
+  decision.
 
 ## RESULT: 15 games CLOSE CLEANLY on the 60K
 
