@@ -331,6 +331,45 @@ next real milestone" within each section.
       **NOT hardware-verified** - 4c left it "not disproven, not verified", and
       that is still true. Side effect: the stored-ROM audit's `snd` leg (beacon
       E4) has no port B to sweep and reads 0 by design.
+   **4a-ter. MCR-1 FOLDED IN AND MEASURED (2026-07-30) - `mcr123s_console60k`,
+   15 games, four families. 127/118 - OVER BY 9.**
+   MCR-1 costs **+10 blocks** (117 -> 127) and that is AFTER the big win:
+   - **The 32 KB sprite ROM is now SHARED between MCR-1 and MCR-2.** Their
+     `sprite_graphics` instances are structurally identical (dpram 8 x 32K,
+     port A read on clock_vidn at `sp_code_line_mux`), and only one core is
+     ever out of reset, so one RAM serves both - hoisted to the top exactly
+     like the bg pair. **16 blocks, zero timing risk, no SDRAM migration.**
+     This retires lever 4 below for MCR-1's half of the problem.
+     Behind `SP_EXTERNAL` (mcr1+mcr2) and `BG_EXTERNAL` (mcr1) generics,
+     default 0, so mcr2_primer25k / mcr2_console138k / mcr2_console60k /
+     mcr1_console60k are untouched.
+     TRAP: MCR-2 writes its sprite ROM through `{~dl_addr[14], dl_addr[13:0]}`
+     - bit 14 INVERTED - while MCR-1 writes a plain address. That twist used
+     to live inside mcr2.vhd; the top now reproduces it per loading family.
+   - CPU ROM (32 KB program), sound ROM (in SDRAM) and the bg pair (4 KB
+     planes at the bottom of the shared 16 KB) all shared as well.
+   So the remaining +10 is MCR-1's own SCRATCH RAM: wram 2K, video_ram 1K,
+   sprite_ram 512, cache 512. Logic went 60% -> 74%, registers 25% -> 28%.
+   **Levers for the last 9 blocks, cheapest first:**
+   1. **CPU ROM 64 KB -> 56 KB: -4, low risk.** MEASURED: the largest real
+      program in the roster is 57344 bytes = 0xE000 exactly (tapper, timber,
+      dotron, crater, spyhunt; turbotag's 0x10000 is 56 KB of ROM plus 8 KB of
+      MRA zero padding). Every core's `cpu_rom_addr` stays below 0xE000 in
+      normal operation - mcr3scroll's xor-twist maxes at 0xDFFF, and
+      mcr2/mcr3 pass cpu_addr straight through but the Z80 map above 0xDFFF
+      is RAM/IO, never ROM. Needs a depth parameter on `dpram` plus
+      `main_pad_to=0xE000` for the scroll family.
+   2. **Share the per-core SCRATCH RAMs: -9 or so, invasive.** All four cores
+      have `wram` (2K), `sprite_ram` (512) and `sprites_ram_cache` (512) of
+      identical shape, and only one core runs at a time - the same argument
+      that just worked for the sprite ROM. Twelve more port moves across four
+      vendored cores, and these have CPU WRITE ports, so it is more than the
+      read-only hoists done so far.
+   3. **GW5AST-138 (298 blocks): ends the whole problem**, plus 138k LUT with
+      logic already at 74%. `mcr2_console138k/` is a stale pre-fix top and
+      CLAUDE.md warns the net->ball map is SOM-specific.
+   Nothing in `mcr123s_console60k` has been built to a bitstream or run.
+
    Levers NOT needed yet, kept for MCR-1:
    3. CPU ROM 64 KB -> 56 KB (-4). Every MCR-2/3/Scroll program ROM ends at
       0xDFFF; above that the Z80 map is RAM/IO. Needs a depth parameter on

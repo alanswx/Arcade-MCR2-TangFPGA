@@ -68,6 +68,10 @@ def main():
     # tron(1), wacko(2), kroozr(3), twotiger(4), domino(5); mcr3 = tapper(0).
     # mcr3scroll OSD order = crater(0), spyhunt(1), turbotag(2), matching
     # mcr23s_console60k_top.sv NAME9/NAME10/NAME11.
+    # NOTE the roster ORDER here is the pack slot order per family, and it
+    # must match each top's OSD NAME list. The 15-game merged top
+    # (mcr123s_console60k) lists mcr1 as kick(12), solarfox(13), kickman(14),
+    # i.e. the same order as this list.
     ROSTER = ["kick", "solarfox", "kickman",
               "shollow", "tron", "wacko", "kroozr", "twotiger", "domino",
               "tapper", "timber", "dotron",

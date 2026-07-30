@@ -154,7 +154,23 @@ generic(
  GFX1_1_INIT  : string  := "rom_gfx1_1.hex";
  GFX1_2_INIT  : string  := "rom_gfx1_2.hex";
  GFX2_INIT    : string  := "rom_gfx2.hex";
- GFX_LOADABLE : integer := 0
+ GFX_LOADABLE : integer := 0;
+ -- Hoists for the merged multi-family build (2026-07-30). Defaults 0 keep
+ -- mcr1_console60k exactly as it is: the RAMs stay inside and so does their
+ -- dl decode.
+ --   SP_EXTERNAL => 1 : the 32 KB sprite ROM moves to the top. MCR-2's is
+ --     structurally IDENTICAL (dpram 8 x 32K, port A read on clock_vidn at
+ --     sp_code_line_mux), so the merged top shares ONE between the families -
+ --     16 blocks at zero timing risk, a pure port move rather than the SDRAM
+ --     migration these 1-phase sprite pipelines cannot absorb.
+ --   BG_EXTERNAL => 1 : the two 4 KB bg planes move to the top's shared 16 KB
+ --     pair (MCR-3 sized). bg_addr is widened to 14 bits and the top
+ --     zero-extends; only the low 12 bits are ever driven.
+ SP_EXTERNAL  : integer := 0;
+ BG_EXTERNAL  : integer := 0;
+ -- See the same generic on mcr2/mcr3/mcr3scroll: "distributed_ram" puts the
+ -- 256x8 sprite line buffers in LUT RAM instead of whole BSRAM blocks.
+ SPRLINE_RAMSTYLE : string := "block_ram"
 );
 port(
  clock_40       : in std_logic;
@@ -193,6 +209,13 @@ port(
 
  snd_rom_addr   : out std_logic_vector(13 downto 0);
  snd_rom_do     : in std_logic_vector(7 downto 0);
+
+ -- Hoisted graphics RAMs, used only when the matching generic is 1.
+ sp_rom_addr    : out std_logic_vector(14 downto 0);
+ sp_rom_do      : in  std_logic_vector( 7 downto 0) := (others => '0');
+ bg_addr        : out std_logic_vector(13 downto 0);
+ bg1_do         : in  std_logic_vector( 7 downto 0) := (others => '0');
+ bg2_do         : in  std_logic_vector( 7 downto 0) := (others => '0');
  
  pause          : in  std_logic;
  
@@ -810,7 +833,7 @@ port map(
 
 -- sprite line buffer 1
 sprlinebuf1 : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1_we,
@@ -821,7 +844,7 @@ port map(
 
 -- sprite line buffer 2
 sprlinebuf2 : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2_we,
@@ -831,58 +854,83 @@ port map(
 );
 
 -- background graphics ROM G4
-bg_graphics_1 : entity work.dpram
-generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_1_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx1_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(11 downto 0),
- we_b   => bg_graphics_1_we,
- d_b    => dl_data,
- q_b    => open
-);
+bg_int : if BG_EXTERNAL = 0 generate
+  bg_graphics_1 : entity work.dpram
+  generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_1_INIT, LOADABLE => GFX_LOADABLE)
+  port map(
+   clk_a  => clock_vidn,
+   we_a   => '0',
+   d_a    => x"00",
+   addr_a => bg_code_line,
+   q_a    => bg_graphx1_do,
+   clk_b  => clock_vid,
+   addr_b => dl_addr(11 downto 0),
+   we_b   => bg_graphics_1_we,
+   d_b    => dl_data,
+   q_b    => open
+  );
+  bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11000" else '0'; -- 18000-18FFF
 
-bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11000" else '0'; -- 18000-18FFF
+  -- background graphics ROM G5
+  bg_graphics_2 : entity work.dpram
+  generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_2_INIT, LOADABLE => GFX_LOADABLE)
+  port map(
+   clk_a  => clock_vidn,
+   we_a   => '0',
+   d_a    => x"00",
+   addr_a => bg_code_line,
+   q_a    => bg_graphx2_do,
+   clk_b  => clock_vid,
+   addr_b => dl_addr(11 downto 0),
+   we_b   => bg_graphics_2_we,
+   d_b    => dl_data,
+   q_b    => open
+  );
+  bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11001" else '0'; -- 19000-19FFF
 
--- background graphics ROM G5
-bg_graphics_2 : entity work.dpram
-generic map( dWidth => 8, aWidth => 12, INIT_FILE => GFX1_2_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx2_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(11 downto 0),
- we_b   => bg_graphics_2_we,
- d_b    => dl_data,
- q_b    => open
-);
+  bg_addr <= (others => '0');
+end generate;
 
-bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(16 downto 12) = "11001" else '0'; -- 19000-19FFF
+-- HOISTED bg: the top owns a 16 KB pair shared with the other families and
+-- must clock port A on NOT clock_40 (read here on clock_vidn). MCR-1's planes
+-- are only 4 KB, so the top sees the address zero-extended to 14 bits.
+bg_ext : if BG_EXTERNAL /= 0 generate
+  bg_addr          <= "00" & bg_code_line;
+  bg_graphx1_do    <= bg1_do;
+  bg_graphx2_do    <= bg2_do;
+  bg_graphics_1_we <= '0';
+  bg_graphics_2_we <= '0';
+end generate;
 
 -- sprite graphics ROM 1E/1D/1B/1A
-sprite_graphics : entity work.dpram
-generic map( dWidth => 8, aWidth => 15, INIT_FILE => GFX2_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => sp_code_line_mux,
- q_a    => sp_graphx_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(14 downto 0),
+sp_int : if SP_EXTERNAL = 0 generate
+  sprite_graphics : entity work.dpram
+  generic map( dWidth => 8, aWidth => 15, INIT_FILE => GFX2_INIT, LOADABLE => GFX_LOADABLE)
+  port map(
+   clk_a  => clock_vidn,
+   we_a   => '0',
+   d_a    => x"00",
+   addr_a => sp_code_line_mux,
+   q_a    => sp_graphx_do,
+   clk_b  => clock_vid,
+   addr_b => dl_addr(14 downto 0),
 
- we_b   => sprite_graphics_we,
- d_b    => dl_data,
- q_b    => open
-);
-sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16 downto 15) = "10" else '0'; -- 10000-17FFF
+   we_b   => sprite_graphics_we,
+   d_b    => dl_data,
+   q_b    => open
+  );
+  sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16 downto 15) = "10" else '0'; -- 10000-17FFF
+  sp_rom_addr <= (others => '0');
+end generate;
+
+-- HOISTED sprite ROM: shared with MCR-2 in the merged build (identical shape).
+-- Note MCR-1 writes it with a PLAIN dl_addr(14 downto 0), where MCR-2 twists
+-- bit 14 - the top must apply the right one per loading family.
+sp_ext : if SP_EXTERNAL /= 0 generate
+  sp_rom_addr        <= sp_code_line_mux;
+  sp_graphx_do       <= sp_rom_do;
+  sprite_graphics_we <= '0';
+end generate;
 
 --mcr_sound_board 
 sound_board : entity work.mcr_sound_board

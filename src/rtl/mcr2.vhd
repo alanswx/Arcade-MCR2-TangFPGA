@@ -142,6 +142,15 @@ generic(
  -- Only the SPRITE ROM is still inside the core.
  GFX2_INIT    : string  := "rom_gfx2.hex";
  GFX_LOADABLE : integer := 0;
+ -- SP_EXTERNAL => 1 moves the 32 KB SPRITE ROM out to the top, the same way
+ -- the bg pair moved on 2026-07-27. MCR-1's sprite ROM is structurally
+ -- IDENTICAL (dpram 8 x 32K, port A read on clock_vidn at sp_code_line_mux),
+ -- so a merged build can share ONE between the two families - 16 blocks, at
+ -- zero timing risk, because it is a pure port move rather than the SDRAM
+ -- migration that MCR-2's 1-phase sprite pipeline cannot absorb.
+ -- Default 0 keeps mcr2_primer25k / mcr2_console138k / mcr2_console60k
+ -- bit-identical: they still get the internal RAM and its dl decode.
+ SP_EXTERNAL  : integer := 0;
  -- Sprite line buffers: 256x8 each, so an 18 Kb BSRAM block per buffer is
  -- almost entirely wasted. SPRLINE_RAMSTYLE lets a board move them to LUT RAM
  -- instead; the merged 3-family build has TEN across its cores and needs the
@@ -189,6 +198,10 @@ port(
  -- inverted clock, so tile timing is untouched. The top owns the RAMs and the
  -- dl write decode, and must clock port A on NOT clock_40.
  -- Unlike mcr3.vhd these are NOT crossed: bg1 (blob gfx1_1) -> bg_graphx1_do.
+ -- Sprite ROM, present only when SP_EXTERNAL => 1 (else driven/ignored).
+ sp_rom_addr    : out std_logic_vector(14 downto 0);
+ sp_rom_do      : in  std_logic_vector( 7 downto 0) := (others => '0');
+
  bg_addr        : out std_logic_vector(12 downto 0);
  bg1_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_1
  bg2_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_2
@@ -804,25 +817,38 @@ bg_graphx1_do <= bg1_do;
 bg_graphx2_do <= bg2_do;
 
 -- sprite graphics ROM 1E/1D/1B/1A
-sprite_graphics : entity work.dpram
-generic map( dWidth => 8, aWidth => 15, INIT_FILE => GFX2_INIT, LOADABLE => GFX_LOADABLE)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- addr_a => sp_code_line_mux,
- d_a    => x"00",
- q_a    => sp_graphx_do,
- clk_b  => clock_vid,
- we_b   => sprite_graphics_we,
- addr_b => not dl_addr(14) & dl_addr(13 downto 0),
- d_b    => dl_data,
- q_b    => open
-);
--- sprites are 0x14000-0x1BFFF: exclude the sound region below (15:14="00")
--- and the two background planes above (15:14="11")
-sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16) = '1'
-                               and dl_addr(15 downto 14) /= "00"
-                               and dl_addr(15 downto 14) /= "11" else '0';
+sp_int : if SP_EXTERNAL = 0 generate
+  sprite_graphics : entity work.dpram
+  generic map( dWidth => 8, aWidth => 15, INIT_FILE => GFX2_INIT, LOADABLE => GFX_LOADABLE)
+  port map(
+   clk_a  => clock_vidn,
+   we_a   => '0',
+   addr_a => sp_code_line_mux,
+   d_a    => x"00",
+   q_a    => sp_graphx_do,
+   clk_b  => clock_vid,
+   we_b   => sprite_graphics_we,
+   addr_b => not dl_addr(14) & dl_addr(13 downto 0),
+   d_b    => dl_data,
+   q_b    => open
+  );
+  -- sprites are 0x14000-0x1BFFF: exclude the sound region below (15:14="00")
+  -- and the two background planes above (15:14="11")
+  sprite_graphics_we <= '1' when dl_wr = '1' and dl_addr(16) = '1'
+                                 and dl_addr(15 downto 14) /= "00"
+                                 and dl_addr(15 downto 14) /= "11" else '0';
+  sp_rom_addr <= (others => '0');
+end generate;
+
+-- HOISTED: the top owns the RAM and the dl write decode. It must clock port A
+-- on NOT clock_40 (this core reads it on clock_vidn) and reproduce the
+-- download address twist `not dl_addr(14) & dl_addr(13 downto 0)` that the
+-- internal instance applies above.
+sp_ext : if SP_EXTERNAL /= 0 generate
+  sp_rom_addr        <= sp_code_line_mux;
+  sp_graphx_do       <= sp_rom_do;
+  sprite_graphics_we <= '0';
+end generate;
 
 sound_board : entity work.mcr_sound_board
 port map(
