@@ -20,11 +20,14 @@ Raider, Spy Hunter, Turbo Tag: ROMs, pack entries and gateware all in place
 every game for every family (`tools/make_pack_v2.py`, now 15 games); the product
 roadmap toward the full-series jukebox is at the top of `TODO.md`.
 
-**MCR-2 + MCR-3 ARE MERGED** (`mcr23_console60k`, 9 games, flashed as the
-power-on default 2026-07-27). **MCR3Scroll joins them in `mcr23s_console60k`
-(2026-07-30): 12 games, three families, builds at 117/118 BSRAM — but has
-never run on hardware.** MCR-1 folds in once its sprite gfx move to SDRAM -
-see TODO items 4a and 4a-bis.
+**ALL FOUR FAMILIES ARE MERGED.** `mcr123s_console60k` (2026-07-30) holds
+**15 games — every MCR-1/2/3/MCR3Scroll title — in one bitstream**, closing
+cleanly at 116/118 BSRAM with 0 timing violations. It has never run on
+hardware. Stepping stones, both still building: `mcr23_console60k` (9 games,
+what SPI flash holds and the only hardware-verified merge) and
+`mcr23s_console60k` (12 games). MCR-1 needed no sprite-to-SDRAM move after all
+— its sprite ROM is structurally identical to MCR-2's and they share one.
+See TODO items 4a, 4a-bis and 4a-ter.
 **Direction (agreed 2026-07-27): MCR-1/2/3 will be MERGED into one
 bitstream** rather than switched by Gowin multiboot — core switching then
 becomes the same instant SD reload that game switching already is. Multiboot
@@ -40,6 +43,7 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs — Wacko verified loading from the card 2026-07-27 |
 | `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
 | `mcr23_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working — MERGED MCR-2 + MCR-3, 9 games in one bitstream.** This is what the SPI flash holds (power-on default). Roster index <-> (family, slot) translation in the top; both cores instantiated, inactive one held in reset; CPU/sound ROM + bg gfx pair shared. 114/118 BSRAM. **All nine games verified on hardware** (Tapper, Timber, Discs of Tron, Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man) |
+| `mcr123s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **THE COMPLETE ROSTER: 15 games, four families (MCR-1 + MCR-2 + MCR-3 + MCR3Scroll) in one bitstream. Closes cleanly — 116/118 BSRAM, 75% logic, 0 setup/hold violations, clk_sys Fmax 43.0 vs 40.0 MHz. NOT yet run on hardware.** Needed the build options above plus shared sprite ROM / scratch RAM across cores; see its `README.md` |
 | `mcr23s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds, 12 games (MCR-2 + MCR-3 + MCR3Scroll), 117/118 BSRAM, TNS 0.000 — NOT yet run on hardware.** The "can one core hold everything" experiment; adds Crater Raider, Spy Hunter, Turbo Tag with the Cheap Squeak Deluxe 68000 (FX68K). Needed two BSRAM levers to fit: sprite line buffers → LUT RAM and the **sound ROM → SDRAM**, neither hardware-verified. Read its `README.md` first |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
@@ -151,6 +155,28 @@ seat. The Console 60K enumerates as FTDI FT2232 (`0403:6010`).
 Sanity check with no board attached: `openFPGALoader --detect` should exit 1
 with `unable to open ftdi device: -3 (device not found)`. There is no offline
 dry-run — the cable is opened before the `.fs` is ever parsed.
+
+### Build options: `place_option 2` is NOT enough (learned 2026-07-30)
+For most of this project `build.tcl` set only `-place_option 2` and left four
+timing-relevant options at their defaults. Enabling them took the 15-game
+merged core from **clk_sys setup TNS -6.342 ns over 25 endpoints to -0.059 ns
+over 1, with no RTL change** — the design had been routed at default effort all
+along. Every board should carry:
+
+```tcl
+set_option -route_option 2            ;# highest routing effort
+set_option -retiming 1
+set_option -timing_driven 1
+set_option -correct_hold_violation 1  ;# hold is fixed by INSERTING delay,
+                                      ;# which the router will not do unasked
+```
+
+They cost build time only. **Check these before doing RTL surgery for timing** —
+two days of hoisting and re-muxing bought less than these four lines did.
+`place_option` stays at **2**: 0 builds clean, meets timing and yields a
+bitstream whose DDR3 never trains (confirmed on hardware); 3 and 4 exist and are
+untried. Mirror any change into `impl/<project>_process_config.json` for IDE
+builds — see the Gotchas table.
 
 ### Post-build sanity checks (do these every build)
 1. **No `PA1019`** (PLL VCO out of range) warning in the log — **NO

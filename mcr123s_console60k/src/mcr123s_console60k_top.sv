@@ -1616,6 +1616,15 @@ always @(*) begin
     // Removed here. (Reported for mcr23_console60k separately.)
 end
 
+// REGISTERED INPUTS. The per-game mux above is combinational from game_id and
+// fans into all four cores; these are cabinet switches sampled by a 2 MHz Z80,
+// so one 40 MHz cycle of latency is invisible while the path saved is long.
+reg [7:0] in0_r = 8'hFF, in1_r = 8'hFF, in2_r = 8'hFF, in3_r = 8'hFF, in4_r = 8'hFF;
+always @(posedge clk_sys) begin
+    in0_r <= input_0; in1_r <= input_1; in2_r <= input_2;
+    in3_r <= input_3; in4_r <= input_4;
+end
+
 // --- Core Instantiation ---
 // (r/g/b/hblank/vblank/hs/vs/cs are declared just before the controls
 // section - they are referenced there, and Gowin turns use-before-
@@ -1770,10 +1779,17 @@ gen_ram #(.dWidth(8), .aWidth(11)) sh_vram_ram (
 // pair, video, audio) is muxed by run_family. MCR-3's sprites come from SDRAM;
 // MCR-2 keeps its own 32 KB sprite RAM, so there is nothing to mux there.
 // ===========================================================================
-wire       m3_reset = core_reset || !run_is_mcr3;
-wire       m2_reset = core_reset || !run_is_mcr2;
-wire       ms_reset = core_reset || !run_is_scroll;
-wire       m1_reset = core_reset || !run_is_mcr1;
+// One REGISTERED reset per core. core_reset fans out to every core plus the
+// shared RAMs and was the critical path in the 12-game build; separate
+// registers cut the fanout and give the placer four short local nets instead
+// of one long global one. A cycle of latency on a reset is immaterial.
+reg m3_reset = 1'b1, m2_reset = 1'b1, ms_reset = 1'b1, m1_reset = 1'b1;
+always @(posedge clk_sys) begin
+    m3_reset <= core_reset || !run_is_mcr3;
+    m2_reset <= core_reset || !run_is_mcr2;
+    ms_reset <= core_reset || !run_is_scroll;
+    m1_reset <= core_reset || !run_is_mcr1;
+end
 
 wire [2:0]  m3_r, m3_g, m3_b, m2_r, m2_g, m2_b, ms_r, ms_g, ms_b;
 // MCR-1 emits 4-bit RGB (the only core that does); the shared video path is
@@ -1841,8 +1857,8 @@ mcr2 #(
     .hcnt_out(m2_hcnt), .vcnt_out(m2_vcnt),
     .tv15Khz_mode(tv15khz),
     .separate_audio(1'b0), .audio_out_l(m2_al), .audio_out_r(m2_ar),
-    .input_0(input_0), .input_1(input_1), .input_2(input_2),
-    .input_3(input_3), .input_4(input_4),
+    .input_0(in0_r), .input_1(in1_r), .input_2(in2_r),
+    .input_3(in3_r), .input_4(in4_r),
     .cpu_rom_addr(m2_rom_addr), .cpu_rom_do(rom_do),
     .snd_rom_addr(m2_snd_addr), .snd_rom_do(snd_do),
     .bg_addr(m2_bg_addr), .bg1_do(bg1_do), .bg2_do(bg2_do),
@@ -1887,11 +1903,11 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
     .audio_out_l(m3_al),
     .audio_out_r(m3_ar),
 
-    .input_0(input_0),
-    .input_1(input_1),
-    .input_2(input_2),
-    .input_3(input_3),
-    .input_4(input_4),
+    .input_0(in0_r),
+    .input_1(in1_r),
+    .input_2(in2_r),
+    .input_3(in3_r),
+    .input_4(in4_r),
     .output_4(),           // SSIO output port (lamps/mux) - unused here
     .mcr2p5(1'b0),         // Tapper is 91490 (not Journey/MCR-2.5)
 
@@ -1937,8 +1953,15 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
 // ===========================================================================
 // mod_crater / mod_turbo select the board variant. Roster: 9 = Crater Raider
 // (SSIO only, no CSD), 10 = Spy Hunter, 11 = Turbo Tag.
-wire ms_mod_crater = run_is_scroll && (game_id == 4'd9);
-wire ms_mod_turbo  = run_is_scroll && (game_id == 4'd11);
+// REGISTERED: these only change when a new game loads, so a cycle of latency
+// is free - and combinationally they carried game_id deep into the scroll
+// core (7 of the 26 failing endpoints in the pre-option build ran
+// osd_inst/game_id -> scroll_core/sprlinebuf2a).
+reg ms_mod_crater = 1'b0, ms_mod_turbo = 1'b0;
+always @(posedge clk_sys) begin
+    ms_mod_crater <= run_is_scroll && (game_id == 4'd9);
+    ms_mod_turbo  <= run_is_scroll && (game_id == 4'd11);
+end
 
 mcr3scroll #(
     .CH_INIT(""), .GFX_LOADABLE(1), .CSD_ENABLE(SCROLL_CSD),
@@ -1956,8 +1979,8 @@ mcr3scroll #(
     .separate_audio(1'b0),
     .audio_out_l(ms_al), .audio_out_r(ms_ar), .csd_audio_out(ms_csd_audio),
 
-    .input_0(input_0), .input_1(input_1), .input_2(input_2),
-    .input_3(input_3), .input_4(input_4),
+    .input_0(in0_r), .input_1(in1_r), .input_2(in2_r),
+    .input_3(in3_r), .input_4(in4_r),
     .output_4(ms_out4),           // SSIO out: bit 7 muxes wheel vs gas on IP2
     .show_lamps(1'b0),
 
@@ -2003,8 +2026,8 @@ mcr1 #(
 
     .separate_audio(1'b0), .audio_out_l(m1_al), .audio_out_r(m1_ar),
 
-    .input_0(input_0), .input_1(input_1), .input_2(input_2),
-    .input_3(input_3), .input_4(input_4),
+    .input_0(in0_r), .input_1(in1_r), .input_2(in2_r),
+    .input_3(in3_r), .input_4(in4_r),
 
     .cpu_rom_addr(m1_rom_addr15), .cpu_rom_do(rom_do), .cpu_rom_rd(),
     .snd_rom_addr(m1_snd_addr),   .snd_rom_do(snd_do),

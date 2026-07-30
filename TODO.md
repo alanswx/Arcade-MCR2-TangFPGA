@@ -395,14 +395,22 @@ next real milestone" within each section.
    Both together gave **-8, not the -13 predicted**. Same lesson as the sprite
    line buffers: PnR already packs small arrays, so hoisting four 512-byte RAMs
    into one does NOT return four blocks. **Never budget a block per array.**
-   **BUT IT DOES NOT MEET TIMING.** Space was never the wall - placement
-   congestion is. Final state: BSRAM 116/118, Logic 75%, and clk_sys setup
-   TNS **-6.342 ns over 25 endpoints** plus 3 hold violations in the DDR3
-   framebuffer. The 12-game build's worst slack was +0.027 ns; a fourth core
-   and the shared-RAM muxes consumed that and more. Detail, the remaining
-   failing paths and the untried fixes are in `mcr123s_console60k/README.md`.
-   **Recommendation: ship 12 games on the 60K (mcr23s_console60k closes clean
-   at 117/118, 0 violations) and take MCR-1 to the GW5AST-138.**
+   **AND IT CLOSES TIMING - 15 GAMES, ONE BITSTREAM, ON THE 60K.**
+   BSRAM 116/118, Logic 75%, **0 setup and 0 hold violations, TNS 0.000 on
+   every clock**, clk_sys Fmax 43.008 vs 40.000 MHz required (+7.5%),
+   clk_sdram 95.3 vs 80.0. **No larger FPGA needed.** Never run on hardware.
+   Timing did NOT close by RTL work - it closed by BUILD OPTIONS:
+   | Step | clk_sys setup TNS |
+   |---|---|
+   | shared scratch RAM, muxes as 4:1 chains | -6.342 ns / 25 eps |
+   | **+ route_option 2, retiming, timing_driven, correct_hold_violation** | **-0.059 / 1** |
+   | + registered mod_crater/turbo, inputs, per-core reset | **0.000 / 0** |
+   `build.tcl` had only ever set `place_option 2`; the design was routed at
+   DEFAULT effort for the life of the project. See the new build-options
+   section in CLAUDE.md - **check those before doing RTL surgery for timing.**
+   The three RTL fixes that finished it cost nothing: `ms_mod_crater`/
+   `ms_mod_turbo`, `input_0..4` and a per-core `core_reset` copy, all
+   registered (each only matters at game-load or switch-sample rates).
    Two lessons that cost a build each:
    - **LUT RAM is NOT a free substitute for BSRAM.** It worked for the 256-byte
      sprite line buffers; doing it to the 512-byte sprite STAGING RAMs sent

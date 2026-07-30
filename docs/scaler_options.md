@@ -189,11 +189,21 @@ to 64 is the lever, since BSRAM here is width-driven not depth-driven.
 
 ### The +10 gets worse as families are merged (measured 2026-07-30)
 
-Adding MCR3Scroll (`mcr23s_console60k`, 12 games, three families) put the
-`ddr3_framebuffer` build at **127/118 — 9 over** before any scaler question
-arises; the BSRAM levers to get it under are enumerated in `TODO.md` 4a-bis.
-So the scaler choice is now genuinely coupled to the roster: every block
-`ascal_v` spends is a block the jukebox cannot spend on a game family.
+Adding MCR3Scroll (`mcr23s_console60k`, 12 games) landed at 117/118, and
+adding MCR-1 on top (`mcr123s_console60k`, 15 games) at **116/118** - see
+`TODO.md` 4a-bis/4a-ter for the levers that got them there.
+
+**15 games IS the complete roster for this board**, so the squeeze is not about
+making room for another family: MCR3Mono is parked for a different board rev
+because its IP ports route to different cabinet connectors (plus 3-player
+wiring and an ADC), not because of capacity. The remaining same-board
+candidates are Journey (needs a DDR3 wave port) and Demolition Derby (needs
+Turbo Cheap Squeak, and is 4-player so it may hit the same connector wall).
+
+That makes the scaler the ONLY real future claim on headroom, and the trade is
+now explicit: at 116/118 there is no room for `ascal_v`'s +10. It is
+**15 games on `ddr3_framebuffer`, or 12 games with the better scaler** - unless
+`N_DW` is narrowed to 64, which is where the +10 comes from in the first place.
 
 Order of business, therefore: settle the 3-family fit on the cheap scaler
 first, then decide whether `ascal_v`'s 10 blocks are affordable — and if they

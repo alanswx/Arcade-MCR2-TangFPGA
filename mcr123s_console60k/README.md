@@ -77,62 +77,75 @@ this layout, and the roster order (kick, solarfox, kickman) matches NAME12–14.
 
 Build: `tools/gw_build.sh mcr123s_console60k`.
 
-## RESULT: it fits in BSRAM, but it does NOT meet timing on the 60K
+## RESULT: 15 games CLOSE CLEANLY on the 60K
 
-**Do not flash this board's bitstream.** Gowin emits a `.fs` whether or not
-timing closes; this one does not close.
+```
+BSRAM   116/118        Logic 75%        Register 28%
+Setup violated endpoints  0
+Hold  violated endpoints  0
+TNS 0.000 on every clock domain
+```
 
-| Build | BSRAM | clk_sys setup TNS | other |
+| Clock | Required | Actual Fmax | Margin |
 |---|---|---|---|
-| v3: staging RAMs in LUT RAM | 108/118 | **-536.088 ns / 459 eps** | hclk -1.896 |
-| v4: reverted, video_ram shared | 116/118 | -8.093 ns / 32 eps | hclk -0.310, sdram -1.044 |
-| v5: shared-RAM muxes -> true 4:1 | **116/118** | **-6.342 ns / 25 eps** | clk1x hold -0.109 / 3 |
+| clk_sys | 40.000 MHz | 43.008 | +7.5% |
+| clk_sdram | 80.000 | 95.345 | +19% |
+| clk1x | 74.239 | 130.028 | +75% |
 
-Logic 75%, registers 28%. So **space was never the wall — placement congestion
-is.** At four cores the design is dense enough that half-cycle paths which
-passed comfortably in the 12-game build (worst slack there: +0.027 ns) no
-longer make it.
+**No bigger FPGA needed.** How it got here, because the path was not obvious:
 
-Where the remaining 26 failing endpoints live:
+| Step | clk_sys setup TNS | |
+|---|---|---|
+| v3: staging RAMs in LUT RAM | -536.088 ns / 459 eps | catastrophic |
+| v4: reverted, video_ram shared | -8.093 / 32 | |
+| v5: shared-RAM muxes -> true 4:1 | -6.342 / 25 | |
+| **A: four toolchain options enabled** | **-0.059 / 1** | the real fix |
+| **A+B: three free RTL fixes** | **0.000 / 0** | closes |
 
-| count | path |
-|---|---|
-| 17 | `mcr1_core` T80 -> `sh_sprc_ram` / `sh_vram_ram` (shared scratch RAM) |
-| 7 | `osd_inst/game_id` -> `scroll_core/sprlinebuf2a` |
-| 3 | `fb_inst` -> `fb_inst` (DDR3 framebuffer, **hold**) |
-| 1 | `sdram/addr_last2[1]` -> `SDRAM_A[3]` (vendored controller, 80 MHz) |
+### The finding that mattered: build options we had never enabled
 
-Two lessons worth keeping:
+`build.tcl` had only ever set `place_option 2`. Four relevant knobs sat at
+their defaults **for the entire life of this project**:
 
-* **LUT RAM is not a free substitute for BSRAM.** It worked for the 256-byte
-  sprite line buffers; converting the 512-byte staging RAMs cost the entire
-  clk_sys domain, because a distributed-RAM read is a combinational walk fed by
-  a family mux, closing on the opposite clock edge. One block bought, -536 ns
-  paid.
-* **Mux depth matters on half-cycle paths.** Rewriting
-  `run_is_a ? : run_is_b ? : run_is_c ? :` chains as an array indexed by
-  `run_family[1:0]` (one true 4:1 mux) recovered ~1.75 ns of TNS for free.
+```tcl
+set_option -route_option 2            ;# highest routing effort
+set_option -retiming 1
+set_option -timing_driven 1
+set_option -correct_hold_violation 1  ;# hold is fixed by INSERTING delay
+```
 
-### If someone picks this up again
+Enabling them took clk_sys setup TNS from **-6.342 ns over 25 endpoints to
+-0.059 ns over 1**, with no RTL change at all. The design had been routed at
+default effort the whole time. `place_option` stays at **2** - CLAUDE.md records
+that 0 builds clean, meets timing, and yields a bitstream whose DDR3 never
+trains, confirmed on hardware; 3 and 4 exist and are untried.
 
-Untried, in order of expected value:
+### The three free RTL fixes that finished it
 
-1. **Register `ms_mod_crater` / `ms_mod_turbo`.** They only change when a game
-   loads, so a register is functionally free, and `osd_inst/game_id` is 7 of
-   the 26 failing endpoints. Do this regardless — it is correct anyway.
-2. **Give MCR-1 back its own `sprites_ram_cache` and `video_ram`** (split
-   `SCRATCH_EXTERNAL` into per-RAM generics). That removes MCR-1 from the two
-   muxes carrying all 17 of its failing endpoints, at +2 blocks — landing on
-   118/118 with zero spare.
-3. The `fb_inst` HOLD violations and the `sdram` path are **not caused by any
-   of this work**; they are congestion pressure on already-marginal paths. Hold
-   failures do not improve with a slower clock and can be intermittent on
-   hardware, so treat a build that merely "looks fine" with suspicion.
-4. **GW5AST-138** — 298 blocks, 138k LUT. Removes the whole class of problem
-   rather than shaving at it.
+None costs a block, none changes behaviour:
 
-The recommendation from here is (4), or ship 12 games on the 60K: that build
-(`mcr23s_console60k`) closes cleanly at 117/118 with 0 violations.
+1. `ms_mod_crater` / `ms_mod_turbo` **registered** - they change only when a
+   game loads, and combinationally they dragged `game_id` deep into the scroll
+   core.
+2. `input_0..4` **registered** - the per-game mux is combinational from
+   `game_id` into all four cores; these are cabinet switches read by a 2 MHz
+   Z80, so a 40 MHz cycle of latency is invisible.
+3. `core_reset` **registered per core** - four short local nets instead of one
+   long global one; it was the critical path in the 12-game build.
+
+### Lessons worth keeping
+
+* **LUT RAM is not a free substitute for BSRAM.** Fine for the 256-byte sprite
+  line buffers; converting the 512-byte staging RAMs cost the entire clk_sys
+  domain (-536 ns), because a distributed-RAM read is a combinational walk fed
+  by a family mux, closing on the opposite clock edge. One block bought, the
+  design lost.
+* **Mux depth matters on half-cycle paths.** `run_is_a ? : run_is_b ? : ...`
+  is three dependent LUT levels; an array indexed by `run_family[1:0]` is one
+  4:1 mux. Keep `FAM_*` numbered 0..3 so the family code stays usable as an
+  index.
+* **Check the tool options before blaming the design.** Two full days of RTL
+  surgery bought less than four `set_option` lines did.
 
 ## Rolling this back
 

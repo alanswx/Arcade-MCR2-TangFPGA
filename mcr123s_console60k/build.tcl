@@ -18,6 +18,27 @@ set_option -ireg_in_iob 1
 set_option -oreg_in_iob 1
 set_option -ioreg_in_iob 1
 set_option -place_option 2
+# TIMING-CLOSURE OPTIONS (2026-07-30). The 15-game build fails clk_sys setup by
+# -6.3 ns over 25 endpoints and has 3 hold violations in the DDR3 framebuffer,
+# and none of these were ever enabled - they cost only build time.
+#   -route_option 2        highest routing effort; this design's problem is
+#                          congestion at 75% logic, so routing effort is the
+#                          most direct lever
+#   -retiming 1            let the tool move registers across long combinational
+#                          paths
+#   -timing_driven 1       explicit rather than relying on the default
+#   -correct_hold_violation 1
+#                          aimed squarely at the clk1x hold failures; hold is
+#                          fixed by INSERTING delay, which the router will not
+#                          do unless asked
+# NOTE place_option stays at 2. CLAUDE.md records that 0 builds clean and meets
+# timing yet produces a bitstream whose DDR3 never trains - CONFIRMED on
+# hardware - so this knob is not a free experiment. 3 and 4 exist and are
+# untried; only change it with a board in front of you.
+set_option -route_option 2
+set_option -retiming 1
+set_option -timing_driven 1
+set_option -correct_hold_violation 1
 
 # Free the dual-purpose config pins as regular GPIO. The J10 header
 # (SDRAM1 bus) overlaps the CPU-mode config DBUS (R19/P19/U21/T21 = D0-D3)
