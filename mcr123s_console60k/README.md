@@ -77,10 +77,12 @@ this layout, and the roster order (kick, solarfox, kickman) matches NAME12–14.
 
 Build: `tools/gw_build.sh mcr123s_console60k`.
 
-## HARDWARE: Wacko and Kick both play (2026-07-30)
+## HARDWARE 2026-07-30: Wacko, Kick, Kickman, Solar Fox and Spy Hunter all play
 
-First hardware run of this board, and of **Kick** on any build. Between them
-those two games exercise most of what was unproven:
+Five of the fifteen confirmed on the first session, including **Kick and Solar
+Fox for the first time on any build**, and **Spy Hunter WITH SOUND** - which is
+the FX68K running on this platform for the first time. Between them they
+exercise nearly everything that was unproven:
 
 | Mechanism | Exercised by |
 |---|---|
@@ -89,11 +91,24 @@ those two games exercise most of what was unproven:
 | Scratch RAM shared across all four cores | both - and this is the one that could corrupt a RUNNING game |
 | CPU ROM trimmed to 0xE000 | both |
 | MCR-1's 4 KB bg planes in the shared 16 KB pair | Kick |
-| Timing closure from the new build options | both |
+| Timing closure from the new build options | all |
+| **FX68K / Cheap Squeak Deluxe**, the `fx68k_lc` binding workaround, `$readmemb` finding the microcode | Spy Hunter sound |
+| **CSD 68000 ROM read from SDRAM** (`cpu2`) and its 16-bit byte-lane split (u17/u18 low, u7/u8 high) | Spy Hunter sound |
+| MCR3Scroll roster, decode, char plane, sprite plane assembly | Spy Hunter |
 
-Still unproven: **the sound ROM in SDRAM** (audio was not reported either way),
-the **Cheap Squeak Deluxe / FX68K** path (Spy Hunter and Turbo Tag only), Solar
-Fox, and the MCR3Scroll bg plane order.
+Still open:
+
+* **Turbo Tag** - the harshest CSD test, because `mod_turbo` disables the SSIO
+  board entirely, so it is silent unless the Cheap Squeak Deluxe carries it
+  alone. Also the only game needing the MRA byte patch at 0x0B2C.
+* **Crater Raider** - SSIO-only, no CSD, and the only LANDSCAPE cabinet in the
+  roster (not in `ROT_MASK`).
+* A **regression pass over the nine MCR-2/MCR-3 games** in THIS build. They were
+  verified in `mcr23_console60k`, but the shared scratch RAM and the trimmed CPU
+  ROM are new since then.
+* **MCR3Scroll bg plane order** - Spy Hunter looking right is good evidence the
+  uncrossed guess was correct, but Crater Raider and Turbo Tag are separate
+  ROM sets and could still be wrong.
 
 ## RESULT: 15 games CLOSE CLEANLY on the 60K
 

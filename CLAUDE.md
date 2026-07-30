@@ -14,21 +14,24 @@ the whole family behind its OSD). **MCR-3 (91490)** — all three titles
 hardware-verified and playable: Tapper, Timber and Discs of Tron (the
 latter mirrored, which is correct - the real cabinet has a mirror). **MCR-1** —
 Kick/Kickman/Solar Fox; Kickman verified 2026-07-27 (first ever MCR-1 run) and
-**Kick verified 2026-07-30 in the merged 15-game core**; Solar Fox not yet
-exercised. **MCR3Scroll** — Crater
+**all three verified 2026-07-30 in the merged 15-game core** (Kick and Solar
+Fox for the first time ever). **MCR3Scroll** — Crater
 Raider, Spy Hunter, Turbo Tag: ROMs, pack entries and gateware all in place
-(`mcr23s_console60k`), nothing run on hardware yet. One pack-v2 SD card carries
+**Spy Hunter verified WITH SOUND 2026-07-30** in the merged 15-game core -
+the first FX68K on this platform; Crater Raider and Turbo Tag not yet run. One pack-v2 SD card carries
 every game for every family (`tools/make_pack_v2.py`, now 15 games); the product
 roadmap toward the full-series jukebox is at the top of `TODO.md`.
 
 **ALL FOUR FAMILIES ARE MERGED AND THE MERGE RUNS ON HARDWARE.**
 `mcr123s_console60k` (2026-07-30) holds **15 games — every MCR-1/2/3/MCR3Scroll
 title — in one bitstream**, closing cleanly at 116/118 BSRAM with 0 timing
-violations. **Wacko and Kick both play** (Kick's first ever hardware run),
-which between them exercise the risky mechanisms: the sprite ROM shared
-between MCR-1 and MCR-2, the scratch RAM shared across all four cores, the
-CPU ROM trimmed to 0xE000, and MCR-1's 4 KB bg planes in the shared 16 KB
-pair. Stepping stones, both still building: `mcr23_console60k` (9 games,
+violations. **Wacko, Kick, Kickman, Solar Fox and Spy Hunter all play** - Kick and
+Solar Fox for the first time on any build, and Spy Hunter WITH SOUND, which is
+**FX68K running on this platform for the first time**. Between them they prove
+the sprite ROM shared between MCR-1 and MCR-2, the scratch RAM shared across
+all four cores, the CPU ROM trimmed to 0xE000, MCR-1's 4 KB bg planes in the
+shared 16 KB pair, and the Cheap Squeak Deluxe 68000 running its ROM from
+SDRAM. Stepping stones, both still building: `mcr23_console60k` (9 games,
 what SPI flash holds and the only hardware-verified merge) and
 `mcr23s_console60k` (12 games). MCR-1 needed no sprite-to-SDRAM move after all
 — its sprite ROM is structurally identical to MCR-2's and they share one.
