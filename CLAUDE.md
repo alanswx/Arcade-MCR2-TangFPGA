@@ -465,6 +465,36 @@ scaler can't track 15 kHz timing). The J10/SDRAM1 balls overlap CPU/SSPI
 config pins → `build.tcl` needs the `-use_*_as_gpio` option block (already
 there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
 
+## Making an SD card (the ROM pack)
+
+One card serves every board and every family. Regenerate whenever the roster or
+a ROM spec changes; the payload is additive, so existing games keep their
+(family, slot) and a saved preference survives.
+
+```sh
+# on any machine with roms/*.zip present (roms/ is GITIGNORED - copy by hand)
+python3 tools/make_pack_v2.py          # -> mcr_pack_v2.img, 15 games, 2.7 MB
+
+# macOS, needs root for the raw device
+sudo python3 tools/write_pack_v2.py            # lists candidate cards
+sudo python3 tools/write_pack_v2.py disk4      # writes /dev/disk4
+```
+
+`write_pack_v2.py` only considers EXTERNAL physical disks, refuses a card whose
+partition table overlaps the pack's sectors, unmounts, writes at sector 2048 and
+then reads the WHOLE image back and verifies it byte for byte. Prefs live at
+sector 2047 and are not touched.
+
+**Read the `make_pack_v2.py` output.** A missing zip prints
+`skip <game> (no zip)` and silently leaves that game out of the pack - the exit
+code is still 0. The 15 zips it wants are listed in `tools/merge_roms.py`
+(note `twotigerc.zip` for Two Tigers, not `twotiger.zip`).
+
+`tools/ckstore.py` prints the STORED-ROM checksums the beacon should report for
+a given game, which is how you tell a bad card from a bad core. It defaults to
+the 15-game core's audit (CPU swept to 0xE000, sound ROM in SDRAM so E4 reads
+0000); pass `--cpu64 --snd` to compare against the older 9/12-game cores.
+
 ## Docs map
 
 - `docs/bench_wiring.md` — **what the current bitstream drives on J10**
