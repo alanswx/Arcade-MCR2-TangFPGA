@@ -23,6 +23,11 @@ HEX_DIRS = {
     "mcr2": ["mcr2_primer25k/src", "mcr2_console60k/src",
              "mcr2_console138k/src", "src/rtl"],
     "mcr3": ["mcr3_console60k/src", "src/rtl"],
+    # MCR3Scroll has no baked board: it only ever exists inside the merged
+    # 60K bitstream, which carries no ROM data at all (licensing). So there is
+    # nowhere to write hex to, and writing to src/rtl would clobber whichever
+    # baked family the 25K last used.
+    "mcr3scroll": [],
 }
 
 # Board src dirs whose tops `include the generated game_config.vh, by family
@@ -30,6 +35,7 @@ CONFIG_DIRS = {
     "mcr1": ["mcr1_console60k/src"],
     "mcr2": ["mcr2_console60k/src", "mcr2_console138k/src"],
     "mcr3": ["mcr3_console60k/src"],
+    "mcr3scroll": [],      # merged board only - no GAME_DEFAULT to write
 }
 
 # ---------------------------------------------------------------------------
@@ -176,6 +182,101 @@ GAME_SPECS = {
         snd_pad_to=16 * 1024,
     ),
 
+    # --- MCR3Scroll (core src/rtl/mcr3scroll.vhd) --------------------------
+    # Two regions no other family has: a 4 KB CHAR/ALPHA plane (`chr`, loaded
+    # into the core's own dpram at dl 0x8000) and the 32 KB 16-bit Cheap Squeak
+    # Deluxe 68000 ROM (`csd`, which goes to SDRAM - 16 BSRAM blocks is more
+    # than the merged build has). bg planes are 16 KB = TWO 8 KB files each.
+    #
+    # Sprites: assembled BY PLANE into four 32 KB slots, exactly like MCR-3, so
+    # the merged top's existing sprite write-swizzle is reused unchanged. That
+    # works because upstream MCR3Scroll does the same interleave in its MRA
+    # (`<interleave output="32">`, maps 0001/0010/0100/1000, two files per lane)
+    # while Arcade-MCR3.sv does it in gateware - the SDRAM contents match either
+    # way. File ORDER within each pair follows the MRA, which is the same
+    # pair-swapped pattern as tapper (fg1,fg0,fg3,fg2,...).
+    #
+    # gfx1 plane order: mcr3scroll.vhd's bg dprams are UNCROSSED (bg_graphics_1,
+    # the dl "00" range, feeds bg_graphx1_do), unlike mcr3.vhd - so gfx1_1 is
+    # the pair MAME/the MRA loads FIRST. NOT hardware-verified: if bg tiles come
+    # out with right shapes and wrong colours, swap these two (that is the exact
+    # symptom, and it cost a day on Timber - see CLAUDE.md).
+    #
+    # DIP bytes: MRA `switches default="FF 00"` for all three, i.e. input_3 =
+    # 0xFF. Not cross-checked against MAME per game yet.
+
+    # Crater Raider - SSIO sound only, no CSD, LANDSCAPE cabinet.
+    "crater": dict(
+        family="mcr3scroll",
+        define="GAME_CRATER",
+        zip_path="roms/crater.zip",
+        main_files=["crcpu.6d", "crcpu.7d", "crcpu.8d", "crcpu.9d",
+                    "crcpu.10d"],
+        main_pad_to=0xE000, main_pad_byte=0xFF,   # MRA: <part repeat=0x4000>FF
+        snd_files=["crsnd4.a7", "crsnd1.a8", "crsnd2.a9", "crsnd3.a10"],
+        snd_pad_to=16 * 1024,
+        gfx1_1_files=["crcpu.3a", "crcpu.4a"],
+        gfx1_2_files=["crcpu.5a", "crcpu.6a"],
+        chr_files=["crcpu.10g"],
+        csd_files=[],                              # no Cheap Squeak Deluxe
+        gfx2_files=["crvid.a4", "crvid.a3", "crvid.a6", "crvid.a5",
+                    "crvid.a8", "crvid.a7", "crvid.a10", "crvid.a9"],
+    ),
+    # Spy Hunter - SSIO + Cheap Squeak Deluxe, wheel/pedal on IP2.
+    "spyhunt": dict(
+        family="mcr3scroll",
+        define="GAME_SPYHUNT",
+        zip_path="roms/spyhunt.zip",
+        main_files=["spy-hunter_cpu_pg0_2-9-84.6d",
+                    "spy-hunter_cpu_pg1_2-9-84.7d",
+                    "spy-hunter_cpu_pg2_2-9-84.8d",
+                    "spy-hunter_cpu_pg3_2-9-84.9d",
+                    "spy-hunter_cpu_pg4_2-9-84.10d",
+                    "spy-hunter_cpu_pg5_2-9-84.11d"],   # 5x8K + 16K = 56K
+        snd_files=["spy-hunter_snd_0_sd_11-18-83.a7",
+                   "spy-hunter_snd_1_sd_11-18-83.a8"],  # only 8K of SSIO ROM
+        snd_pad_to=16 * 1024,
+        gfx1_1_files=["spy-hunter_cpu_bg0_11-18-83.3a",
+                      "spy-hunter_cpu_bg1_11-18-83.4a"],
+        gfx1_2_files=["spy-hunter_cpu_bg2_11-18-83.5a",
+                      "spy-hunter_cpu_bg3_11-18-83.6a"],
+        chr_files=["spy-hunter_cpu_alpha-n_11-18-83"],
+        csd_files=["spy-hunter_cs_deluxe_u17_b_11-18-83.u17",
+                   "spy-hunter_cs_deluxe_u18_d_11-18-83.u18",   # low bytes
+                   "spy-hunter_cs_deluxe_u7_a_11-18-83.u7",
+                   "spy-hunter_cs_deluxe_u8_c_11-18-83.u8"],    # high bytes
+        gfx2_files=["spy-hunter_video_1fg_11-18-83.a7",
+                    "spy-hunter_video_0fg_11-18-83.a8",
+                    "spy-hunter_video_3fg_11-18-83.a5",
+                    "spy-hunter_video_2fg_11-18-83.a6",
+                    "spy-hunter_video_5fg_11-18-83.a3",
+                    "spy-hunter_video_4fg_11-18-83.a4",
+                    "spy-hunter_video_7fg_11-18-83.a1",
+                    "spy-hunter_video_6fg_11-18-83.a2"],
+    ),
+    # Turbo Tag (prototype) - CSD sound ONLY (mod_turbo disables the SSIO
+    # board), so snd_files is empty. The MRA repeats ttprog5 to fill 56K and
+    # patches one CPU byte.
+    "turbotag": dict(
+        family="mcr3scroll",
+        define="GAME_TURBOTAG",
+        zip_path="roms/turbotag.zip",
+        main_files=["ttprog0.bin", "ttprog1.bin", "ttprog2.bin",
+                    "ttprog3.bin", "ttprog4.bin", "ttprog5.bin",
+                    "ttprog5.bin"],                # MRA repeats the last 8K
+        main_pad_to=0x10000, main_pad_byte=0x00,
+        main_patches=[(0x0B2C, 0x18)],             # MRA <patch offset=0x0B2C>
+        snd_files=[],                              # no SSIO sound board
+        snd_pad_to=16 * 1024,
+        gfx1_1_files=["ttbg0.bin", "ttbg1.bin"],
+        gfx1_2_files=["ttbg2.bin", "ttbg3.bin"],
+        chr_files=["ttan.bin"],
+        csd_files=["ttu17.bin", "ttu18.bin",       # low bytes
+                   "ttu7.bin",  "ttu8.bin"],       # high bytes
+        gfx2_files=["ttfg1.bin", "ttfg0.bin", "ttfg3.bin", "ttfg2.bin",
+                    "ttfg5.bin", "ttfg4.bin", "ttfg7.bin", "ttfg6.bin"],
+    ),
+
     # --- MCR-2 (90010 video board; core src/rtl/mcr2.vhd) -----------------
     # Satan's Hollow (MCR2): 48KB CPU, 12KB->16KB sound, 16KB bg, 32KB sprites
     "shollow": dict(
@@ -281,22 +382,48 @@ def collect(game, quiet=False):
         print("      (roms/ is gitignored - copy the MAME zip there by hand)")
         return None
 
-    with zipfile.ZipFile(zip_path, "r") as z:
-        # 1. Main CPU ROM (loaded at 0x0000, contiguous)
-        main_data = bytearray()
-        for fn in spec["main_files"]:
-            main_data.extend(z.read(fn))
+    def cat(z, names):
+        out = bytearray()
+        for fn in names:
+            out.extend(z.read(fn))
+        return out
 
-        # 2. Sound ROM (SSIO Z80), optionally zero-padded to a power of two
-        snd_data = bytearray()
-        for fn in spec["snd_files"]:
-            snd_data.extend(z.read(fn))
+    with zipfile.ZipFile(zip_path, "r") as z:
+        # 1. Main CPU ROM (loaded at 0x0000, contiguous).
+        # main_pad_to / main_pad_byte reproduce an MRA `<part repeat=...>` fill.
+        # Crater Raider's is 0xFF, not 0x00 - the MRA is the authority, and an
+        # 0xFF fill reads as RST 38h rather than NOP if the Z80 ever gets there.
+        main_data = cat(z, spec["main_files"])
+        if spec.get("main_pad_to"):
+            fill = bytes([spec.get("main_pad_byte", 0x00)])
+            main_data.extend(fill * (spec["main_pad_to"] - len(main_data)))
+        # MRA <patch> bytes (Turbo Tag's prototype ROM needs one).
+        for off, val in spec.get("main_patches", []):
+            main_data[off] = val
+
+        # 2. Sound ROM (SSIO Z80), optionally zero-padded to a power of two.
+        # Turbo Tag has NO SSIO board (mcr_sound_board is disabled by
+        # mod_turbo); all its audio comes from the Cheap Squeak Deluxe, so
+        # snd_files is empty and the region is just padding.
+        snd_data = cat(z, spec.get("snd_files", []))
         if spec.get("snd_pad_to"):
             snd_data.extend(b"\x00" * (spec["snd_pad_to"] - len(snd_data)))
 
-        # 3. Background tile graphics (gfx1): two 8KB planes
-        gfx1_1_data = z.read(spec["gfx1_1_file"])
-        gfx1_2_data = z.read(spec["gfx1_2_file"])
+        # 3. Background tile graphics (gfx1): two planes. MCR-1/2 use one 4/8 KB
+        # file per plane; MCR3Scroll's planes are 16 KB = TWO 8 KB files each,
+        # so the plural keys take a list.
+        gfx1_1_data = bytes(cat(z, spec["gfx1_1_files"])) \
+            if spec.get("gfx1_1_files") else z.read(spec["gfx1_1_file"])
+        gfx1_2_data = bytes(cat(z, spec["gfx1_2_files"])) \
+            if spec.get("gfx1_2_files") else z.read(spec["gfx1_2_file"])
+
+        # 3b. MCR3Scroll only: the 4 KB char/alpha plane (Spy Hunter's status
+        # line) and the 32 KB 16-bit Cheap Squeak Deluxe 68000 ROM. The CSD
+        # halves are ROM_LOAD16_BYTE: the first 16 KB is the LOW byte of each
+        # word, the second the HIGH byte (the merged top's port1 write applies
+        # exactly that lane split).
+        chr_data = bytes(cat(z, spec.get("chr_files", [])))
+        csd_data = bytes(cat(z, spec.get("csd_files", [])))
 
         # 4. Sprite graphics (gfx2), assembled BY BITPLANE.
         # The MCR-3 sprite engine fetches one 32-bit word as
@@ -321,7 +448,7 @@ def collect(game, quiet=False):
         # the region and shift every later game in the pack.
         files = spec["gfx2_files"]
         gfx2_data = bytearray()
-        if spec.get("family", "mcr2") == "mcr3":
+        if spec.get("family", "mcr2") in ("mcr3", "mcr3scroll"):
             per_plane = SPRITE_REGION // 4          # 32 KB
             for i in range(0, len(files), 2):
                 plane = bytearray()
@@ -338,9 +465,12 @@ def collect(game, quiet=False):
                 gfx2_data.extend(z.read(fn))
 
     if not quiet:
+        extra = ""
+        if chr_data or csd_data:
+            extra = f"  chr={len(chr_data)}  csd={len(csd_data)}"
         print(f"  main(cpu)={len(main_data)}  snd={len(snd_data)}  "
               f"gfx1_1={len(gfx1_1_data)}  gfx1_2={len(gfx1_2_data)}  "
-              f"gfx2={len(gfx2_data)}")
+              f"gfx2={len(gfx2_data)}{extra}")
 
     return {
         "main":   bytes(main_data),
@@ -348,6 +478,8 @@ def collect(game, quiet=False):
         "gfx1_1": bytes(gfx1_1_data),
         "gfx1_2": bytes(gfx1_2_data),
         "gfx2":   bytes(gfx2_data),
+        "chr":    chr_data,      # MCR3Scroll char/alpha plane (else b"")
+        "csd":    csd_data,      # MCR3Scroll CSD 68000 ROM     (else b"")
     }
 
 

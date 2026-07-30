@@ -187,6 +187,21 @@ Cost there: Logic 13338 -> 13590, BSRAM 88 -> 98 of 118 (20 spare).
 The merged 9-game core at 114/118 will NOT fit (+10 = 124); narrowing `N_DW`
 to 64 is the lever, since BSRAM here is width-driven not depth-driven.
 
+### The +10 gets worse as families are merged (measured 2026-07-30)
+
+Adding MCR3Scroll (`mcr23s_console60k`, 12 games, three families) put the
+`ddr3_framebuffer` build at **127/118 — 9 over** before any scaler question
+arises; the BSRAM levers to get it under are enumerated in `TODO.md` 4a-bis.
+So the scaler choice is now genuinely coupled to the roster: every block
+`ascal_v` spends is a block the jukebox cannot spend on a game family.
+
+Order of business, therefore: settle the 3-family fit on the cheap scaler
+first, then decide whether `ascal_v`'s 10 blocks are affordable — and if they
+are not, whether `N_DW=64` (halving the line-buffer and FIFO width, the whole
+source of the +10) closes the gap. Do not start the swap while the merge is
+still over budget; the two changes would confound each other, which is exactly
+the measurement mistake this file's last section warns about.
+
 **Three integration traps, all of which build and time cleanly while failing
 silently:**
 1. **Hold the scaler in reset until DDR3 has trained** -

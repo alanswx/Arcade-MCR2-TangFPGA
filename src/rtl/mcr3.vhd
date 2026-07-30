@@ -131,6 +131,13 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity mcr3 is
+generic(
+ -- Sprite line buffers: 256x8 each, so an 18 Kb BSRAM block per buffer is
+ -- almost entirely wasted. SPRLINE_RAMSTYLE lets a board move them to LUT RAM
+ -- instead; the merged 3-family build has TEN across its cores and needs the
+ -- blocks. Default "block_ram" keeps every existing board bit-identical.
+ SPRLINE_RAMSTYLE : string := "block_ram"
+);
 port(
  clock_40     : in std_logic;
  reset        : in std_logic;
@@ -805,7 +812,7 @@ port map(
 
 -- sprite line buffer 1a
 sprlinebuf1a : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1a_we,
@@ -816,7 +823,7 @@ port map(
 
 -- sprite line buffer 1b
 sprlinebuf1b : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1b_we,
@@ -827,7 +834,7 @@ port map(
 
 -- sprite line buffer 2a
 sprlinebuf2a : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2a_we,
@@ -838,7 +845,7 @@ port map(
 
 -- sprite line buffer 2b
 sprlinebuf2b : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2b_we,

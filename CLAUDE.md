@@ -14,13 +14,17 @@ the whole family behind its OSD). **MCR-3 (91490)** — all three titles
 hardware-verified and playable: Tapper, Timber and Discs of Tron (the
 latter mirrored, which is correct - the real cabinet has a mirror). **MCR-1** —
 Kick/Kickman/Solar Fox; Kickman verified on hardware 2026-07-27 (first ever
-MCR-1 run), Kick and Solar Fox not yet exercised. One pack-v2 SD card carries every
-game for every family (`tools/make_pack_v2.py`); the product roadmap toward
-the full-series jukebox is at the top of `TODO.md`.
+MCR-1 run), Kick and Solar Fox not yet exercised. **MCR3Scroll** — Crater
+Raider, Spy Hunter, Turbo Tag: ROMs, pack entries and gateware all in place
+(`mcr23s_console60k`), nothing run on hardware yet. One pack-v2 SD card carries
+every game for every family (`tools/make_pack_v2.py`, now 15 games); the product
+roadmap toward the full-series jukebox is at the top of `TODO.md`.
 
 **MCR-2 + MCR-3 ARE MERGED** (`mcr23_console60k`, 9 games, flashed as the
-power-on default 2026-07-27). MCR-1 folds in once its sprite gfx move to
-SDRAM - see TODO item 4a.
+power-on default 2026-07-27). **MCR3Scroll joins them in `mcr23s_console60k`
+(2026-07-30): 12 games, three families, builds at 117/118 BSRAM — but has
+never run on hardware.** MCR-1 folds in once its sprite gfx move to SDRAM -
+see TODO items 4a and 4a-bis.
 **Direction (agreed 2026-07-27): MCR-1/2/3 will be MERGED into one
 bitstream** rather than switched by Gowin multiboot — core switching then
 becomes the same instant SD reload that game switching already is. Multiboot
@@ -36,10 +40,18 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs — Wacko verified loading from the card 2026-07-27 |
 | `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
 | `mcr23_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working — MERGED MCR-2 + MCR-3, 9 games in one bitstream.** This is what the SPI flash holds (power-on default). Roster index <-> (family, slot) translation in the top; both cores instantiated, inactive one held in reset; CPU/sound ROM + bg gfx pair shared. 114/118 BSRAM. **All nine games verified on hardware** (Tapper, Timber, Discs of Tron, Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man) |
+| `mcr23s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds, 12 games (MCR-2 + MCR-3 + MCR3Scroll), 117/118 BSRAM, TNS 0.000 — NOT yet run on hardware.** The "can one core hold everything" experiment; adds Crater Raider, Spy Hunter, Turbo Tag with the Cheap Squeak Deluxe 68000 (FX68K). Needed two BSRAM levers to fit: sprite line buffers → LUT RAM and the **sound ROM → SDRAM**, neither hardware-verified. Read its `README.md` first |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
 Shared, platform-independent code lives in `src/`:
-- `src/rtl/` — MCR2 core (`mcr2.vhd`), T80 Z80, Z80CTC, PLL (`gowin_pll_mcr2.v`), RAM wrappers (`dpram.sv`)
+- `src/rtl/` — the game cores (`mcr1.vhd`, `mcr2.vhd`, `mcr3.vhd`,
+  `mcr3scroll.vhd`), T80 Z80, Z80CTC, PLL (`gowin_pll_mcr2.v`), RAM wrappers
+  (`dpram.sv`, `gen_ram.sv`)
+- `src/rtl/FX68K/` + `cheap_squeak_deluxe.vhd` + `pia6821.vhd` +
+  `steering_control.vhd` — the Cheap Squeak Deluxe 68000 music board and Spy
+  Hunter's wheel/pedal decoder (vendored 2026-07-30 from MCR3Scroll; MCR3Mono's
+  Sounds Good reuses the FX68K). **Instantiate FX68K via `fx68k_lc.sv`, not
+  `fx68k.vhd`** — see `src/rtl/FX68K/README.md`
 - `src/dvi_tx/` — TMDS encoder + OSER10-based HDMI serializer
 - `src/audio/` — delta-sigma PWM DAC
 - `src/usb/` — nand2mario `usb_hid_host` (MIT, vendored 2026-07) + 12 MHz
@@ -186,11 +198,18 @@ python3 tools/merge_roms.py domino    # default (MCR-2)
 python3 tools/merge_roms.py tron      # MCR-2
 python3 tools/merge_roms.py kick      # MCR-1 -> mcr1_console60k/
 python3 tools/merge_roms.py solarfox  # MCR-1
+python3 tools/merge_roms.py spyhunt   # MCR3Scroll (also crater, turbotag)
 ```
 
-Each game carries a `family` (`mcr1`/`mcr2`); merge_roms writes that
-family's board dir(s) only, so an MCR-1 build never clobbers the MCR-2
-boards' `game_config.vh` (and vice versa). The MCR-1 core lives in
+Each game carries a `family` (`mcr1`/`mcr2`/`mcr3`/`mcr3scroll`); merge_roms
+writes that family's board dir(s) only, so an MCR-1 build never clobbers the
+MCR-2 boards' `game_config.vh` (and vice versa). **`mcr3scroll` writes
+nowhere** — it exists only inside the merged 60K bitstream, which bakes no ROM
+data at all, and writing to `src/rtl` would clobber whichever baked family the
+25K last used. Its two extra regions, `chr` (4 KB char/alpha plane) and `csd`
+(32 KB Cheap Squeak Deluxe 68000 ROM), come back from `collect()` and are
+placed by `make_pack_v2` at dl 0x3C000 and 0x40000 — past the 256 KB an 18-bit
+`dl_addr` covers, hence `rom_loader`'s `DL_AW` parameter. The MCR-1 core lives in
 `src/rtl/mcr1.vhd` (vendored from Arcade-MCR1_MiSTer, patched: exposes
 `hcnt_out`/`vcnt_out` and INIT_FILE-bakes its gfx dprams, same as
 `mcr2.vhd`). Its download/ROM map differs (CPU 0x0000, sound 0x8000,
@@ -234,6 +253,11 @@ their bg dprams differently:
 |---|---|---|
 | MCR-3 (`mcr3.vhd`) | the ROM MAME loads **second** (higher offset) | tapper, timber |
 | MCR-2 (`mcr2.vhd`) | the ROM MAME loads **first** (offset 0) | domino, shollow, tron, wacko, kroozr |
+| MCR3Scroll (`mcr3scroll.vhd`) | the ROM MAME loads **first** (offset 0) | **NOT verified** — read off the instances (its bg dprams are wired uncrossed, unlike mcr3.vhd's) |
+
+MCR3Scroll additionally takes **two files per plane** (its planes are 16 KB,
+made of two 8 KB ROMs), so its specs use the plural `gfx1_1_files` /
+`gfx1_2_files` keys.
 
 ### MCR-3 sprite ROMs are FOUR 32 KB BITPLANE SLOTS, not a blob
 The sprite engine fetches each 32-bit word as `{Q3[i],Q2[i],Q1[i],Q0[i]}`
@@ -241,10 +265,15 @@ from the four quarters of the 128 KB region, so every bitplane owns a fixed
 32 KB slot. `merge_roms` assembles gfx2 **by plane**, padding each pair of
 files to its slot. Concatenating and padding at the end only works for a
 full 128 KB set; a 64 KB set (Discs of Tron) then leaves Q2/Q3 empty and
-sprites draw with 2 of 4 planes — striped, missing interior pixels. This is
-MCR-3 only: MCR-1/MCR-2 sprites are a FLAT 32 KB region (one `aWidth=15`
-dpram read 8 bits at a time), and padding their planes overflows it and
-shifts every later game in the pack.
+sprites draw with 2 of 4 planes — striped, missing interior pixels.
+
+This applies to **MCR-3 and MCR3Scroll** (their sprite fetch logic is
+byte-identical, so both use the same plane assembly *and* the same SDRAM write
+swizzle in the top — note upstream MiSTer does MCR3Scroll's interleave in the
+MRA instead, which reaches the same SDRAM contents). It does NOT apply to
+MCR-1/MCR-2: their sprites are a FLAT 32 KB region (one `aWidth=15` dpram read
+8 bits at a time), and padding their planes overflows it and shifts every later
+game in the pack.
 
 Check a new game with `mame -listxml <game> | grep 'region="gfx1"'` — the
 `offset=` attributes are the authority. Getting it backwards gives **correct
@@ -430,6 +459,10 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
   merged MCR-2+MCR-3 core (the product), what is open and in what order, the
   stored-ROM audit, the recurring Gowin/measurement traps, and the bench
   state. Also lists the conclusions I got WRONG so they are not re-derived.
+  Its item 3 now covers the 3-family merge that builds.
+- `mcr23s_console60k/README.md` — **the 12-game three-family merge**: what is
+  shared between the cores, the two SDRAM regions it depends on, the family-3
+  download map, the FX68K binding fix, and everything still unverified.
 - `TODO.md` items 1, 2, 3 and 4a-4c — the detail behind that handoff:
   HDMI dropouts (with the reconfig-recovers-it result), everything-from-SD,
   per-game status, and the MEASURED merge budget.

@@ -17,6 +17,11 @@ Per-family payload layouts (== each top's dl address map):
                     | 0x1C000 bg1 8K | 0x1E000 bg2 8K            (128 KB)
   mcr3 (family 2):  0x00000 CPU 64K | 0x10000 snd 16K | 0x14000 bg1 16K
                     | 0x18000 bg2 16K | 0x1C000 sprites 128K     (240 KB)
+  mcr3scroll (fam 3): as mcr3, then 0x3C000 char 4K | 0x40000 CSD 68000 32K
+                    (288 KB - past 256 KB, which is why the merged top's
+                    rom_loader runs a 19-bit dl_addr. The 12 KB gap at
+                    0x3D000 keeps the CSD region on a clean dl_addr[18]
+                    decode.)
 
 Usage (repo root):  python3 tools/make_pack_v2.py   -> mcr_pack_v2.img
 Write on the Mac:   python3 tools/write_pack_v2.py mcr_pack_v2.img /dev/rdiskN
@@ -26,7 +31,7 @@ sys.path.insert(0, 'tools')
 from merge_roms import GAME_SPECS, collect
 
 SECTOR, PACK_BASE, PAYLOAD_LBA = 512, 2048, 2112
-FAM_ID = {"mcr1": 0, "mcr2": 1, "mcr3": 2}
+FAM_ID = {"mcr1": 0, "mcr2": 1, "mcr3": 2, "mcr3scroll": 3}
 
 def pad(b, n): return bytes(b) + b"\x00" * (n - len(b))
 
@@ -40,6 +45,15 @@ def blob(game, spec, r):
         return (pad(r["main"],0x10000) + pad(r["snd"],0x4000) +
                 pad(r["gfx2"],0x8000) + pad(r["gfx1_1"],0x2000) +
                 pad(r["gfx1_2"],0x2000))
+    if fam == "mcr3scroll":
+        # Same first five regions as mcr3, then the two scroll-only ones. The
+        # 0x3D000-0x3FFFF gap is deliberate: it puts the CSD ROM at 0x40000 so
+        # the top decodes it as simply dl_addr[18].
+        return (pad(r["main"],0x10000) + pad(r["snd"],0x4000) +
+                pad(r["gfx1_1"],0x4000) + pad(r["gfx1_2"],0x4000) +
+                pad(r["gfx2"],0x20000) +
+                pad(r["chr"],0x1000) + b"\x00" * 0x3000 +
+                pad(r["csd"],0x8000))
     # mcr3
     return (pad(r["main"],0x10000) + pad(r["snd"],0x4000) +
             pad(r["gfx1_1"],0x4000) + pad(r["gfx1_2"],0x4000) +
@@ -48,13 +62,16 @@ def blob(game, spec, r):
 def main():
     minis, rich, payload = [], [], b""
     lba = PAYLOAD_LBA
-    slots = {0: 0, 1: 0, 2: 0}
+    slots = {0: 0, 1: 0, 2: 0, 3: 0}
     # Slot numbers MUST match each family's OSD roster (osd.sv NAME0.. order),
     # NOT dict order: mcr1 OSD = kick(0), solarfox(1); mcr2 OSD = shollow(0),
     # tron(1), wacko(2), kroozr(3), twotiger(4), domino(5); mcr3 = tapper(0).
+    # mcr3scroll OSD order = crater(0), spyhunt(1), turbotag(2), matching
+    # mcr23s_console60k_top.sv NAME9/NAME10/NAME11.
     ROSTER = ["kick", "solarfox", "kickman",
               "shollow", "tron", "wacko", "kroozr", "twotiger", "domino",
-              "tapper", "timber", "dotron"]
+              "tapper", "timber", "dotron",
+              "crater", "spyhunt", "turbotag"]
     for game in ROSTER:
         spec = GAME_SPECS[game]
         fam = FAM_ID[spec.get("family", "mcr2")]

@@ -220,6 +220,17 @@ we_a/we_b/d/q tie-offs, palette gets we_b/d_b, and `hcnt_out` is added
 633-wrap as the rest). Board integration is **SDRAM-gated** (same 128 KB
 sprite port as MCR-3) — build after the Phase B memtest passes.
 
+**MERGED AND BUILDING 2026-07-30 — `mcr23s_console60k/`, 12 games in one
+bitstream, and BSRAM-blocked.** Read that board's `README.md` first; the
+budget and levers are `TODO.md` item 4a-bis. Second round of adaptation on
+this core: the bg pair is now HOISTED to the top (shared with MCR-2/MCR-3),
+`vcnt_out` and `cpu_halt_n` are exported, the char plane took `CH_INIT` +
+`GFX_LOADABLE` so the bitstream carries no ROM data, and `CSD_ENABLE` /
+`SPRLINE_RAMSTYLE` generics were added — the first to measure the 68000's
+cost (it turned out to be **zero** BSRAM), the second to push the 256×8
+sprite line buffers into LUT RAM. The whole sound stack below is vendored
+and compiles; the only blocker is 7 BSRAM blocks.
+
 ### Sound stack (all verified Gowin-clean, vendor at board-build time)
 
 Spy Hunter and Turbo Tag add the **Cheap Squeak Deluxe** board, a 68000 +
@@ -234,17 +245,37 @@ Altera primitives):
   its microcode via `$readmemb` (the only "altera" strings in it are
   `// altera message_off` comment pragmas). This is the first FX68K on the
   platform; MCR3Mono reuses it (Sounds Good), so proving it here is a
-  one-time cost.
+  one-time cost. **Vendored and building 2026-07-30**, at 0 extra BSRAM —
+  its `uRam`/`nRam` microcode and `regs68H/L` register file map to
+  ROM16/SSRAM rather than block RAM. It needs `src/rtl/FX68K/fx68k_lc.sv`,
+  a lower-case-port wrapper: upstream's `use work.fx68k.all` + a COMPONENT
+  in a package *also* called `fx68k` does not bind under GowinSynthesis
+  (EX4806 resolves the component to the package; EX4968 because
+  mixed-language port matching is case sensitive).
 - `steering_control.vhd` for Spy Hunter's wheel/pedals.
 
 ### Memory split
 
-Same as MCR-3 (CPU/sound/bg baked BRAM; sprites -> SDRAM) plus:
-- **char/alpha graphics** (Spy Hunter status line): baked BRAM,
-  `rom_gfx_ch.hex`, dl 0x8000.
-- **CSD 68000 ROM** (`csd_rom_addr`[14:1] -> `csd_rom_do`[15:0], 16-bit):
-  baked BRAM (Spy Hunter/Turbo only).
-- `csd_audio_out`[9:0] mixes into the main audio for those games.
+**Superseded by what `mcr23s_console60k` actually does (2026-07-30):** nothing
+is baked (licensing), CPU/sound/bg RAMs are SHARED with MCR-2/MCR-3, and the
+CSD ROM went to SDRAM because 32 KB is 16 BSRAM blocks. As built:
+- **char/alpha graphics** (Spy Hunter status line): inside the core, `CH_INIT("")`
+  + `GFX_LOADABLE(1)`, dl 0x3C000 -> the core's own 0x8000 decode. 2 blocks.
+- **CSD 68000 ROM** (`csd_rom_addr`[14:1] -> `csd_rom_do`[15:0], 16-bit, 32 KB):
+  **SDRAM banks 0/1** — written through port1 from dl 0x40000, read on the
+  `cpu2` port, the same arrangement upstream MiSTer uses. Byte lanes follow
+  MiSTer's 16-bit swizzle: first 16 KB = low byte, second = high byte
+  (`ROM_LOAD16_BYTE` halves u17/u18 then u7/u8).
+- **sound ROM**: also moved to SDRAM (`cpu3`, word 0x4000) to claw back 8
+  blocks — the sound Z80 is at 2 MHz, ~3x the main CPU's timing margin.
+  `SND_IN_SDRAM` in the top switches it back.
+- `csd_audio_out`[9:0] mixes into the main audio as `audio + {csd_audio, 5'd0}`
+  for those games.
+- sprites: the SAME 128 KB SDRAM region and write swizzle as MCR-3 — the
+  sprite fetch logic is byte-identical between the two cores, so `merge_roms`
+  assembles gfx2 by plane into four 32 KB slots for both.
+
+Original plan (baked BRAM everywhere) kept below for context only.
 
 ### Games, in order
 

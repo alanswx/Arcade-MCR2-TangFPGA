@@ -141,7 +141,12 @@ generic(
  -- bg gfx generics are gone: those RAMs moved to the top (2026-07-27).
  -- Only the SPRITE ROM is still inside the core.
  GFX2_INIT    : string  := "rom_gfx2.hex";
- GFX_LOADABLE : integer := 0
+ GFX_LOADABLE : integer := 0;
+ -- Sprite line buffers: 256x8 each, so an 18 Kb BSRAM block per buffer is
+ -- almost entirely wasted. SPRLINE_RAMSTYLE lets a board move them to LUT RAM
+ -- instead; the merged 3-family build has TEN across its cores and needs the
+ -- blocks. Default "block_ram" keeps every existing board bit-identical.
+ SPRLINE_RAMSTYLE : string := "block_ram"
 );
 port(
  clock_40     : in std_logic;
@@ -763,7 +768,7 @@ port map(
 
 -- sprite line buffer 1
 sprlinebuf1 : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1_we,
@@ -774,7 +779,7 @@ port map(
 
 -- sprite line buffer 2
 sprlinebuf2 : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2_we,

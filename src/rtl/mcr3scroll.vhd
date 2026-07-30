@@ -130,6 +130,26 @@ use ieee.std_logic_unsigned.all;
 use ieee.numeric_std.all;
 
 entity mcr3scroll is
+-- Graphics-ROM baking and the CSD sound board, per board (2026-07-30). Same
+-- discipline as mcr2.vhd/mcr1.vhd: defaults bake so a future standalone
+-- MCR3Scroll board keeps working, while the merged 60K top passes an empty
+-- name + GFX_LOADABLE => 1 so the bitstream carries NO ROM data (licensing,
+-- TODO item 2). dpram needs LOADABLE whenever INIT_FILE is empty or its port B
+-- silently goes read-only and the download dies with no error anywhere.
+-- CSD_ENABLE => 0 removes the Cheap Squeak Deluxe board (68000 + PIA) for
+-- Crater Raider, which is SSIO-only; Spy Hunter and Turbo Tag need it.
+generic(
+ -- bg gfx generics are absent by design: those RAMs are HOISTED to the top
+ -- (see bg_addr/bg1_do/bg2_do below). Only the CHAR plane is still inside.
+ CH_INIT      : string  := "rom_gfx_ch.hex";
+ GFX_LOADABLE : integer := 0;
+ CSD_ENABLE   : integer := 1;
+ -- Sprite line buffers: 256x8 each, so an 18 Kb BSRAM block per buffer is
+ -- almost entirely wasted. SPRLINE_RAMSTYLE lets a board move them to LUT RAM
+ -- instead; the merged 3-family build has TEN across its cores and needs the
+ -- blocks. Default "block_ram" keeps every existing board bit-identical.
+ SPRLINE_RAMSTYLE : string := "block_ram"
+);
 port(
   clock_40       : in  std_logic;
   reset          : in  std_logic;
@@ -147,6 +167,8 @@ port(
   -- counter so the Tang top can align the framebuffer capture window; the
   -- video scanner is the same 633-wrap design as the other cores.
   hcnt_out       : out std_logic_vector(9 downto 0);
+  vcnt_out       : out std_logic_vector(9 downto 0);
+  cpu_halt_n     : out std_logic;   -- T80 HALT export (boot wedge watchdog)
 
   mod_crater     : in  std_logic;
   mod_turbo      : in  std_logic;
@@ -171,8 +193,23 @@ port(
   csd_rom_addr   : out std_logic_vector(14 downto 1);
   csd_rom_do     : in  std_logic_vector(15 downto 0);
   sp_addr        : out std_logic_vector(14 downto 0);
-  sp_graphx32_do : in  std_logic_vector(31 downto 0); 
- 
+  sp_graphx32_do : in  std_logic_vector(31 downto 0);
+
+  -- Background tile graphics, HOISTED OUT of the core (2026-07-30), exactly as
+  -- mcr3.vhd's were on 2026-07-27: the merged multi-family top shares ONE pair
+  -- of 16 KB RAMs between cores, since only one core runs at a time, and these
+  -- are 16 of the blocks that decide whether the merge fits at all. Pure port
+  -- move - same 1-cycle read on the same inverted clock, so tile timing is
+  -- untouched. The top owns the RAMs and the dl write decode, and must clock
+  -- port A on NOT clock_40 (this core reads them on clock_vidn).
+  -- NOTE the wiring is UNCROSSED here, unlike mcr3.vhd: upstream MCR3Scroll
+  -- has bg_graphics_1 (rom_gfx1_1.hex, dl range "00") drive bg_graphx1_do,
+  -- whereas upstream MCR-3 crosses them. Keep this straight or bg tiles get
+  -- right shapes with wrong colours - see CLAUDE.md's per-core plane-order note.
+  bg_addr        : out std_logic_vector(13 downto 0);
+  bg1_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_1
+  bg2_do         : in  std_logic_vector( 7 downto 0);  -- RAM holding blob gfx1_2
+
   dl_addr        : in  std_logic_vector(15 downto 0);
   dl_data        : in  std_logic_vector(7 downto 0);
   dl_wr          : in  std_logic;
@@ -339,8 +376,6 @@ architecture struct of mcr3scroll is
    x"4C", x"49", x"4F", x"00",                             -- oil
 	x"00", x"00");
   
- signal dl_bg_graphics_1_we : std_logic;
- signal dl_bg_graphics_2_we : std_logic;
  signal dl_cg_graphics_we   : std_logic;
 
 begin
@@ -880,7 +915,7 @@ port map(
   RD_n    => cpu_rd_n,
   WR_n    => cpu_wr_n,
   RFSH_n  => open,
-  HALT_n  => open,
+  HALT_n  => cpu_halt_n,
   BUSAK_n => open,
   A       => cpu_addr,
   DI      => cpu_di,
@@ -914,6 +949,13 @@ port map (
 cpu_rom_addr <= cpu_addr when cpu_addr < x"A000" else cpu_addr xor x"6000"; -- last rom has upper/lower part swapped
 
 hcnt_out <= hcnt;   -- local addition: surface the raster counter (see entity)
+vcnt_out <= vcnt;
+
+-- Background tile graphics now live in the top (see the entity comment).
+-- UNCROSSED, matching upstream MCR3Scroll's own instance ordering.
+bg_addr       <= bg_code_line;
+bg_graphx1_do <= bg1_do;
+bg_graphx2_do <= bg2_do;
 
 -- working RAM   F000-F7FF  2Ko
 wram : entity work.dpram
@@ -978,7 +1020,7 @@ port map(
 
 -- sprite line buffer 1a
 sprlinebuf1a : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1a_we,
@@ -989,7 +1031,7 @@ port map(
 
 -- sprite line buffer 1b
 sprlinebuf1b : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram1b_we,
@@ -1000,7 +1042,7 @@ port map(
 
 -- sprite line buffer 2a
 sprlinebuf2a : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2a_we,
@@ -1011,7 +1053,7 @@ port map(
 
 -- sprite line buffer 2b
 sprlinebuf2b : entity work.gen_ram
-generic map( dWidth => 8, aWidth => 8)
+generic map( dWidth => 8, aWidth => 8, RAMSTYLE => SPRLINE_RAMSTYLE)
 port map(
  clk  => clock_vidn,
  we   => sp_buffer_ram2b_we,
@@ -1020,12 +1062,13 @@ port map(
  q    => sp_buffer_ram2b_do
 );
 
--- char graphics ROM 10G
+-- char graphics ROM 10G (Spy Hunter's status line / alpha plane)
 ch_graphics : entity work.dpram
 generic map(
 	aWidth => 12,
 	dWidth => 8,
-	INIT_FILE => "rom_gfx_ch.hex"    -- baked char/alpha graphics (dl 0x8000)
+	INIT_FILE => CH_INIT,            -- "" + LOADABLE on the 60K (no baked ROMs)
+	LOADABLE  => GFX_LOADABLE
 )
 port map(
  clk_a  => clock_vidn,
@@ -1041,47 +1084,10 @@ port map(
 );
 dl_cg_graphics_we <= '1' when dl_wr = '1' and dl_addr(15 downto 12) = "1000" else '0';
 
--- background graphics ROM 3A/4A
-bg_graphics_1 : entity work.dpram
-generic map(
-	aWidth => 14,
-	dWidth => 8,
-	INIT_FILE => "rom_gfx1_1.hex"
-)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx1_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(13 downto 0),
- we_b   => dl_bg_graphics_1_we,
- d_b    => dl_data,
- q_b    => open
-);
-dl_bg_graphics_1_we <= '1' when dl_wr = '1' and dl_addr(15 downto 14) = "00" else '0';
-
--- background graphics ROM 5A/6A
-bg_graphics_2 : entity work.dpram
-generic map(
-	aWidth => 14,
-	dWidth => 8,
-	INIT_FILE => "rom_gfx1_2.hex"
-)
-port map(
- clk_a  => clock_vidn,
- we_a   => '0',
- d_a    => x"00",
- addr_a => bg_code_line,
- q_a    => bg_graphx2_do,
- clk_b  => clock_vid,
- addr_b => dl_addr(13 downto 0),
- we_b   => dl_bg_graphics_2_we,
- d_b    => dl_data,
- q_b    => open
-);
-dl_bg_graphics_2_we <= '1' when dl_wr = '1' and dl_addr(15 downto 14) = "01" else '0';
+-- background graphics ROMs 3A/4A + 5A/6A were HERE. They are now in the top
+-- (bg_addr/bg1_do/bg2_do, wired at the top of the architecture) so the merged
+-- multi-family build can share one pair across cores. Their dl decode moved
+-- with them; dl_bg_graphics_{1,2}_we are gone.
 
 
 -- background & sprite palette
@@ -1130,15 +1136,24 @@ port map(
 
 output_4 <= out_4;
 
--- Cheap Squeak Deluxe
-csd: entity work.cheap_squeak_deluxe
-port map (
- clock_40 => clock_40,
- reset => reset or mod_crater,
- input => out_4,
- rom_addr => csd_rom_addr,
- rom_do => csd_rom_do,
- audio_out => csd_audio_out
-);
+-- Cheap Squeak Deluxe (68000 + PIA music board): Spy Hunter and Turbo Tag
+-- only. Crater Raider is SSIO-only, so CSD_ENABLE => 0 leaves the whole
+-- FX68K/PIA stack out of the build - the lever for measuring what it costs.
+csd_gen : if CSD_ENABLE /= 0 generate
+  csd: entity work.cheap_squeak_deluxe
+  port map (
+   clock_40 => clock_40,
+   reset => reset or mod_crater,
+   input => out_4,
+   rom_addr => csd_rom_addr,
+   rom_do => csd_rom_do,
+   audio_out => csd_audio_out
+  );
+end generate;
+
+no_csd_gen : if CSD_ENABLE = 0 generate
+  csd_rom_addr  <= (others => '0');
+  csd_audio_out <= (others => '0');
+end generate;
 
 end struct;

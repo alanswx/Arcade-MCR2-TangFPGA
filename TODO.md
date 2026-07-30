@@ -274,6 +274,84 @@ next real milestone" within each section.
    (3) MCR-1: hoist its bg too, and take on the sprite->SDRAM surgery with a
        known-good merged reference to compare against.
    (4) Fold MCR-1 in (111/118 with both sprite sets in SDRAM).
+   **4a-bis. MCR3Scroll FOLDED IN AND MEASURED (2026-07-30) - board
+   `mcr23s_console60k/`, 12 games across three families.** Not a throwaway
+   probe this time: a real merge, with the roster, input maps, ROM specs and
+   pack layout done (`merge_roms` family `mcr3scroll`, `make_pack_v2` family 3,
+   15 games in `mcr_pack_v2.img`). Scaler kept as `ddr3_framebuffer` - the
+   cheap one - because BSRAM is the resource in question; `ascal_v` would add
+   10 blocks.
+   PnR numbers, `ddr3_framebuffer`, CSD ROM already in SDRAM:
+   | Configuration | BSRAM | verdict |
+   |---|---|---|
+   | mcr2+mcr3 (today, shipping) | 114 | fits |
+   | + MCR3Scroll, CSD/FX68K IN | **127** | over by 9 |
+   | + MCR3Scroll, CSD/FX68K OUT (`SCROLL_CSD=0`, Crater Raider only) | **127** | over by 9 |
+   | ...then the two levers below | **fits, PnR places it** | **12 games, one bitstream** |
+   Logic is a non-issue: 33.5k of 59.9k (56%), registers 25%.
+   **The Cheap Squeak Deluxe / FX68K stack costs ZERO BSRAM blocks** - the two
+   builds above differ only in whether it is compiled and land on the same 127.
+   Its microcode ROMs (`uRam`/`nRam`) and the 68000 register file
+   (`regs68H`/`regs68L`) map to ROM16/SSRAM, not block RAM. So the handoff's
+   "+ MCR3Scroll + FX68K ~130" was close on the total but wrong about the
+   cause: the 68000 is free, the cost is MCR3Scroll's own video/sprite RAMs.
+   What made it fit in the first place, and cost nothing:
+   - bg gfx pair HOISTED out of `mcr3scroll.vhd` and shared, as `mcr3.vhd`'s
+     was on 2026-07-27 (note it is UNCROSSED there, unlike mcr3.vhd)
+   - the 128 KB sprite region in SDRAM shared with MCR-3, write swizzle and
+     all: `mcr3scroll.vhd`'s sprite fetch is byte-identical to `mcr3.vhd`'s, so
+     `merge_roms` assembles its gfx2 by plane into four 32 KB slots and the
+     existing port2 path is reused unchanged
+   - the 32 KB CSD 68000 ROM in SDRAM on the idle **port1/cpu2** group (banks
+     0,1), which is what upstream MiSTer does too. In BSRAM it would be 16
+     blocks. The 68000's DTACK handshake absorbs the latency - unlike the main
+     Z80, which is why 4c's CPU-ROM-in-SDRAM failed. UNVERIFIED on hardware.
+   Closing the 9-block gap - both levers applied, PnR-measured:
+   | Step | BSRAM | |
+   |---|---|---|
+   | 3-family, as first built | 127 | over by 9 |
+   | + sprite line buffers -> LUT RAM | **125** | over by 7 |
+   | + sound ROM -> SDRAM | **PnR ACCEPTS - it PLACES** | fits |
+   1. **Sprite line buffers -> LUT RAM: -2 blocks, not the 10 hoped for.**
+      Ten 256x8 buffers across the three cores (2 mcr2, 4 mcr3, 4 mcr3scroll)
+      each burn a whole 18 Kb block for 2 Kb of storage. `gen_ram.sv` gained a
+      `RAMSTYLE` parameter and the cores a `SPRLINE_RAMSTYLE` generic (default
+      "block_ram", so every existing board is untouched). Gowin DID honour it -
+      SSRAM went 98 -> 418 RAM16, synthesis BSRAM 118 -> 116 - but PnR only
+      gave back 2 blocks, so it evidently packs most of those small arrays into
+      shared blocks already. Cheap (+1.9k logic) and worth keeping, but do not
+      budget 1 block per small RAM: **PnR packing, not the array count, decides.**
+   2. **Sound ROM 16 KB -> SDRAM: this is what made it fit.** Written through
+      port1 at word 0x4000 (above the CSD ROM), read on the idle `cpu3` port,
+      byte lane = `snd_addr[0]`. The sound Z80 runs at 2 MHz
+      (`mcr_sound_board` divides clk_sys by 20), so its address is stable
+      ~500 ns per fetch against sdram_gw's ~7 clk_sys worst case - about 3x the
+      main Z80's margin, which is why 4c's CPU-ROM attempt failed and this is
+      expected to work. `SND_IN_SDRAM` in the top switches it back.
+      **NOT hardware-verified** - 4c left it "not disproven, not verified", and
+      that is still true. Side effect: the stored-ROM audit's `snd` leg (beacon
+      E4) has no port B to sweep and reads 0 by design.
+   Levers NOT needed yet, kept for MCR-1:
+   3. CPU ROM 64 KB -> 56 KB (-4). Every MCR-2/3/Scroll program ROM ends at
+      0xDFFF; above that the Z80 map is RAM/IO. Needs a depth parameter on
+      `dpram` and a check that no core mirrors ROM above 0xE000.
+   4. MCR-2 sprites 32 KB -> SDRAM (-16). The known-hard one: MCR-2 has 1
+      phase of slack between latching the sprite code and drawing, MCR-3 has
+      8. Pipeline surgery, not a port change.
+   5. GW5AST-138 (298 blocks) - no surgery at all.
+   Also fixed in the new top, still open in `mcr23_console60k`: an
+   unconditional `input_4 = 8'hFF;` AFTER the input-mux `endcase` overrides
+   every per-game IP4 the case sets - Wacko's aim stick, Kozmik Kroozr's
+   synthesised Y axis and Two Tigers' player-2 dial all read 0xFF.
+   `mcr2_console60k` does not have the line; it came in with the merge.
+   Gowin trap found here: **FX68K cannot be bound the upstream way.**
+   `use work.fx68k.all` + a COMPONENT in a package also named `fx68k` gives
+   EX4806 ("primary unit of binding component is not an entity" - it resolves
+   to the package), and mixed-language port matching is CASE SENSITIVE, so
+   `extReset`/`enPhi1`/`iEdb` all fail with EX4968. Fix:
+   `src/rtl/FX68K/fx68k_lc.sv`, a lower-case-port wrapper reached by direct
+   entity instantiation.
+
    PROBE GOTCHA worth remembering: the first probe reported a comfortable 95
    because the family-select signal was `game_id[3]`, which synthesis proved
    constant 0 (the OSD only assigns loaded_slot[2:0]) - it killed MCR-2's
@@ -1951,12 +2029,21 @@ budget exists anymore. See the Shield PCB section.
   rationale in `future/README.md`; design in the roadmap (Phase E). Bonus
   still stands: once Turbo Cheap Squeak is vendored, demoderb (4-player
   Demolition Derby) drops into the existing MCR-2 core.
-- **MCR3Scroll core (Spy Hunter/Crater/Turbo Tag) — Phase D, core ready,
-  board gated on SDRAM.** `src/rtl/mcr3scroll.vhd` vendored + adapted
-  (dprams + hcnt_out). The Cheap Squeak Deluxe / FX68K / pia6821 /
-  steering_control sound stack is verified Gowin-clean and listed for
-  vendoring at board-build time. Crater Raider first (SSIO-only, no FX68K);
-  Spy Hunter adds CSD + steering + lamps. Design in the roadmap.
+- **MCR3Scroll core (Spy Hunter/Crater/Turbo Tag) — Phase D. MERGED INTO
+  `mcr23s_console60k` 2026-07-30, BSRAM-BLOCKED, nothing on hardware yet.**
+  The whole sound stack is vendored and BUILDS: `cheap_squeak_deluxe.vhd`,
+  `pia6821.vhd`, `steering_control.vhd` and FX68K (via the `fx68k_lc.sv`
+  lower-case wrapper — upstream's package+COMPONENT route does not bind on
+  GowinSynthesis, see `mcr23s_console60k/README.md`). ROM specs and the pack
+  layout are done: `merge_roms` family `mcr3scroll` for all three games,
+  `make_pack_v2` family 3, `mcr_pack_v2.img` now carries 15 games.
+  **The 3-family merge FITS**, after moving the sound ROM to SDRAM; it was
+  127/118 before that. Detail and measurements in item 4a-bis above. The FX68K costs zero blocks;
+  MCR3Scroll's own video/sprite RAMs are the cost.
+  Open before it can run: the fit, then bg plane order (a guess — swap
+  `gfx1_1_files`/`gfx1_2_files` if tiles show right shapes/wrong colours),
+  per-game DIPs, Spy Hunter's lamp panel, and a real wheel/pedal on the
+  shield ADC (`steering_control` on the d-pad is the stand-in).
 - **MCR-3 core (Tapper/Timber/Journey/DoT) — Phase C, core ready, board
   gated on SDRAM.** `src/rtl/mcr3.vhd` vendored + platform-adapted (builds
   once wired). Board integration is fully designed in

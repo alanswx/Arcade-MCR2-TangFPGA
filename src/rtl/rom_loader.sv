@@ -31,7 +31,13 @@ module rom_loader #(
     // (0=mcr1, 1=mcr2, 2=mcr3)
     // Default family for single-core boards. The MERGED top drives `family`
     // instead, because which family to load is a runtime choice there.
-    parameter [7:0]  FAMILY      = 8'd1
+    parameter [7:0]  FAMILY      = 8'd1,
+    // Download-address width. 18 bits (256 KB) covers every family up to
+    // MCR-3; MCR3Scroll's payload runs to 0x48000 (288 KB) because its char
+    // plane and the Cheap Squeak Deluxe 68000 ROM sit above the 128 KB sprite
+    // blob, so the merged 3-family top passes 19. Keep it a parameter so the
+    // existing single-family boards are bit-for-bit unaffected.
+    parameter int    DL_AW       = 18
 )(
     input             clk,
     input             rst,
@@ -77,7 +83,7 @@ module rom_loader #(
     input             sd_wr_done,
 
     // ROM download bus (see map above)
-    output reg [17:0] dl_addr,   // 18-bit: v2 payloads up to 256 KB
+    output reg [DL_AW-1:0] dl_addr,   // v2 payloads: 18 bits = 256 KB
     output reg        v2_mode,   // 1 = MCRPACK2 pack detected
     output reg [7:0]  dl_data,
     output reg        dl_wr,
@@ -121,7 +127,7 @@ reg        v2_found;
 reg [31:0] v2_lba;
 reg [15:0] v2_cnt;
 reg [31:0] sector;
-reg [17:0] addr;
+reg [DL_AW-1:0] addr;
 reg        save_pend;
 reg [9:0]  save_idx;
 reg [2:0]  retry_cnt;    // transient failures so far
@@ -160,7 +166,7 @@ always @(posedge clk) begin
         st         <= L_WAIT;
         done       <= 1'b0;
         error      <= 1'b0;
-        addr       <= 18'd0;
+        addr       <= '0;
         hdr_cnt    <= 9'd0;
         is_v2      <= 1'b0;
         v2_mode    <= 1'b0;
@@ -277,7 +283,7 @@ always @(posedge clk) begin
                 else begin
                     sector       <= v2_lba;
                     sect_left_hi <= v2_cnt;
-                    addr         <= 18'd0;
+                    addr         <= '0;
                     st           <= L_NEXT;
                 end
             end else if (hdr != MAGIC) begin
@@ -289,7 +295,7 @@ always @(posedge clk) begin
                 v2_mode      <= 1'b0;
                 sector       <= PACK_BASE + 32'd1 + (cur_slot * SLOT_SECTORS);
                 sect_left_hi <= 16'(SLOT_SECTORS);
-                addr         <= 18'd0;
+                addr         <= '0;
                 st           <= L_NEXT;
             end
         end
@@ -314,7 +320,7 @@ always @(posedge clk) begin
                     dl_addr <= addr;
                     dl_data <= sd_dout;
                     dl_wr   <= 1'b1;
-                    addr    <= addr + 18'd1;
+                    addr    <= addr + 1'b1;
                 end
                 if (sd_rd_done) begin
                     sector       <= sector + 32'd1;
@@ -373,7 +379,7 @@ always @(posedge clk) begin
                 watchdog   <= 27'd0;
                 hdr_cnt    <= 9'd0;
                 hdr        <= 64'd0;
-                addr       <= 18'd0;
+                addr       <= '0;
                 is_v2      <= 1'b0;
                 v2_found   <= 1'b0;
                 st         <= L_WAIT;

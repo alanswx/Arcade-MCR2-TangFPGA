@@ -22,6 +22,11 @@ recovers within seconds with no power cycle.
 Budget: **114/118 BSRAM**, ~20k of 60k LUT, TNS 0.000. Four blocks spare — check
 the BSRAM count on *every* change.
 
+**`mcr23s_console60k` (2026-07-30) extends this to 12 games / three families —
+MCR3Scroll's Crater Raider 9, Spy Hunter 10, Turbo Tag 11 — and BUILDS at
+117/118, TNS 0.000.** Untested on hardware; see item 3 below and that board's
+README. `mcr23_console60k` remains the product and is untouched.
+
 Single-family boards (`mcr1/mcr2/mcr3_console60k`) all still build and work; the
 merged board is additive. The 25K stays deliberately baked (fixed-function).
 
@@ -71,28 +76,47 @@ contributes (18% ≫ the 0–2% of a cool board). **Next: a managed or periodic 
 re-calibration.** A cabinet owner cannot cool the board; gateware can recalibrate.
 
 ### 3. Folding in MCR-1, and MCR3Scroll
-Measured budget (see TODO 4a — arithmetic was wrong twice, these are PnR):
 
-| Configuration | BSRAM |
-|---|---|
-| MCR-2+MCR-3 (today) | 114 |
-| + MCR3Scroll + FX68K | ~130 — over |
-| …after MCR-2 sprites → SDRAM (−16) | ~114 |
-| + MCR-1 | ~127 — over |
+**DONE for MCR3Scroll, 2026-07-30: `mcr23s_console60k` builds — 12 games,
+three families, 117/118 BSRAM, 0 setup/hold violations.** Read
+`mcr23s_console60k/README.md`; the measurement trail is `TODO.md` 4a-bis.
+Nothing has run on hardware yet. Progression, all PnR:
 
-- **FX68K fits easily**: synthesised standalone for this exact part at **2,891
-  LUT and 4 BSRAM** (microcode ROMs map to block RAM, not logic). The 68000 is
-  *not* the reason to change FPGA.
-- MCR3Scroll shares more than expected: its `sp_addr`/`sp_graphx32_do` is
-  byte-identical to `mcr3.vhd`, and its cpu/snd/bg widths match, so only ~12
-  blocks are genuinely new. **Crater Raider needs no CSD/FX68K at all** — the
-  cheap first target.
-- **MCR-2 sprite → SDRAM is the risky piece**: MCR-3 has 8 phases between
-  latching the sprite code and drawing; MCR-2 has 1. It needs pipeline surgery,
-  not a port change.
-- **Escape hatch**: GW5AST-138 has **298 blocks** vs 118, and 138k LUT. All four
-  families fit with ~170 spare, no surgery. `mcr2_console138k/` is a stale
-  pre-fix top and CLAUDE.md warns the net→ball map is SOM-specific.
+| Configuration | BSRAM | |
+|---|---|---|
+| MCR-2+MCR-3 (the shipping core) | 114 | fits |
+| + MCR3Scroll, first build | 127 | over by 9 |
+| + sprite line buffers → LUT RAM | 125 | over by 7 |
+| + sound ROM → SDRAM | **117** | **fits, 1 spare** |
+
+What that revised, from the estimates that used to be in this section:
+
+- **The FX68K costs ZERO BSRAM, not 4.** Two builds differing only in
+  `SCROLL_CSD` both land on 127: `uRam`/`nRam` and the 68000 register file map
+  to ROM16/SSRAM. The 68000 was never the problem — MCR3Scroll's own
+  video/sprite RAMs are.
+- **MCR-2 sprites → SDRAM was NOT needed.** The two cheap levers above were
+  enough, so the pipeline surgery (MCR-2 has 1 phase of slack, MCR-3 has 8) is
+  still un-attempted and still available for MCR-1.
+- **Small RAMs do not cost one block each.** Pushing ten 256×8 sprite line
+  buffers to LUT RAM gave back **2** blocks, not 10 — PnR already packs them.
+  Budget from PnR, never from array counts.
+- **Two SDRAM regions are now load-bearing and neither is hardware-verified**:
+  the CSD 68000 ROM (32 KB, `cpu2`) and the sound ROM (16 KB, `cpu3`). Both sit
+  in the banks 0/1 group, away from the sprite read. The 68000 has a DTACK
+  handshake and the sound Z80 runs at 2 MHz — roughly 3× the main Z80's margin,
+  which is why item 4c's CPU-ROM-in-SDRAM failed and these are expected to
+  work. `SND_IN_SDRAM` reverts the sound one at the cost of 8 blocks.
+- `clk_sys` worst-case slack is **0.027 ns** (Fmax 40.086 vs 40.000 MHz) on
+  `core_reset_s1 → scroll_core/palette`. It passes, but there is no headroom
+  left in that domain — a reset-fanout path, so pipelining `core_reset` into
+  each core is the obvious relief if anything else has to go in.
+- **Escape hatch, still open**: GW5AST-138 has **298 blocks** vs 118, and 138k
+  LUT. All four families fit with ~170 spare, no surgery. `mcr2_console138k/`
+  is a stale pre-fix top and CLAUDE.md warns the net→ball map is SOM-specific.
+- **MCR-1 is next and now has ~1 block of room**, so it needs real work:
+  hoist its bg, and either the CPU-ROM-56K trim (−4) or the MCR-2 sprite move
+  (−16). See TODO 4a-bis levers 3 and 4.
 
 ### 4. Owed cleanup
 TEMPORARY diagnostics are still in the merged core (stored-ROM audit, liveness
@@ -140,9 +164,18 @@ them. If a game looks wrong, read this audit before theorising.
 8. **Connecting `q_b` at all** makes the tool infer write-through and reject with
    `PA2122`. Port B now reads only when not writing.
 9. **gfx1 bg plane order is PER-CORE**: MCR-3 wants the ROM MAME loads SECOND,
-   MCR-2 the FIRST. Verify new games with
+   MCR-2 the FIRST, **MCR3Scroll the FIRST** (its bg dprams are wired
+   uncrossed, unlike `mcr3.vhd`'s — verified by reading the instances, NOT on
+   hardware). Verify new games with
    `mame -listxml <game> | grep 'region="gfx1"'`. Wrong order = right shapes,
    wrong colours, bg only.
+10. **Mixed-language instantiation on Gowin is case sensitive, and a component
+    cannot share a name with its package.** FX68K's upstream binding hits both:
+    EX4806 resolves the component to the package `fx68k`, and EX4968 rejects
+    `extReset`/`enPhi1`/`iEdb` because VHDL folded them to lower case. The fix
+    is a lower-case-port wrapper reached by direct entity instantiation
+    (`src/rtl/FX68K/fx68k_lc.sv`) — the same route `mcr2.vhd` already uses for
+    `dpram.sv`. Expect this for every future SystemVerilog core.
 
 ## Bench state
 
