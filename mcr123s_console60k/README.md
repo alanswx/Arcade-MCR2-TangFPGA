@@ -95,17 +95,18 @@ exercise nearly everything that was unproven:
 | **FX68K / Cheap Squeak Deluxe**, the `fx68k_lc` binding workaround, `$readmemb` finding the microcode | Spy Hunter sound |
 | **CSD 68000 ROM read from SDRAM** (`cpu2`) and its 16-bit byte-lane split (u17/u18 low, u7/u8 high) | Spy Hunter sound |
 | MCR3Scroll roster, decode, char plane, sprite plane assembly | Spy Hunter |
+| **Sound ROM read from SDRAM (`cpu3`)** - the 8 blocks that made 15 games fit | Kick + Kickman, which are SSIO-ONLY so their audio cannot come from a CSD |
 
 Still open:
 
+* A **regression pass over the nine MCR-2/MCR-3 games** in THIS build (Wacko
+  aside) - they were verified in `mcr23_console60k`, but the shared scratch
+  RAM, the trimmed CPU ROM and the SDRAM sound ROM are all new since.
 * **Turbo Tag** - the harshest CSD test, because `mod_turbo` disables the SSIO
   board entirely, so it is silent unless the Cheap Squeak Deluxe carries it
   alone. Also the only game needing the MRA byte patch at 0x0B2C.
 * **Crater Raider** - SSIO-only, no CSD, and the only LANDSCAPE cabinet in the
   roster (not in `ROT_MASK`).
-* A **regression pass over the nine MCR-2/MCR-3 games** in THIS build. They were
-  verified in `mcr23_console60k`, but the shared scratch RAM and the trimmed CPU
-  ROM are new since then.
 * **MCR3Scroll bg plane order** - Spy Hunter looking right is good evidence the
   uncrossed guess was correct, but Crater Raider and Turbo Tag are separate
   ROM sets and could still be wrong.

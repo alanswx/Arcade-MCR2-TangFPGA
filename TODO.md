@@ -469,12 +469,15 @@ next real milestone" within each section.
      clk_sys, ~16 across a T1->T3 read. Too little margin, and the port1
      group round-robins between port1/cpu1/cpu2/cpu3 so a port can wait
      extra rounds.
-   - **Sound ROM in SDRAM: NOT DISPROVEN, not verified either.** Its Z80
-     runs at 2 MHz (mcr_sound_board divides by 20), ~3x the margin. The
-     build rendered identically to the known-good one - but the only game
-     the prefs would boot was TIMBER, which has its own boot-load bug, so
-     the comparison proves nothing. Retest with a cleanly-booting game
-     selected (Tapper or Satan's Hollow) before trusting it. Worth 8 blocks.
+   - **Sound ROM in SDRAM: VERIFIED ON HARDWARE 2026-07-30.** Kick and
+     Kickman are SSIO-ONLY (no Cheap Squeak Deluxe) and both have sound in
+     the merged 15-game core, so the shared 16 KB sound ROM read from SDRAM
+     on the `cpu3` port works. Its Z80 runs at 2 MHz (mcr_sound_board divides
+     clk_sys by 20), ~3x the main CPU's margin, which is why this succeeds
+     where the CPU-ROM move failed. **Worth 8 blocks, and those 8 blocks are
+     what made the 15-game merge fit.** `SND_IN_SDRAM` stays 1.
+     (The earlier inconclusive attempt compared against TIMBER, which has its
+     own boot-load bug - that comparison proved nothing either way.)
    Experiment reverted; it lives in git history (both moves were behind
    independent `CPU_ROM_IN_SDRAM` / `SND_ROM_IN_SDRAM` switches so either
    can be re-enabled). If the CPU ROM is ever wanted in SDRAM it needs real
