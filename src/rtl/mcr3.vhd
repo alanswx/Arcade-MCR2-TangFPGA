@@ -136,7 +136,9 @@ generic(
  -- almost entirely wasted. SPRLINE_RAMSTYLE lets a board move them to LUT RAM
  -- instead; the merged 3-family build has TEN across its cores and needs the
  -- blocks. Default "block_ram" keeps every existing board bit-identical.
- SPRLINE_RAMSTYLE : string := "block_ram"
+ SPRLINE_RAMSTYLE : string := "block_ram";
+ -- See the scratch-RAM ports below.
+ SCRATCH_EXTERNAL : integer := 0
 );
 port(
  clock_40     : in std_logic;
@@ -194,7 +196,31 @@ port(
  dl_wr          : in  std_logic;
  dl_din         : out std_logic_vector(7 downto 0);
  dl_nvram       : in  std_logic;
- dl_nvram_wr    : in  std_logic
+ dl_nvram_wr    : in  std_logic;
+
+ -- SHARED SCRATCH RAM (SCRATCH_EXTERNAL => 1). The work RAM and the two sprite
+ -- staging RAMs are byte-identical in mcr1/mcr2/mcr3/mcr3scroll, and only one
+ -- core is ever out of reset, so the merged build keeps ONE set in the top
+ -- instead of four. The top MUST mux we/addr/d by the running family: a core
+ -- held in reset can still present a combinational write-enable, and that
+ -- would corrupt the active game's RAM.
+ -- `sh_` prefix because wram_we / sp_ram_we are internal signal names here.
+ sh_wram_addr   : out std_logic_vector(10 downto 0);
+ sh_wram_we     : out std_logic;
+ sh_wram_d      : out std_logic_vector( 7 downto 0);
+ sh_wram_q      : in  std_logic_vector( 7 downto 0) := (others => '0');
+ sh_spr_addr    : out std_logic_vector( 8 downto 0);
+ sh_spr_we      : out std_logic;
+ sh_spr_d       : out std_logic_vector( 7 downto 0);
+ sh_spr_q       : in  std_logic_vector( 7 downto 0) := (others => '0');
+ sh_sprc_addr   : out std_logic_vector( 8 downto 0);
+ sh_sprc_we     : out std_logic;
+ sh_sprc_d      : out std_logic_vector( 7 downto 0);
+ sh_sprc_q      : in  std_logic_vector( 7 downto 0) := (others => '0');
+ sh_vram_addr   : out std_logic_vector(10 downto 0);
+ sh_vram_we     : out std_logic;
+ sh_vram_d      : out std_logic_vector( 7 downto 0);
+ sh_vram_q      : in  std_logic_vector( 7 downto 0) := (others => '0')
  );
 end mcr3;
 
@@ -761,6 +787,7 @@ port map (
 cpu_rom_addr <= cpu_addr(15 downto 0);
 
 -- working RAM   0xE000-0xE7FF
+scratch_int : if SCRATCH_EXTERNAL = 0 generate
 wram : entity work.dpram
 generic map( dWidth => 8, aWidth => 11)
 port map(
@@ -776,8 +803,10 @@ port map(
 	d_b    => dl_data(7 downto 0),
 	q_b     => dl_din(7 downto 0)
 );
+end generate;
 
 -- video RAM   0xF000-0xF7FF
+vram_int : if SCRATCH_EXTERNAL = 0 generate
 video_ram : entity work.gen_ram
 generic map( dWidth => 8, aWidth => 11)
 port map(
@@ -787,8 +816,10 @@ port map(
  d    => cpu_do,
  q    => bg_ram_do
 );
+end generate;
 
 -- sprite RAM (no cpu access)
+spr_int : if SCRATCH_EXTERNAL = 0 generate
 sprite_ram : entity work.gen_ram
 generic map( dWidth => 8, aWidth => 9)
 port map(
@@ -798,8 +829,10 @@ port map(
  d    => sp_ram_cache_do,
  q    => sp_ram_do
 );
+end generate;
 
 -- sprite RAM  0xE800-0xE9FF + mirroring adresses
+sprc_int : if SCRATCH_EXTERNAL = 0 generate
 sprites_ram_cache : entity work.gen_ram
 generic map( dWidth => 8, aWidth => 9)
 port map(
@@ -809,6 +842,34 @@ port map(
  d    => cpu_do,
  q    => sp_ram_cache_do
 );
+end generate;
+
+-- HOISTED scratch RAM: the top owns one set for all four cores. Reads are the
+-- same 1-cycle, same clock edge (the top clocks port A on NOT clock_40), so
+-- this is a pure port move.
+scratch_ext : if SCRATCH_EXTERNAL /= 0 generate
+  sh_wram_addr    <= cpu_addr(10 downto 0);
+  sh_wram_we      <= wram_we;
+  sh_wram_d       <= cpu_do;
+  wram_do         <= sh_wram_q;
+  dl_din          <= (others => '0');   -- nvram read-back unused when hoisted
+
+  sh_spr_addr     <= sp_ram_addr;
+  sh_spr_we       <= sp_ram_we;
+  sh_spr_d        <= sp_ram_cache_do;
+  sp_ram_do       <= sh_spr_q;
+
+  sh_sprc_addr    <= sp_ram_cache_addr;
+  sh_sprc_we      <= sp_ram_cache_we;
+  sh_sprc_d       <= cpu_do;
+  sp_ram_cache_do <= sh_sprc_q;
+
+  sh_vram_addr    <= bg_ram_addr;
+  sh_vram_we      <= bg_ram_we;
+  sh_vram_d       <= cpu_do;
+  bg_ram_do       <= sh_vram_q;
+end generate;
+
 
 -- sprite line buffer 1a
 sprlinebuf1a : entity work.gen_ram

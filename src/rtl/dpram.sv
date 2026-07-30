@@ -16,7 +16,16 @@ module dpram #(
     parameter dWidth = 8,
     parameter aWidth = 10,
     parameter INIT_FILE = "",
-    parameter LOADABLE = 0
+    parameter LOADABLE = 0,
+    // DEPTH < 2**aWidth allocates a SHORTER array while keeping the full
+    // aWidth address bus. The merged 4-family core uses it for the shared CPU
+    // ROM: the address is 16 bits but the largest program in the whole MCR
+    // roster ends at 0xE000, and 57344x8 is 28 BSRAM blocks against 32 for a
+    // full 64 KB. Addresses at or above DEPTH read undefined data - fine here
+    // because above 0xDFFF the Z80 memory map is RAM/IO, never ROM, so the
+    // core never uses that result. The CALLER must also gate port-B writes,
+    // or an out-of-range download byte writes past the end of the array.
+    parameter DEPTH = 0            // 0 = full 2**aWidth (every existing caller)
 ) (
     input                     clk_a,
     input                     we_a,
@@ -31,7 +40,8 @@ module dpram #(
     output reg [dWidth-1:0]   q_b
 );
 
-(* syn_ramstyle = "block_ram" *) reg [dWidth-1:0] ram [0:(2**aWidth)-1];
+localparam integer RAM_DEPTH = (DEPTH == 0) ? (2**aWidth) : DEPTH;
+(* syn_ramstyle = "block_ram" *) reg [dWidth-1:0] ram [0:RAM_DEPTH-1];
 
 generate
     if (INIT_FILE != "" || LOADABLE) begin: rom_mode

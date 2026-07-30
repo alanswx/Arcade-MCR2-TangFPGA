@@ -76,3 +76,107 @@ this layout, and the roster order (kick, solarfox, kickman) matches NAME12–14.
 - the shared sprite ROM and MCR-2's `sp_wr_addr` twist, both new.
 
 Build: `tools/gw_build.sh mcr123s_console60k`.
+
+## RESULT: it fits in BSRAM, but it does NOT meet timing on the 60K
+
+**Do not flash this board's bitstream.** Gowin emits a `.fs` whether or not
+timing closes; this one does not close.
+
+| Build | BSRAM | clk_sys setup TNS | other |
+|---|---|---|---|
+| v3: staging RAMs in LUT RAM | 108/118 | **-536.088 ns / 459 eps** | hclk -1.896 |
+| v4: reverted, video_ram shared | 116/118 | -8.093 ns / 32 eps | hclk -0.310, sdram -1.044 |
+| v5: shared-RAM muxes -> true 4:1 | **116/118** | **-6.342 ns / 25 eps** | clk1x hold -0.109 / 3 |
+
+Logic 75%, registers 28%. So **space was never the wall — placement congestion
+is.** At four cores the design is dense enough that half-cycle paths which
+passed comfortably in the 12-game build (worst slack there: +0.027 ns) no
+longer make it.
+
+Where the remaining 26 failing endpoints live:
+
+| count | path |
+|---|---|
+| 17 | `mcr1_core` T80 -> `sh_sprc_ram` / `sh_vram_ram` (shared scratch RAM) |
+| 7 | `osd_inst/game_id` -> `scroll_core/sprlinebuf2a` |
+| 3 | `fb_inst` -> `fb_inst` (DDR3 framebuffer, **hold**) |
+| 1 | `sdram/addr_last2[1]` -> `SDRAM_A[3]` (vendored controller, 80 MHz) |
+
+Two lessons worth keeping:
+
+* **LUT RAM is not a free substitute for BSRAM.** It worked for the 256-byte
+  sprite line buffers; converting the 512-byte staging RAMs cost the entire
+  clk_sys domain, because a distributed-RAM read is a combinational walk fed by
+  a family mux, closing on the opposite clock edge. One block bought, -536 ns
+  paid.
+* **Mux depth matters on half-cycle paths.** Rewriting
+  `run_is_a ? : run_is_b ? : run_is_c ? :` chains as an array indexed by
+  `run_family[1:0]` (one true 4:1 mux) recovered ~1.75 ns of TNS for free.
+
+### If someone picks this up again
+
+Untried, in order of expected value:
+
+1. **Register `ms_mod_crater` / `ms_mod_turbo`.** They only change when a game
+   loads, so a register is functionally free, and `osd_inst/game_id` is 7 of
+   the 26 failing endpoints. Do this regardless — it is correct anyway.
+2. **Give MCR-1 back its own `sprites_ram_cache` and `video_ram`** (split
+   `SCRATCH_EXTERNAL` into per-RAM generics). That removes MCR-1 from the two
+   muxes carrying all 17 of its failing endpoints, at +2 blocks — landing on
+   118/118 with zero spare.
+3. The `fb_inst` HOLD violations and the `sdram` path are **not caused by any
+   of this work**; they are congestion pressure on already-marginal paths. Hold
+   failures do not improve with a slower clock and can be intermittent on
+   hardware, so treat a build that merely "looks fine" with suspicion.
+4. **GW5AST-138** — 298 blocks, 138k LUT. Removes the whole class of problem
+   rather than shaving at it.
+
+The recommendation from here is (4), or ship 12 games on the 60K: that build
+(`mcr23s_console60k`) closes cleanly at 117/118 with 0 violations.
+
+## Rolling this back
+
+Three independent levels, coarsest last.
+
+**1. Per-lever, no git.** Every space-saving change is a switch with a
+behaviour-preserving default:
+
+| Switch | Where | Off value | Costs |
+|---|---|---|---|
+| `CPU_ROM_DEPTH` | this top | `0` = full 64 KB | +4 BSRAM |
+| `SCRATCH_EXTERNAL` | mcr1/mcr2/mcr3/mcr3scroll generic | `0` = per-core RAMs | +9 BSRAM |
+| `SP_EXTERNAL` | mcr1/mcr2 generic | `0` = per-core sprite ROM | +16 BSRAM |
+| `BG_EXTERNAL` | mcr1 generic | `0` = per-core bg planes | +4 BSRAM |
+| `SND_IN_SDRAM` | this top | `0` = sound ROM in BSRAM | +8 BSRAM |
+| `SPRLINE_RAMSTYLE` | all four cores | `"block_ram"` | +2 BSRAM |
+| `SCROLL_CSD` | mcr3scroll generic | `0` = no FX68K (Crater only) | 0 BSRAM |
+
+Turning one off usually means the build no longer fits — that is the point:
+they exist so a suspect mechanism can be isolated, not so it can be shipped off.
+
+**2. Per-family, no rebuild.** The families are independent at runtime. If one
+core misbehaves, the other three still play; the OSD just won't load that
+family's games. Nothing needs reflashing to test that.
+
+**3. git.** Each step is its own commit:
+
+```
+465a9c2  MCR-1 added, 127/118 - over by 9   <- rollback point for the levers
+8877ab9  MCR3Scroll merged, 12 games, 117/118, builds
+9a1ef7d  handoff v9 - the shipping 9-game core
+```
+
+`git checkout 8877ab9 -- .` returns the whole tree to the last state that
+produced a working bitstream. The shipping 9-game core in SPI flash is
+untouched by any of this, so a plain power cycle is always a way back to a
+known-good board.
+
+## The one thing to be suspicious of first
+
+The shared scratch RAM is the only change here that can corrupt a *running*
+game rather than fail to build. Its safety rests on the top muxing
+`we`/`addr`/`d` by the RUNNING family — a core held in reset still presents a
+combinational write-enable off its static CPU decode, and an un-muxed OR of all
+four would let an idle core scribble on the live game's work RAM. If games show
+sporadic corruption that a family switch makes worse, set `SCRATCH_EXTERNAL(0)`
+on all four cores and see whether it goes away.

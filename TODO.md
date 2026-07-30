@@ -368,7 +368,55 @@ next real milestone" within each section.
    3. **GW5AST-138 (298 blocks): ends the whole problem**, plus 138k LUT with
       logic already at 74%. `mcr2_console138k/` is a stale pre-fix top and
       CLAUDE.md warns the net->ball map is SOM-specific.
-   Nothing in `mcr123s_console60k` has been built to a bitstream or run.
+   **BOTH LEVERS APPLIED 2026-07-30** (user-approved, "I have validated the
+   cores well enough"):
+   - `dpram` gained a `DEPTH` parameter and the shared CPU ROM is now 0xE000
+     rather than 64 KB. The download write is gated on the same bound, because
+     Turbo Tag's payload carries 8 KB of zero padding above 0xDFFF that would
+     otherwise write past the end of the array. The stored-ROM audit's CPU
+     sweep is bounded to match, so `tools/ckstore.py` must checksum only the
+     first 0xE000 bytes to compare against beacon E5.
+   - `wram` (2 KB) + `sprite_ram` (512) + `sprites_ram_cache` (512) hoisted out
+     of ALL FOUR cores behind `SCRATCH_EXTERNAL` (default 0). They are
+     byte-identical in every core, so one set replaces four.
+     **The top muxes we/addr/d by the RUNNING family, and that is load-bearing:
+     a core held in reset still presents a combinational write-enable off its
+     static CPU decode, so an un-muxed OR would let an idle core corrupt the
+     live game's work RAM.** This is the only change in the whole merge that
+     can break a RUNNING game rather than fail to build - suspect it first if
+     games show sporadic corruption.
+   MEASURED, and the estimates were optimistic AGAIN - PnR, not arithmetic:
+   | Step | BSRAM | |
+   |---|---|---|
+   | MCR-1 added, sprite ROM already shared | 127 | over by 9 |
+   | + CPU ROM 64K -> 56K (predicted -4) | | |
+   | + scratch RAM shared x4 (predicted -9) | 119 | over by 1 |
+   | + the two shared 512x8 staging RAMs -> LUT RAM | **PnR ACCEPTS** | **15 games fit** |
+   Both together gave **-8, not the -13 predicted**. Same lesson as the sprite
+   line buffers: PnR already packs small arrays, so hoisting four 512-byte RAMs
+   into one does NOT return four blocks. **Never budget a block per array.**
+   **BUT IT DOES NOT MEET TIMING.** Space was never the wall - placement
+   congestion is. Final state: BSRAM 116/118, Logic 75%, and clk_sys setup
+   TNS **-6.342 ns over 25 endpoints** plus 3 hold violations in the DDR3
+   framebuffer. The 12-game build's worst slack was +0.027 ns; a fourth core
+   and the shared-RAM muxes consumed that and more. Detail, the remaining
+   failing paths and the untried fixes are in `mcr123s_console60k/README.md`.
+   **Recommendation: ship 12 games on the 60K (mcr23s_console60k closes clean
+   at 117/118, 0 violations) and take MCR-1 to the GW5AST-138.**
+   Two lessons that cost a build each:
+   - **LUT RAM is NOT a free substitute for BSRAM.** It worked for the 256-byte
+     sprite line buffers; doing it to the 512-byte sprite STAGING RAMs sent
+     clk_sys TNS to **-536 ns over 459 endpoints**, because a distributed-RAM
+     read is a combinational walk through the LUT array fed by a 4-way family
+     mux, closing on the OPPOSITE clock edge. One block bought, the whole
+     clk_sys domain paid.
+   - **Mux DEPTH matters on half-cycle paths.** Rewriting
+     `run_is_a ? : run_is_b ? : run_is_c ? :` chains as an array indexed by
+     `run_family[1:0]` - one true 4:1 mux instead of three dependent LUT
+     levels - recovered ~1.75 ns of TNS for free. Keep FAM_* numbered 0..3 so
+     the family code stays usable as the index.
+   Every lever is a switch with a behaviour-preserving default; the table and
+   the git rollback points are in `mcr123s_console60k/README.md`.
 
    Levers NOT needed yet, kept for MCR-1:
    3. CPU ROM 64 KB -> 56 KB (-4). Every MCR-2/3/Scroll program ROM ends at

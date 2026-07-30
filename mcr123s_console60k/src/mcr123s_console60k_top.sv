@@ -242,6 +242,18 @@ localparam int SCROLL_CSD = 1;
 // region has no port B to sweep) - E4 is meaningless, E5/E6/E7 still valid.
 localparam int SND_IN_SDRAM = 1;
 
+// Shared CPU ROM depth. 57344 (0xE000) instead of a full 64 KB saves 4 BSRAM
+// blocks (28 vs 32). MEASURED against the whole roster: the largest real
+// program is 57344 bytes exactly (tapper, timber, dotron, crater, spyhunt);
+// Turbo Tag's 64 KB region is 56 KB of ROM plus 8 KB of MRA zero padding, and
+// MCR-1/MCR-2 are all smaller. Above 0xDFFF the Z80 map is RAM/IO, never ROM,
+// so no core ever uses a read from the trimmed range - mcr3scroll's
+// xor-twisted address maxes at 0xDFFF too.
+// Set to 0 to go back to a full 64 KB array.
+localparam int CPU_ROM_DEPTH = 57344;
+localparam [16:0] CPU_SWEEP_END = (CPU_ROM_DEPTH == 0) ? 17'h10000
+                                                       : 17'(CPU_ROM_DEPTH);
+
 localparam [7:0] FAM_MCR1 = 8'd0, FAM_MCR2 = 8'd1, FAM_MCR3 = 8'd2, FAM_SCROLL = 8'd3;
 localparam [4:0] OSD_DEFAULT_IDX = 5'd0;   // Tapper
 localparam [4:0] N_MCR3   = 5'd3;          // MCR-3 entries come first
@@ -525,7 +537,10 @@ wire dl_sp2_rng = dl_v2 && !dl_hi && ldr_is_mcr2 &&
                   (dl_addr[17:0] >= 18'h14000) && (dl_addr[17:0] < 18'h1C000);
 wire [14:0] sp_wr_addr = ldr_is_mcr2 ? {~dl_addr[14], dl_addr[13:0]}
                                      : dl_addr[14:0];
-wire cpu_rom_we = dl_wr && dl_cpu_rng;
+// The write MUST be gated as well: Turbo Tag's payload carries 8 KB of zero
+// padding above 0xDFFF, and with a trimmed array that would write past the end.
+wire cpu_rom_we = dl_wr && dl_cpu_rng &&
+                  ((CPU_ROM_DEPTH == 0) || (dl_addr[15:0] < CPU_ROM_DEPTH[15:0]));
 wire snd_rom_we = dl_wr && dl_snd_rng;
 // core-facing dl bus: bg planes at the core's own decode addresses
 wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
@@ -1133,9 +1148,13 @@ always @(posedge clk_sys) begin
     // load) and run one step PAST the last address, or the final byte is
     // never folded in - which showed up as every checksum being the true
     // value rotated right once, because that last byte is ROM padding (0).
-    2'd1: begin                             // CPU ROM, 64K
+    2'd1: begin                             // CPU ROM, CPU_ROM_DEPTH bytes
         if (sr_i != 17'd0) ck_cpu <= rox(ck_cpu, q_cpu[7:0]);
-        if (sr_i == 17'h10000) begin sr_i <= 17'd0; sr_st <= 2'd2; end
+        // Bounded by the ARRAY, not by 64K: with CPU_ROM_DEPTH set, sweeping
+        // past the end reads out of range and E5 becomes noise. tools/
+        // ckstore.py must therefore checksum only the first CPU_ROM_DEPTH
+        // bytes of the blob to match this.
+        if (sr_i == CPU_SWEEP_END) begin sr_i <= 17'd0; sr_st <= 2'd2; end
         else sr_i <= sr_i + 1'd1;
     end
     2'd2: begin                             // sound 16K + both bg planes 16K
@@ -1158,7 +1177,8 @@ dpram #(
     // so this starts blank and the SD pack is the only source. LOADABLE keeps
     // port B writable - without it the empty INIT_FILE would select dpram's
     // read-only-port-B mode and silently kill the download.
-    .LOADABLE(1)
+    .LOADABLE(1),
+    .DEPTH(CPU_ROM_DEPTH)   // 0xE000, not 64K - see the localparam above
 ) rom_cpu_inst (
     .clk_a(clk_sys),
     .we_a(1'b0),
@@ -1637,6 +1657,114 @@ dpram #(.dWidth(8), .aWidth(15), .LOADABLE(1)) sp12_ram (
 );
 
 // ===========================================================================
+// SHARED SCRATCH RAM - work RAM (2 KB) + the two 512 B sprite staging RAMs.
+// These three are byte-identical in all four cores and only one core runs at a
+// time, so one set replaces four. That is the last 9 blocks needed to fit.
+//
+// The write enables MUST be muxed by the RUNNING family, not merely by which
+// core happens to drive them: a core held in reset still presents a
+// combinational `wram_we` / `sp_ram_we` off its static CPU decode, and an
+// un-muxed OR of all four would let an idle core scribble on the live game's
+// RAM. The address and data are muxed for the same reason.
+// ===========================================================================
+wire [10:0] m1_wram_a, m2_wram_a, m3_wram_a, ms_wram_a;
+wire        m1_wram_we, m2_wram_we, m3_wram_we, ms_wram_we;
+wire [7:0]  m1_wram_d, m2_wram_d, m3_wram_d, ms_wram_d;
+wire [7:0]  sh_wram_q;
+wire [8:0]  m1_spr_a, m2_spr_a, m3_spr_a, ms_spr_a;
+wire        m1_spr_we, m2_spr_we, m3_spr_we, ms_spr_we;
+wire [7:0]  m1_spr_d, m2_spr_d, m3_spr_d, ms_spr_d;
+wire [7:0]  sh_spr_q;
+wire [8:0]  m1_sprc_a, m2_sprc_a, m3_sprc_a, ms_sprc_a;
+wire        m1_sprc_we, m2_sprc_we, m3_sprc_we, ms_sprc_we;
+wire [7:0]  m1_sprc_d, m2_sprc_d, m3_sprc_d, ms_sprc_d;
+wire [7:0]  sh_sprc_q;
+wire [10:0] m1_vram_a, m2_vram_a, m3_vram_a, ms_vram_a;
+wire        m1_vram_we, m2_vram_we, m3_vram_we, ms_vram_we;
+wire [7:0]  m1_vram_d, m2_vram_d, m3_vram_d, ms_vram_d;
+wire [7:0]  sh_vram_q;
+
+// These feed BSRAM inputs on the OPPOSITE clock edge - half a 25 ns period -
+// from a core's CPU decode, so mux DEPTH matters. A `run_is_a ? : run_is_b ? :
+// run_is_c ? :` chain is three dependent LUT levels; indexing an array by
+// run_family[1:0] is one 4:1 mux. FAM_MCR1/2/3/SCROLL are 0/1/2/3, so the
+// family code IS the index - keep it that way if families are ever renumbered.
+wire [1:0] run_sel = run_family[1:0];
+
+wire [10:0] wram_a_m [0:3];
+wire [7:0]  wram_d_m [0:3];
+wire [3:0]  wram_we_m;
+assign wram_a_m[0]=m1_wram_a; assign wram_a_m[1]=m2_wram_a;
+assign wram_a_m[2]=m3_wram_a; assign wram_a_m[3]=ms_wram_a;
+assign wram_d_m[0]=m1_wram_d; assign wram_d_m[1]=m2_wram_d;
+assign wram_d_m[2]=m3_wram_d; assign wram_d_m[3]=ms_wram_d;
+assign wram_we_m = {ms_wram_we, m3_wram_we, m2_wram_we, m1_wram_we};
+wire [10:0] sh_wram_a  = wram_a_m[run_sel];
+wire [7:0]  sh_wram_d  = wram_d_m[run_sel];
+wire        sh_wram_we = wram_we_m[run_sel];
+
+wire [8:0] spr_a_m [0:3];
+wire [7:0] spr_d_m [0:3];
+wire [3:0] spr_we_m;
+assign spr_a_m[0]=m1_spr_a; assign spr_a_m[1]=m2_spr_a;
+assign spr_a_m[2]=m3_spr_a; assign spr_a_m[3]=ms_spr_a;
+assign spr_d_m[0]=m1_spr_d; assign spr_d_m[1]=m2_spr_d;
+assign spr_d_m[2]=m3_spr_d; assign spr_d_m[3]=ms_spr_d;
+assign spr_we_m = {ms_spr_we, m3_spr_we, m2_spr_we, m1_spr_we};
+wire [8:0] sh_spr_a  = spr_a_m[run_sel];
+wire [7:0] sh_spr_d  = spr_d_m[run_sel];
+wire       sh_spr_we = spr_we_m[run_sel];
+
+wire [8:0] sprc_a_m [0:3];
+wire [7:0] sprc_d_m [0:3];
+wire [3:0] sprc_we_m;
+assign sprc_a_m[0]=m1_sprc_a; assign sprc_a_m[1]=m2_sprc_a;
+assign sprc_a_m[2]=m3_sprc_a; assign sprc_a_m[3]=ms_sprc_a;
+assign sprc_d_m[0]=m1_sprc_d; assign sprc_d_m[1]=m2_sprc_d;
+assign sprc_d_m[2]=m3_sprc_d; assign sprc_d_m[3]=ms_sprc_d;
+assign sprc_we_m = {ms_sprc_we, m3_sprc_we, m2_sprc_we, m1_sprc_we};
+wire [8:0] sh_sprc_a  = sprc_a_m[run_sel];
+wire [7:0] sh_sprc_d  = sprc_d_m[run_sel];
+wire       sh_sprc_we = sprc_we_m[run_sel];
+
+// Work RAM: port A is the core's (read/write on clock_vidn = ~clk_sys); port B
+// was the NVRAM download, which every 60K top ties off.
+dpram #(.dWidth(8), .aWidth(11)) sh_wram (
+    .clk_a(~clk_sys), .we_a(sh_wram_we), .addr_a(sh_wram_a),
+    .d_a(sh_wram_d), .q_a(sh_wram_q),
+    .clk_b(clk_sys), .we_b(1'b0), .addr_b(11'd0), .d_b(8'h00), .q_b()
+);
+// KEEP THESE IN BSRAM. Moving them to LUT RAM did save the last block, and it
+// blew the whole design's timing apart: clk_sys setup TNS went to -536 ns over
+// 459 endpoints, and EVERY worst path ended at sh_spr_ram/sh_sprc_ram's output
+// register. As distributed RAM the read is a combinational walk through the
+// LUT array, fed by a 4-way family mux, closing on the OPPOSITE clock edge -
+// half a 25 ns period. In BSRAM the read is clocked and the path is trivial.
+// The block that conversion bought came from sharing video_ram instead.
+gen_ram #(.dWidth(8), .aWidth(9)) sh_spr_ram (
+    .clk(~clk_sys), .we(sh_spr_we), .addr(sh_spr_a), .d(sh_spr_d), .q(sh_spr_q)
+);
+gen_ram #(.dWidth(8), .aWidth(9)) sh_sprc_ram (
+    .clk(~clk_sys), .we(sh_sprc_we), .addr(sh_sprc_a), .d(sh_sprc_d), .q(sh_sprc_q)
+);
+// Shared video RAM, 2 KB. MCR-1's is only 1 KB and zero-extends into the
+// bottom half; the other three are 2 KB already.
+wire [10:0] vram_a_m [0:3];
+wire [7:0]  vram_d_m [0:3];
+wire [3:0]  vram_we_m;
+assign vram_a_m[0]=m1_vram_a; assign vram_a_m[1]=m2_vram_a;
+assign vram_a_m[2]=m3_vram_a; assign vram_a_m[3]=ms_vram_a;
+assign vram_d_m[0]=m1_vram_d; assign vram_d_m[1]=m2_vram_d;
+assign vram_d_m[2]=m3_vram_d; assign vram_d_m[3]=ms_vram_d;
+assign vram_we_m = {ms_vram_we, m3_vram_we, m2_vram_we, m1_vram_we};
+wire [10:0] sh_vram_a  = vram_a_m[run_sel];
+wire [7:0]  sh_vram_d  = vram_d_m[run_sel];
+wire        sh_vram_we = vram_we_m[run_sel];
+gen_ram #(.dWidth(8), .aWidth(11)) sh_vram_ram (
+    .clk(~clk_sys), .we(sh_vram_we), .addr(sh_vram_a), .d(sh_vram_d), .q(sh_vram_q)
+);
+
+// ===========================================================================
 // MERGED CORES. Both are instantiated; the inactive one is held in RESET so it
 // cannot drive the shared buses. Everything shared (CPU/sound ROM RAM, bg gfx
 // pair, video, audio) is muxed by run_family. MCR-3's sprites come from SDRAM;
@@ -1703,7 +1831,8 @@ mcr2 #(
     // block; the three cores have TEN of them between them, and PnR measured
     // this build at 127/118 BSRAM with them in block RAM. See gen_ram.sv.
     .GFX2_INIT(""), .GFX_LOADABLE(1), .SPRLINE_RAMSTYLE("distributed_ram"),
-    .SP_EXTERNAL(1)            // 32 KB sprite ROM shared with MCR-1, in the top
+    .SP_EXTERNAL(1),           // 32 KB sprite ROM shared with MCR-1, in the top
+    .SCRATCH_EXTERNAL(1)
 ) mcr2_core (
     .clock_40(clk_sys), .reset(m2_reset),
     .video_r(m2_r), .video_g(m2_g), .video_b(m2_b),
@@ -1720,11 +1849,19 @@ mcr2 #(
     .sp_rom_addr(m2_sp_addr), .sp_rom_do(sp12_do),
     // gated on the family being LOADED - the download runs while run_family
     // still names the previous game
+    .sh_wram_addr(m2_wram_a), .sh_wram_we(m2_wram_we), .sh_wram_d(m2_wram_d),
+    .sh_wram_q(sh_wram_q),
+    .sh_spr_addr(m2_spr_a),   .sh_spr_we(m2_spr_we),   .sh_spr_d(m2_spr_d),
+    .sh_spr_q(sh_spr_q),
+    .sh_sprc_addr(m2_sprc_a), .sh_sprc_we(m2_sprc_we), .sh_sprc_d(m2_sprc_d),
+    .sh_sprc_q(sh_sprc_q),
+    .sh_vram_addr(m2_vram_a), .sh_vram_we(m2_vram_we), .sh_vram_d(m2_vram_d),
+    .sh_vram_q(sh_vram_q),
     .dl_addr(dl_addr[16:0]), .dl_wr(dl_wr && ldr_is_mcr2), .dl_data(dl_data),
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
 
-mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram")) mcr3_core (
+mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
     .clock_40(clk_sys),
     .reset(m3_reset),
 
@@ -1775,6 +1912,14 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram")) mcr3_core (
     .bg1_do(bg1_do),
     .bg2_do(bg2_do),
 
+    .sh_wram_addr(m3_wram_a), .sh_wram_we(m3_wram_we), .sh_wram_d(m3_wram_d),
+    .sh_wram_q(sh_wram_q),
+    .sh_spr_addr(m3_spr_a),   .sh_spr_we(m3_spr_we),   .sh_spr_d(m3_spr_d),
+    .sh_spr_q(sh_spr_q),
+    .sh_sprc_addr(m3_sprc_a), .sh_sprc_we(m3_sprc_we), .sh_sprc_d(m3_sprc_d),
+    .sh_sprc_q(sh_sprc_q),
+    .sh_vram_addr(m3_vram_a), .sh_vram_we(m3_vram_we), .sh_vram_d(m3_vram_d),
+    .sh_vram_q(sh_vram_q),
     .dl_addr(core_dl_addr),
     .dl_wr(core_dl_wr),
     .dl_data(dl_data),
@@ -1797,7 +1942,7 @@ wire ms_mod_turbo  = run_is_scroll && (game_id == 4'd11);
 
 mcr3scroll #(
     .CH_INIT(""), .GFX_LOADABLE(1), .CSD_ENABLE(SCROLL_CSD),
-    .SPRLINE_RAMSTYLE("distributed_ram")
+    .SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)
 ) scroll_core (
     .clock_40(clk_sys), .reset(ms_reset),
     .tv15Khz_mode(tv15khz),
@@ -1824,6 +1969,14 @@ mcr3scroll #(
     .bg_addr(ms_bg_addr), .bg1_do(bg1_do), .bg2_do(bg2_do),
 
     // char/alpha plane only - the bg planes go to the shared RAMs above
+    .sh_wram_addr(ms_wram_a), .sh_wram_we(ms_wram_we), .sh_wram_d(ms_wram_d),
+    .sh_wram_q(sh_wram_q),
+    .sh_spr_addr(ms_spr_a),   .sh_spr_we(ms_spr_we),   .sh_spr_d(ms_spr_d),
+    .sh_spr_q(sh_spr_q),
+    .sh_sprc_addr(ms_sprc_a), .sh_sprc_we(ms_sprc_we), .sh_sprc_d(ms_sprc_d),
+    .sh_sprc_q(sh_sprc_q),
+    .sh_vram_addr(ms_vram_a), .sh_vram_we(ms_vram_we), .sh_vram_d(ms_vram_d),
+    .sh_vram_q(sh_vram_q),
     .dl_addr(scroll_dl_addr), .dl_wr(scroll_dl_wr), .dl_data(dl_data),
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
@@ -1838,7 +1991,8 @@ mcr3scroll #(
 // ===========================================================================
 mcr1 #(
     .GFX1_1_INIT(""), .GFX1_2_INIT(""), .GFX2_INIT(""), .GFX_LOADABLE(1),
-    .SP_EXTERNAL(1), .BG_EXTERNAL(1), .SPRLINE_RAMSTYLE("distributed_ram")
+    .SP_EXTERNAL(1), .BG_EXTERNAL(1), .SPRLINE_RAMSTYLE("distributed_ram"),
+    .SCRATCH_EXTERNAL(1)
 ) mcr1_core (
     .clock_40(clk_sys), .reset(m1_reset),
     .tv15Khz_mode(tv15khz),
@@ -1860,6 +2014,14 @@ mcr1 #(
 
     .pause(1'b0), .flip(1'b0),    // upright; no cocktail screen flip
     // Everything MCR-1 needs is loaded by the top, so its own dl bus is idle.
+    .sh_wram_addr(m1_wram_a), .sh_wram_we(m1_wram_we), .sh_wram_d(m1_wram_d),
+    .sh_wram_q(sh_wram_q),
+    .sh_spr_addr(m1_spr_a),   .sh_spr_we(m1_spr_we),   .sh_spr_d(m1_spr_d),
+    .sh_spr_q(sh_spr_q),
+    .sh_sprc_addr(m1_sprc_a), .sh_sprc_we(m1_sprc_we), .sh_sprc_d(m1_sprc_d),
+    .sh_sprc_q(sh_sprc_q),
+    .sh_vram_addr(m1_vram_a), .sh_vram_we(m1_vram_we), .sh_vram_d(m1_vram_d),
+    .sh_vram_q(sh_vram_q),
     .dl_addr(17'd0), .dl_wr(1'b0), .dl_data(8'h00),
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
