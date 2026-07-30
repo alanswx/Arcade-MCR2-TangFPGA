@@ -77,6 +77,24 @@ this layout, and the roster order (kick, solarfox, kickman) matches NAME12–14.
 
 Build: `tools/gw_build.sh mcr123s_console60k`.
 
+## HARDWARE: Wacko and Kick both play (2026-07-30)
+
+First hardware run of this board, and of **Kick** on any build. Between them
+those two games exercise most of what was unproven:
+
+| Mechanism | Exercised by |
+|---|---|
+| MCR-1 inside the merged core (roster, decode, input map) | Kick |
+| 32 KB sprite ROM SHARED with MCR-2, incl. the bit-14 write twist | Kick + Wacko |
+| Scratch RAM shared across all four cores | both - and this is the one that could corrupt a RUNNING game |
+| CPU ROM trimmed to 0xE000 | both |
+| MCR-1's 4 KB bg planes in the shared 16 KB pair | Kick |
+| Timing closure from the new build options | both |
+
+Still unproven: **the sound ROM in SDRAM** (audio was not reported either way),
+the **Cheap Squeak Deluxe / FX68K** path (Spy Hunter and Turbo Tag only), Solar
+Fox, and the MCR3Scroll bg plane order.
+
 ## RESULT: 15 games CLOSE CLEANLY on the 60K
 
 ```

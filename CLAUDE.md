@@ -13,17 +13,22 @@ Games: **MCR-2** — all six (Domino Man default on the 25K; the 60K holds
 the whole family behind its OSD). **MCR-3 (91490)** — all three titles
 hardware-verified and playable: Tapper, Timber and Discs of Tron (the
 latter mirrored, which is correct - the real cabinet has a mirror). **MCR-1** —
-Kick/Kickman/Solar Fox; Kickman verified on hardware 2026-07-27 (first ever
-MCR-1 run), Kick and Solar Fox not yet exercised. **MCR3Scroll** — Crater
+Kick/Kickman/Solar Fox; Kickman verified 2026-07-27 (first ever MCR-1 run) and
+**Kick verified 2026-07-30 in the merged 15-game core**; Solar Fox not yet
+exercised. **MCR3Scroll** — Crater
 Raider, Spy Hunter, Turbo Tag: ROMs, pack entries and gateware all in place
 (`mcr23s_console60k`), nothing run on hardware yet. One pack-v2 SD card carries
 every game for every family (`tools/make_pack_v2.py`, now 15 games); the product
 roadmap toward the full-series jukebox is at the top of `TODO.md`.
 
-**ALL FOUR FAMILIES ARE MERGED.** `mcr123s_console60k` (2026-07-30) holds
-**15 games — every MCR-1/2/3/MCR3Scroll title — in one bitstream**, closing
-cleanly at 116/118 BSRAM with 0 timing violations. It has never run on
-hardware. Stepping stones, both still building: `mcr23_console60k` (9 games,
+**ALL FOUR FAMILIES ARE MERGED AND THE MERGE RUNS ON HARDWARE.**
+`mcr123s_console60k` (2026-07-30) holds **15 games — every MCR-1/2/3/MCR3Scroll
+title — in one bitstream**, closing cleanly at 116/118 BSRAM with 0 timing
+violations. **Wacko and Kick both play** (Kick's first ever hardware run),
+which between them exercise the risky mechanisms: the sprite ROM shared
+between MCR-1 and MCR-2, the scratch RAM shared across all four cores, the
+CPU ROM trimmed to 0xE000, and MCR-1's 4 KB bg planes in the shared 16 KB
+pair. Stepping stones, both still building: `mcr23_console60k` (9 games,
 what SPI flash holds and the only hardware-verified merge) and
 `mcr23s_console60k` (12 games). MCR-1 needed no sprite-to-SDRAM move after all
 — its sprite ROM is structurally identical to MCR-2's and they share one.
@@ -43,7 +48,7 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs — Wacko verified loading from the card 2026-07-27 |
 | `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
 | `mcr23_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working — MERGED MCR-2 + MCR-3, 9 games in one bitstream.** This is what the SPI flash holds (power-on default). Roster index <-> (family, slot) translation in the top; both cores instantiated, inactive one held in reset; CPU/sound ROM + bg gfx pair shared. 114/118 BSRAM. **All nine games verified on hardware** (Tapper, Timber, Discs of Tron, Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man) |
-| `mcr123s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **THE COMPLETE ROSTER: 15 games, four families (MCR-1 + MCR-2 + MCR-3 + MCR3Scroll) in one bitstream. Closes cleanly — 116/118 BSRAM, 75% logic, 0 setup/hold violations, clk_sys Fmax 43.0 vs 40.0 MHz. NOT yet run on hardware.** Needed the build options above plus shared sprite ROM / scratch RAM across cores; see its `README.md` |
+| `mcr123s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **THE COMPLETE ROSTER: 15 games, four families (MCR-1 + MCR-2 + MCR-3 + MCR3Scroll) in one bitstream. Closes cleanly — 116/118 BSRAM, 75% logic, 0 setup/hold violations, clk_sys Fmax 43.0 vs 40.0 MHz. RUNNING ON HARDWARE 2026-07-30: Wacko and KICK both play** (Kick's first ever run, on any build). Needed the build options above plus shared sprite ROM / scratch RAM across cores; see its `README.md` |
 | `mcr23s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds, 12 games (MCR-2 + MCR-3 + MCR3Scroll), 117/118 BSRAM, TNS 0.000 — NOT yet run on hardware.** The "can one core hold everything" experiment; adds Crater Raider, Spy Hunter, Turbo Tag with the Cheap Squeak Deluxe 68000 (FX68K). Needed two BSRAM levers to fit: sprite line buffers → LUT RAM and the **sound ROM → SDRAM**, neither hardware-verified. Read its `README.md` first |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
