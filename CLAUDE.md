@@ -415,15 +415,26 @@ there; the IDE JSON equivalents are the CPU/MSPI/SSPI/etc. booleans).
 - `docs/bench_wiring.md` — **what the current bitstream drives on J10**
   (VGA, straps, debug pins, audio) for temporary bench hookups. Wire from
   this, not from the shield spec's §4b cabinet plan.
+- `docs/scaler_options.md` — **START HERE for anything video-scaling**:
+  decision guide across all four scaler paths (`bram_scaler`,
+  `ddr3_framebuffer`, upstream `ascal.vhd`, `ascal_v`) with MEASURED
+  utilisation, which to pick when, how to integrate one into a game core
+  (`ascal_fb` is a drop-in for `ddr3_framebuffer`), the silent integration
+  traps, modes worth adding, and the measurement discipline. Upstream
+  `ascal.vhd` is marked DO NOT PURSUE with the evidence.
 - `TODO.md` — **open issues and known gaps, consolidated**. Check (and
   update) this before starting anything; per-doc "open items" sections feed
   into it.
 
-- `TODO.md` items 2 and 4 — **start here for current direction**: the
-  everything-from-SD status and the merge-vs-multiboot decision with its
-  measured BSRAM budget. These supersede the handoffs for "what next".
-- `handoff_v8_sprite_shift.md` — the MCR-3 sprite "detached handle"
-  investigation. **RESOLVED 2026-07-27** (see its header): the cause was a
+- `handoff_v9_merged_core.md` — **MOST CURRENT HANDOFF, start here.** The
+  merged MCR-2+MCR-3 core (the product), what is open and in what order, the
+  stored-ROM audit, the recurring Gowin/measurement traps, and the bench
+  state. Also lists the conclusions I got WRONG so they are not re-derived.
+- `TODO.md` items 1, 2, 3 and 4a-4c — the detail behind that handoff:
+  HDMI dropouts (with the reconfig-recovers-it result), everything-from-SD,
+  per-game status, and the MEASURED merge budget.
+- `handoff_v8_sprite_shift.md` — superseded by v9. The MCR-3 sprite
+  "detached handle" investigation, **RESOLVED 2026-07-27** (see its header): the cause was a
   pipeline-depth mismatch in the top's sprite dl→SDRAM write, not anything
   in the core. Its "instance dependence", "leading suspects" and "next
   steps" sections are superseded — read the header, not the body.
