@@ -99,6 +99,11 @@ unproven:
 | MCR3Scroll **bg plane order** - the uncrossed guess that could have cost a day, as it did on Timber | crater, spyhunt, turbotag |
 | Landscape-cabinet handling (excluded from ROT_MASK) | Crater Raider |
 | MRA byte patch at 0x0B2C and the repeated-ttprog5 CPU layout | Turbo Tag |
+| **CSD carrying audio ALONE**, with no SSIO board in the design at all | Turbo Tag (mod_turbo disables the SSIO board entirely) |
+
+**All three audio configurations are verified**: SSIO-from-SDRAM alone
+(Kick, Kickman), SSIO + CSD together (Spy Hunter), and CSD alone with no SSIO
+(Turbo Tag).
 | **Sound ROM read from SDRAM (`cpu3`)** - the 8 blocks that made 15 games fit | Kick + Kickman, which are SSIO-ONLY so their audio cannot come from a CSD |
 
 Still open:
@@ -106,10 +111,6 @@ Still open:
 * A **regression pass over the nine MCR-2/MCR-3 games** in THIS build (Wacko
   aside) - they were verified in `mcr23_console60k`, but the shared scratch
   RAM, the trimmed CPU ROM and the SDRAM sound ROM are all new since.
-* Whether **Turbo Tag has AUDIO** specifically. It is the only game with no
-  SSIO board at all (`mod_turbo` disables it), so it is silent unless the CSD
-  carries it alone. Spy Hunter already proved the CSD path, so this is a
-  nice-to-confirm rather than a risk.
 * Everything else here is polish, not risk: see `TODO.md` for the HDMI soak,
   retiring the bring-up diagnostics, control/DIP tuning and the scaler
   decision.
