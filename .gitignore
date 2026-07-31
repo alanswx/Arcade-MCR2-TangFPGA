@@ -63,6 +63,15 @@ sim/ascal_*_out*.txt
 ._*
 .DS_Store
 
+# MAME *sample* sets (Journey's sepways.wav, Two Tigers' left/right, ...).
+# These are copyrighted AUDIO, are not in the ROM zips, and arrive as loose
+# zips that would otherwise land at the repo root - roms/ already being ignored
+# does not cover them. Same rule as the ROMs: supply them by hand per machine.
+/journey.zip
+/twotiger.zip
+/*.wav
+/sound/
+
 # ROM tarballs - roms/ is ignored to keep copyrighted ROM data out of the
 # repo; a tarball of it would sneak the same data past that rule.
 mcrroms.tar
