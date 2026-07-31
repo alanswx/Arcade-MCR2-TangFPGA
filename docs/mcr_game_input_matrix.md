@@ -244,11 +244,37 @@ Our `wave_sound.sv` port has `I_LOOP` and `I_PAUSE` inputs that map onto this
 one-for-one; upstream MiSTer wires `pause <= ~output_4[0]`, which matches
 MAME's `~data & 1`.
 
-**Supporting a REAL deck** therefore needs no new mechanism: route
-`output_4[0]` to one bit of the shield's output '595 → ULN2803 (a spare
-channel; the deck's motor relay is exactly the 12 V load that chain exists
-for), and offer a source option that mutes/skips the internal WAV. The same
-bitstream then serves both a purist cabinet and a bare board.
+### The game gates it REPEATEDLY, and that decides the implementation
+
+**alanswx (who wrote the upstream MiSTer wave code) reports the game gates the
+tape repeatedly during a musical sequence, not once per credit.** Two
+consequences, and they point in the opposite direction to the obvious
+"just buy a cheap MP3 module" answer:
+
+1. **Level-triggered module modes are OUT.** The DY-SV5W's I/O Independent
+   Mode 1 (*"keep play repeatedly specify the triggered song… stop playing
+   immediately after release level"*) RESTARTS the track on each re-assert. A
+   sequence that gates repeatedly would slam back to the top of the song every
+   time. Pause/resume that preserves position is mandatory — i.e. serial
+   control, not a level.
+2. **Module command LATENCY becomes a real risk.** Modules in this class take
+   **200–500 ms** to act on a serial command (measured across DFPlayer chip
+   variants; the DY-SV5W is the same family). If the gating is musical, half a
+   second of slop on each pause and resume is plainly audible. The internal
+   `wave_sound` path has **zero** latency — `I_PAUSE` is a wire.
+
+So repeated gating is an argument FOR playing the music internally, and the
+external module is best understood as the option for someone driving a **real
+deck** (whose motor responds mechanically anyway) rather than as a cheap
+substitute for the internal player. Worth measuring the gating rate before
+committing either way: a toggle counter on `journey_tape_run` in the UART
+beacon answers it in one credit.
+
+**Supporting a REAL deck** needs no new mechanism: route `output_4[0]` to one
+bit of the shield's output '595 → ULN2803 (a spare channel; the deck's motor
+relay is exactly the 12 V load that chain exists for), and offer a source
+option that mutes/skips the internal WAV. The same bitstream then serves both a
+purist cabinet and a bare board.
 
 ### Note: we ship the Two Tigers CONVERSION set, which has no tape
 

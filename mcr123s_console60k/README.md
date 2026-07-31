@@ -30,10 +30,17 @@ a physical pin.** Two ways to spend it, detailed in
 - **one dedicated output pin** if we drive an MP3 module, because those need a
   UART command stream (9600 8N1, TX only) rather than a bare level.
 
-Module not chosen yet, so no pin is committed. The DY-SV5W is the current
-front-runner — real English datasheet, fixed command frames, loop mode 01 is
-literally "play the current song all the time", and its logic is 3.3 V despite
-a 5 V supply, so it connects with no level shifter.
+**The game gates the tape REPEATEDLY during a musical sequence** (per alanswx,
+who wrote the upstream MiSTer wave code) — not once per credit. That rules out
+the simple level-triggered module modes, which restart the track on each
+re-assert instead of resuming, and it makes module command **latency**
+(200–500 ms in this class) a real risk if the gating is musical. So an external
+module needs serial pause/resume, and even then may lag audibly.
+
+Read that as: the external module is the right answer for someone driving a
+**real deck** (a motor responds mechanically anyway), not as a cheap substitute
+for playing the music internally. `wave_sound`'s `I_PAUSE` is a wire — zero
+latency.
 
 Playing the music **internally** (the 22.05 kHz WAV in SDRAM) is a separate,
 still-open option — see `handoff_v10_complete_roster.md`. Both paths share this
