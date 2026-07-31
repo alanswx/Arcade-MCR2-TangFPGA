@@ -520,7 +520,16 @@ the 15-game core's audit (CPU swept to 0xE000, sound ROM in SDRAM so E4 reads
   update) this before starting anything; per-doc "open items" sections feed
   into it.
 
-- `handoff_v9_merged_core.md` — **MOST CURRENT HANDOFF, start here.** The
+- `handoff_v10_complete_roster.md` — **MOST CURRENT HANDOFF, start here.** The
+  15-game merged core (the product), what is verified on hardware and what is
+  not, and — the part that existed nowhere else — a consolidated list of what
+  is still MISSING: Discs of Tron's speech, Journey, Demolition Derby, cocktail
+  mode, NVRAM/high scores, the lamp panel, a real wheel/pedal, and scaler
+  rotation for the seven ROT90 cabinets. Plus the session's transferable
+  lessons (check the toolchain before blaming the design; LUT RAM is not free;
+  never budget a block per array).
+- `handoff_v9_merged_core.md` — superseded by v10; predates MCR-1, the 15-game
+  merge and all hardware verification. The
   merged MCR-2+MCR-3 core (the product), what is open and in what order, the
   stored-ROM audit, the recurring Gowin/measurement traps, and the bench
   state. Also lists the conclusions I got WRONG so they are not re-derived.

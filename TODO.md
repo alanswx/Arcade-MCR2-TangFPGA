@@ -1,5 +1,10 @@
 # TODO / open issues
 
+> **For the consolidated view — current state, what is verified, and what is
+> still MISSING (speech, Journey, cocktail mode, NVRAM, lamps, scaler
+> rotation) — read `handoff_v10_complete_roster.md` first.** This file is the
+> detail behind it, and it is long: cocktail mode is ~1800 lines down.
+
 Single list of known gaps. Detail lives in the linked docs; this is the
 index so nothing hides in a §6 somewhere. Roughly ordered by "blocks the
 next real milestone" within each section.
