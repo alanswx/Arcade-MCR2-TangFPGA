@@ -241,6 +241,33 @@ None costs a block, none changes behaviour:
 * **Check the tool options before blaming the design.** Two full days of RTL
   surgery bought less than four `set_option` lines did.
 
+## Bug worth remembering: a `//` comment ate an `assign`
+
+MCR3Scroll games came up with a **RAM error in their power-on self-test** after
+Journey was added. Cause, in the top:
+
+```systemverilog
+// the source had TWO assigns on one line:
+assign vram_a_m[2]=m3_vram_a; assign vram_a_m[3]=ms_vram_a;
+
+// a scripted edit appended a comment to the first one:
+assign vram_a_m[2]=11'd0;   // MCR-3 keeps its own vram assign vram_a_m[3]=ms_vram_a;
+```
+
+The comment **swallowed the second statement**, leaving `vram_a_m[3]` undriven
+— and slot 3 of that mux is MCR3Scroll, so its video-RAM ADDRESS was never
+driven. Journey was unaffected (MCR-3 has its own vram now), MCR-1/MCR-2 were
+unaffected (slots 0/1 still driven); only the three MCR3Scroll titles broke,
+which is what made it look like a Turbo Tag problem rather than a mux problem.
+
+Two guards: never append a `//` comment to a line whose full contents you have
+not read (scripted edits especially), and note that **verilator's `UNDRIVEN`
+warning catches exactly this** — it is currently suppressed because the vendor
+modules trip it, which is a poor trade in a design built out of four-way muxes.
+
+Fixing it also *improved* timing (clk_sys Fmax 41.554 → 43.260): an undriven
+net let the router place things freely and badly.
+
 ## Rolling this back
 
 Three independent levels, coarsest last.

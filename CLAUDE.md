@@ -190,6 +190,15 @@ bitstream whose DDR3 never trains (confirmed on hardware); 3 and 4 exist and are
 untried. Mirror any change into `impl/<project>_process_config.json` for IDE
 builds — see the Gotchas table.
 
+### Staging a bitstream: `cp` into `bitstreams/` FAILS SILENTLY-ish
+Gowin writes `impl/pnr/*.fs` **read-only** (`r-xr-xr-x`). Copying over an
+existing staged bitstream therefore fails with `Permission denied` — and if
+that `cp` is one line of a longer shell block, the flash command after it
+happily programs the **stale** file. That happened 2026-07-31: a fix was built,
+the copy failed, the old broken image was flashed and verified clean, and the
+board still misbehaved. Always `rm -f` the target first (or `cp -f` + `chmod
+u+w`) and **diff the md5 against `impl/pnr/*.fs` before flashing.**
+
 ### Post-build sanity checks (do these every build)
 1. **No `PA1019`** (PLL VCO out of range) warning in the log — **NO
    EXCEPTIONS.** Any PA1019, naming any PLL, is a build-breaker.

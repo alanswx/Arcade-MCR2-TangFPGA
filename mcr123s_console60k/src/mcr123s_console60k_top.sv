@@ -1773,7 +1773,13 @@ wire [10:0] vram_a_m [0:3];
 wire [7:0]  vram_d_m [0:3];
 wire [3:0]  vram_we_m;
 assign vram_a_m[0]=m1_vram_a; assign vram_a_m[1]=m2_vram_a;
-assign vram_a_m[2]=11'd0;   // MCR-3 keeps its own vram assign vram_a_m[3]=ms_vram_a;
+// MCR-3 keeps its own video RAM, so slot 2 of this mux is unused.
+// DO NOT put a // comment on a line that carries a second statement - doing
+// exactly that here swallowed `assign vram_a_m[3]=ms_vram_a;`, left
+// MCR3Scroll's video-RAM ADDRESS undriven, and every MCR3Scroll game came up
+// with a RAM error in its power-on self-test.
+assign vram_a_m[2]=11'd0;
+assign vram_a_m[3]=ms_vram_a;
 assign vram_d_m[0]=m1_vram_d; assign vram_d_m[1]=m2_vram_d;
 assign vram_d_m[2]=8'd0; assign vram_d_m[3]=ms_vram_d;
 assign vram_we_m = {ms_vram_we, 1'b0, m2_vram_we, m1_vram_we};
