@@ -197,3 +197,63 @@ what `docs/shield_wiring.md` builds the connector footprints from.
   has no J6 sheet. Unused by the games above.
 - **Outputs** — coin meters / lamps driven by SSIO output ports are not in
   the matrix; original cabinets wire them via J3-area harness. Deferred.
+
+
+---
+
+## SSIO output port 4 — what each game drives with it
+
+Transcribed from MAME `bally/mcr.cpp` (`init_*` registers a handler via
+`m_ssio->set_custom_output(4, MASK, ...)`; the mask is which bits are custom).
+This is the authority for wiring cabinet loads to the shield's 74HC595 →
+ULN2803 chain — `docs/shield_j10_pinout.md` §4 already reserves bits for it.
+
+Our cores expose this as the `output_4` port on `mcr2.vhd` / `mcr3.vhd` /
+`mcr3scroll.vhd`.
+
+| Game | Mask | Bits | What it drives |
+|---|---|---|---|
+| **Journey** | `0x01` | bit 0 | **Cassette deck on/off.** See below. |
+| **Two Tigers** (dedicated) | `0xff` | bit 1 | **Two cassette decks** (`left`, `right`), both gated by the same bit |
+| Wacko | `0x01` | bit 0 | Trackball input mux (P1 vs cocktail P2) |
+| Kozmik Kroozr | `0x34` | 2, 4, 5 | Ship control; cargo light 1; cargo light 2 |
+| Discs of Tron | `0xff` | 6, 7 | Flasher control board: bit 6 = lamp direct (J1-4), bit 7 = 8.57 Hz strobe enable (J1-3), wire-ORed |
+| Demolition Derby | `0xff` | 6, 7 | Input mux select; the rest goes to the Turbo Cheap Squeak sound board |
+| Spy Hunter | — | — | Lamp panel, via the core's `show_lamps` rather than a custom op4 |
+
+### Journey's cassette — the mechanism
+
+```c
+void mcr_state::journey_op4_w(uint8_t data)
+{
+    if (!m_samples->playing(0))
+        m_samples->start(0, 0, true);   // start it LOOPING, once
+    m_samples->pause(0, ~data & 1);     // bit 0 gates it
+}
+```
+
+Three things follow, and they matter for supporting a real deck:
+
+1. **It is an endless-loop cassette.** The sample starts once with the loop
+   flag set and never stops — the game only ever pauses and resumes it.
+2. **One bit, active high.** `0x01` mask, bit 0. High = tape running.
+3. **Pause, not stop-and-rewind.** Position is preserved across pauses, so the
+   music resumes mid-phrase exactly as a motor-gated tape loop would.
+
+Our `wave_sound.sv` port has `I_LOOP` and `I_PAUSE` inputs that map onto this
+one-for-one; upstream MiSTer wires `pause <= ~output_4[0]`, which matches
+MAME's `~data & 1`.
+
+**Supporting a REAL deck** therefore needs no new mechanism: route
+`output_4[0]` to one bit of the shield's output '595 → ULN2803 (a spare
+channel; the deck's motor relay is exactly the 12 V load that chain exists
+for), and offer a source option that mutes/skips the internal WAV. The same
+bitstream then serves both a purist cabinet and a bare board.
+
+### Note: we ship the Two Tigers CONVERSION set, which has no tape
+
+`twotigerc` (Tron conversion) uses `init_mcr_90010` — **no custom op4 and no
+cassettes at all**, so it is correct as we ship it. Only the dedicated
+`twotiger` set has the two tape channels, and that set also needs the videoram
+remap at `0xE800` that `CLAUDE.md` records as missing. MAME marks the dedicated
+set `MACHINE_IMPERFECT_SOUND`.
