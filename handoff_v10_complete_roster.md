@@ -12,15 +12,15 @@ down anywhere at all.
 
 ## Where the platform is
 
-**One bitstream holds every MCR game this board can run: 15 titles, four
+**One bitstream holds every MCR game this board can run: 16 titles, four
 families.** `mcr123s_console60k` is flashed as the power-on default.
 
 | Family | OSD idx | Games |
 |---|---|---|
-| MCR-3 (2) | 0–2 | Tapper, Timber, Discs of Tron |
-| MCR-2 (1) | 3–8 | Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man |
-| MCR3Scroll (3) | 9–11 | Crater Raider, Spy Hunter, Turbo Tag |
-| MCR-1 (0) | 12–14 | Kick, Solar Fox, Kickman |
+| MCR-3 (2) | 0–3 | Tapper, Timber, Discs of Tron, Journey |
+| MCR-2 (1) | 4–9 | Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man |
+| MCR3Scroll (3) | 10–12 | Crater Raider, Spy Hunter, Turbo Tag |
+| MCR-1 (0) | 13–15 | Kick, Solar Fox, Kickman |
 
 Budget: **116/118 BSRAM, 75% logic, 0 timing violations**, clk_sys Fmax 43.0 vs
 40.0 MHz required. No ROM data in the bitstream — everything streams from the
@@ -66,14 +66,13 @@ the build does not have, so it is a diagnostic, not a fallback).
 | Gap | Status |
 |---|---|
 | **Discs of Tron SPEECH** | **Absent.** DoT's Squawk & Talk board (6809 + TMS5200) was never implemented in the upstream MiSTer core, so there is nothing to port. DoT plays and sounds correct otherwise. Implementing it means writing the board from scratch. |
-| **Journey tape music** | Journey is not in the roster at all — see 2b. |
+| **Journey tape music** | **Journey IS in the roster (added 2026-07-30) but plays WITHOUT music.** Its endless-loop cassette is gated by SSIO output 4 bit 0; the gateware exposes `journey_tape_run` but **no pin is assigned** and no player is built. Two ways to finish it, and they are not exclusive: an external MP3 module / real deck driven from that signal (needs one pin — `docs/shield_j10_pinout.md`), or the internal 22.05 kHz WAV in SDRAM (needs `DL_AW` 19→24, the loader watchdog fixed, a wave pack entry, and ~6.5 s of load). |
 | Everything else | Working. SSIO, Cheap Squeak Deluxe/FX68K, and the SSIO+CSD mix are all verified. |
 
 ### 2b. Games not in the roster
 
 | Game | What it needs | Same board? |
 |---|---|---|
-| **Journey** | `wave_sound.sv` plus a DDR3 read port for its tape samples (MBs, too big for SDRAM alongside sprites). It is `mcr_91475`, not 91490, so `mcr2p5=1`. | Yes |
 | **Demolition Derby** | Turbo Cheap Squeak (6809) vendored; then it drops into the existing MCR-2 core. But it is **4-player**, so it may hit the same connector limit as Rampage. | Probably not |
 | **MCR3Mono** (Rampage, Sarge, Max RPM, Power Drive, Star Guards) | A **different board rev** — its IP ports route to different cabinet connectors, plus 3-player wiring and an ADC. Core is vendored and parked in `future/`. | **No** |
 

@@ -150,7 +150,12 @@ generic(
  -- blocks. Default "block_ram" keeps every existing board bit-identical.
  SPRLINE_RAMSTYLE : string := "block_ram";
  -- See the scratch-RAM ports below.
- SCRATCH_EXTERNAL : integer := 0
+ SCRATCH_EXTERNAL : integer := 0;
+ -- video_ram is split out so a board can hoist the small scratch RAMs but let
+ -- a core keep its OWN video RAM. The merged build does that for MCR-3: at
+ -- four cores the 4:1 mux on this RAM's CPU-side address sat on the critical
+ -- path, and one BSRAM block buys the margin back.
+ VRAM_EXTERNAL    : integer := 0
 );
 port(
   clock_40       : in  std_logic;
@@ -1014,7 +1019,7 @@ port map(
 );
 
 -- video RAM   E000-E7FF  2Ko
-vram_int : if SCRATCH_EXTERNAL = 0 generate
+vram_int : if VRAM_EXTERNAL = 0 generate
 video_ram : entity work.gen_ram
 generic map( dWidth => 8, aWidth => 11)
 port map(
@@ -1072,6 +1077,9 @@ scratch_ext : if SCRATCH_EXTERNAL /= 0 generate
   sh_sprc_d       <= cpu_do;
   sp_ram_cache_do <= sh_sprc_q;
 
+end generate;
+
+vram_ext : if VRAM_EXTERNAL /= 0 generate
   sh_vram_addr    <= bg_ram_addr;
   sh_vram_we      <= bg_ram_we;
   sh_vram_d       <= cpu_do;

@@ -1,17 +1,43 @@
 # mcr123s_console60k — every MCR game this board can run, in one bitstream
 
-15 games, four families. This is `mcr23s_console60k` plus **MCR-1** (Kick,
-Solar Fox, Kickman), which completes the set for the current board/shield
-target.
+16 games, four families.
 
 | OSD idx | Games | Family |
 |---|---|---|
-| 0–2 | Tapper, Timber, Discs of Tron | MCR-3 (2) |
-| 3–8 | Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man | MCR-2 (1) |
-| 9–11 | Crater Raider, Spy Hunter, Turbo Tag | MCR3Scroll (3) |
-| 12–14 | Kick, Solar Fox, Kickman | MCR-1 (0) |
+| 0–3 | Tapper, Timber, Discs of Tron, **Journey** | MCR-3 (2) |
+| 4–9 | Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man | MCR-2 (1) |
+| 10–12 | Crater Raider, Spy Hunter, Turbo Tag | MCR3Scroll (3) |
+| 13–15 | Kick, Solar Fox, Kickman | MCR-1 (0) |
 
-ROT90: 3, 4 (MCR-2) and 12–14 (all MCR-1). Crater Raider is landscape.
+ROT90 (`ROT_MASK = 0x0F838`): Journey 3, Satan's Hollow 4, Tron 5, Spy Hunter
+11, Turbo Tag 12, and all three MCR-1 titles. Crater Raider (10) is the only
+landscape cabinet.
+
+## Journey needs a pin we have NOT assigned yet
+
+**Journey currently plays with sound effects but NO MUSIC.** On the real
+machine the music came from an **endless-loop cassette**, gated by SSIO output
+port 4 bit 0 — MAME starts the sample looping once and thereafter only pauses
+and resumes it, so position is preserved and it picks up mid-phrase.
+
+The gateware already produces that signal as **`journey_tape_run`** (high =
+tape running, low unless Journey is the running game). **It is not assigned to
+a physical pin.** Two ways to spend it, detailed in
+`docs/shield_j10_pinout.md`:
+
+- **one bit of the output 74HC595 chain** — zero extra header pins, and a real
+  deck's motor relay is exactly the 12 V ULN2803 load that chain exists for;
+- **one dedicated output pin** if we drive an MP3 module, because those need a
+  UART command stream (9600 8N1, TX only) rather than a bare level.
+
+Module not chosen yet, so no pin is committed. The DY-SV5W is the current
+front-runner — real English datasheet, fixed command frames, loop mode 01 is
+literally "play the current song all the time", and its logic is 3.3 V despite
+a 5 V supply, so it connects with no level shifter.
+
+Playing the music **internally** (the 22.05 kHz WAV in SDRAM) is a separate,
+still-open option — see `handoff_v10_complete_roster.md`. Both paths share this
+same `journey_tape_run` signal, so neither is wasted work.
 
 ## What made MCR-1 fit: the shared sprite ROM
 
@@ -115,10 +141,10 @@ Still open:
   retiring the bring-up diagnostics, control/DIP tuning and the scaler
   decision.
 
-## RESULT: 15 games CLOSE CLEANLY on the 60K
+## RESULT: 16 games CLOSE CLEANLY on the 60K
 
 ```
-BSRAM   116/118        Logic 75%        Register 28%
+BSRAM   117/118        Logic 75%        Register 28%
 Setup violated endpoints  0
 Hold  violated endpoints  0
 TNS 0.000 on every clock domain
@@ -126,9 +152,32 @@ TNS 0.000 on every clock domain
 
 | Clock | Required | Actual Fmax | Margin |
 |---|---|---|---|
-| clk_sys | 40.000 MHz | 43.008 | +7.5% |
-| clk_sdram | 80.000 | 95.345 | +19% |
-| clk1x | 74.239 | 130.028 | +75% |
+| clk_sys | 40.000 MHz | 41.554 | +3.9% |
+| clk_sdram | 80.000 | 85.970 | +7.5% |
+| clk1x | 74.239 | 142.538 | +92% |
+
+### Adding Journey cost 5 ns of margin, and why
+
+`mcr2p5` had been a hard `1'b0`, so synthesis was **deleting the whole MCR-2.5
+memory map** — different work-RAM / sprite-cache / bg / palette decodes and a
+different CPU clock divider. Making it live un-pruned all of it. This is the
+timing-domain cousin of the handoff's trap #3 (*resource probes silently prune
+the thing you are measuring*): a constant input was hiding a core's real cost.
+
+| Step | clk_sys Fmax | Violations |
+|---|---|---|
+| 15 games | 43.008 | 0 |
+| + Journey | 38.060 | 8 setup, 1 hold |
+| + `mcr2p5` registered | 39.668 | 2 setup, 8 hold |
+| + MCR-3 keeps its own video RAM | **41.554** | **0** |
+
+The last step is worth remembering: **one BSRAM block fixed both the setup path
+and eight DDR3 hold violations.** Taking MCR-3 out of the shared video-RAM mux
+removed the worst CPU-side path *and* dropped that mux from 4:1 to 3:1 for the
+other three cores, and the congestion relief was enough for the Gowin DDR3 IP's
+own internal hold paths — which are vendored code we cannot edit — to close on
+their own. When vendored IP fails timing, buy it room rather than trying to fix
+it.
 
 **No bigger FPGA needed.** How it got here, because the path was not obvious:
 

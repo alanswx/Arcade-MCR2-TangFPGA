@@ -264,6 +264,41 @@ ULN2803s (cabinet 12 V loads, flyback diodes in the ULN):
 The FPGA maps SSIO `output_4/5/6` (per game) onto these bits; wire the
 cabinet's real loads to whichever bits a given game drives.
 
+### Journey cassette / MP3 module &mdash; RESERVE ONE OUTPUT (2026-07-30)
+
+Journey's music came from an **endless-loop cassette** gated by SSIO output
+port 4 bit 0 (`set_custom_output(4, 0x01)`; MAME starts the sample looping once
+and thereafter only pauses/resumes it, so position is preserved &mdash; see
+`docs/mcr_game_input_matrix.md`). The gateware already produces this as
+`journey_tape_run` in `mcr123s_console60k_top.sv`; **it is not yet assigned a
+physical pin.**
+
+Two ways to spend it, both already provided for:
+
+| Option | Cost | Notes |
+|---|---|---|
+| **A bit on the output '595 chain** | zero extra header pins | The natural home &mdash; a deck motor relay is exactly the 12 V ULN2803 load this chain exists for. Use a spare U9 bit. |
+| **A dedicated J10 pin** | one pin | Needed only if an MP3 module wants **UART** rather than a level. See below. |
+
+**If we drive an MP3 module** (DY-SV5W or similar) the module needs a *serial*
+command stream, not a level, because it must be told "loop this one track" and
+then play/pause. That is **one dedicated output pin** (UART TX, 9600 8N1) plus
+ground; we never read back, so no RX. The DY-SV5W's logic is **3.3 V even
+though it runs off 5 V** (its BUSY pin is specified as 3.3 V), so it connects
+directly with no level shifter. Frames are fixed byte strings:
+
+```
+boot:  AA 13 01 14 D2    volume 20/30
+       AA 18 01 01 C4    loop mode 01 = "play the current song all the time"
+       AA 07 02 00 01 B4 select 00001.mp3
+run:   AA 02 00 AC       Play    (tape bit rises)
+stop:  AA 03 00 AD       Pause   (tape bit falls)
+```
+
+**Not yet decided which module**, so no pin is committed. Whichever it is,
+budget **one output pin** (or one '595 bit if a bare level turns out to be
+enough), and keep it away from the config-critical balls.
+
 `OUT_EN_N` (pin 34) **must have a pull-up on the shield**: it holds every
 output off from power-on until the gateware takes control — no coin-meter
 clicks or lamp flashes during the ~1 s of FPGA configuration.

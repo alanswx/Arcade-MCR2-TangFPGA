@@ -256,7 +256,7 @@ localparam [16:0] CPU_SWEEP_END = (CPU_ROM_DEPTH == 0) ? 17'h10000
 
 localparam [7:0] FAM_MCR1 = 8'd0, FAM_MCR2 = 8'd1, FAM_MCR3 = 8'd2, FAM_SCROLL = 8'd3;
 localparam [4:0] OSD_DEFAULT_IDX = 5'd0;   // Tapper
-localparam [4:0] N_MCR3   = 5'd3;          // MCR-3 entries come first
+localparam [4:0] N_MCR3   = 5'd4;          // MCR-3 entries come first (incl. Journey)
 localparam [4:0] N_MCR2   = 5'd6;          // then MCR-2
 localparam [4:0] N_M32    = N_MCR3 + N_MCR2;   // 9  = first MCR3Scroll index
 localparam [4:0] N_SCROLL = 5'd3;
@@ -1485,9 +1485,20 @@ always @(*) begin
         input_3 = 8'hFF;
     end
 
+    // JOURNEY (MCR-2.5, roster 3). From MAME INPUT_PORTS_START(journey):
+    //   IP0 = standard, with BUTTON1 on bit 4
+    //   IP1 = 4-way stick, bits 0-3 = left/right/up/down (bits 4-7 unused)
+    //   IP2 = the same stick for the COCKTAIL player + its button (tied off)
+    //   IP3 DIP: bit0 coin meters, bit1 cabinet (0=upright). MRA default FF.
+    5'd3: begin
+        input_0 = ~{ m_service, 2'b00, m_a, m_start2, m_start1, 1'b0, m_coin1 };
+        input_1 = ~{ 4'b0000, m_down, m_up, m_right, m_left };
+        input_3 = 8'hFD;   // upright (bit1 = 0); coin meters 1
+    end
+
     // SATAN'S HOLLOW: IP0 = standard (no button bit), IP1 = {..., fire,
     // shield, right, left}. Pad: A = fire, B = shield, X = Start2, Y = Coin2.
-    5'd3: begin
+    5'd4: begin
         input_0 = ~{ 2'b00, 1'b0, 1'b0, m_x, m_start1, m_y, m_coin1 };
         input_1 = ~{ 4'b0000, m_a, m_b, m_right, m_left };
         input_2 = 8'hFF;
@@ -1500,7 +1511,7 @@ always @(*) begin
     // joystick, IP3 DIPs = 0x80 (upright, coin meters 2, continues allowed,
     // cocktail-trigger input idle high), IP4 = cocktail dial (unused).
     // Pad: dpad = move, A/B = trigger, X/Y = rotate aim.
-    5'd4: begin
+    5'd5: begin
         input_0 = ~{ 1'b0, m_service, 1'b0, m_a | m_b, 1'b0, m_start1, 1'b0, m_coin1 };
         input_1 = spin_tron;
         input_2 = ~{ 4'b0000, m_down, m_up, m_right, m_left };
@@ -1512,7 +1523,7 @@ always @(*) begin
     // bit3 up, bit2 down, bit1 left, bit0 right). The SSIO input mux only
     // swaps in the *cocktail* trackball, so upright play needs no mux.
     // Pad: dpad = trackball, A/B/X/Y = aim stick.
-    5'd5: begin
+    5'd6: begin
         input_0 = ~{ 1'b0, m_service, 1'b0, 1'b0, 1'b0, m_start1, 1'b0, m_coin1 };
         input_1 = tb_x;
         input_2 = tb_y;
@@ -1525,7 +1536,7 @@ always @(*) begin
     // dial[7], bits 2:0 = dial[6:4], both ACTIVE HIGH; bit 7 is Button 2
     // (active low), bits 5:3 are cockpit sensors. IP2/IP4 = analogue stick.
     // Pad: dpad = stick, A = fire, B = shield, X = Start2, Y = Coin2.
-    5'd6: begin
+    5'd7: begin
         input_0 = ~{ 1'b0, m_service, 1'b0, m_a, m_x, m_start1, m_y, m_coin1 };
         input_1 = { ~m_b, dial_kz[7], 3'b000, dial_kz[6:4] };
         input_2 = stick_x;
@@ -1536,7 +1547,7 @@ always @(*) begin
     // TWO TIGERS (Tron-conversion set): IP1 = P1 dial, IP4 = P2 dial, IP2
     // low nibble = fire buttons, IP0 bit 4 = "Dogfight Start" - moved to
     // D-pad Up because Select+Start now opens the OSD. Pad: X/Y spin, A/B fire.
-    5'd7: begin
+    5'd8: begin
         input_0 = ~{ 1'b0, m_service, 1'b0, m_up, 1'b0, m_start1, 1'b0, m_coin1 };
         input_1 = dial_tt;
         input_2 = ~{ 4'b0000, 2'b00, m_b, m_a };
@@ -1548,7 +1559,7 @@ always @(*) begin
     // joystick. IP3 DIPs = 0x3E: Music On, light skin, bits2-5 unused (idle
     // high), Upright (bit6 LOW - 0xFF selects cocktail!), two coin meters.
     // Pad: A/B = Place/Strike, X = Start2, Y = Coin2.
-    5'd8: begin
+    5'd9: begin
         input_0 = ~{ 1'b0, m_service, 1'b0, m_a | m_b, m_x, m_start1, m_y, m_coin1 };
         input_1 = ~{ 4'b0000, m_down, m_up, m_right, m_left };
         input_2 = 8'hFF;
@@ -1563,7 +1574,7 @@ always @(*) begin
     // CRATER RAIDER: landscape cabinet (NOT rotated). Dial on IP1, forward/
     // reverse on IP2. Pad: A = fire, B = shield, Start = Start1, X = Start2,
     // D-pad L/R = dial, Up/Down = forward/reverse.
-    5'd9: begin
+    5'd10: begin
         input_0 = ~{ m_service, 2'b00, m_a, m_start2, m_start1, 1'b0, m_coin1 };
         input_1 = spin_crater;
         input_2 = ~{ 1'b0, m_b, 1'b0, m_y, m_down, m_up, 2'b00 };
@@ -1573,7 +1584,7 @@ always @(*) begin
     // SPY HUNTER: wheel/pedal on IP2, multiplexed by the SSIO output line
     // output_4[7] (wheel when high, gas when low) exactly as upstream.
     // IP0 bit 4 is the GEAR SHIFT, not a start button - Van/Start is IP1 bit 2.
-    5'd10: begin
+    5'd11: begin
         input_0 = ~{ m_service, 2'b00, m_y, 2'b00, 1'b0, m_coin1 };
         input_1 = ~{ 3'b000, m_a, m_x, m_start1, m_b, m_down };
         input_2 = ms_out4[7] ? steer_emu : gas_emu;
@@ -1582,7 +1593,7 @@ always @(*) begin
 
     // TURBO TAG (prototype): same wheel/pedal arrangement, buttons in the
     // opposite order on IP1.
-    5'd11: begin
+    5'd12: begin
         input_0 = ~{ m_service, 2'b00, m_y, 2'b00, 1'b0, m_coin1 };
         input_1 = ~{ 3'b000, m_start1, m_down, m_x, m_b, m_a };
         input_2 = ms_out4[7] ? steer_emu : gas_emu;
@@ -1594,14 +1605,14 @@ always @(*) begin
     // Roster/pack order is kick(12), solarfox(13), kickman(14).
 
     // KICK / KICKMAN: spinner on IP1's low nibble, kick button on IP0 bit 4.
-    5'd12, 5'd14: begin
+    5'd13, 5'd15: begin
         input_0 = ~{ m_service, 2'b00, m_a, m_start2, m_start1, 1'b0, m_coin1 };
         input_1 = ~{ 4'b0000, kick_spin[3:0] };
     end
 
     // SOLAR FOX: 4-way stick mirrored across both nibbles of IP1 (MiSTer maps
     // it to the P1 and rotated axes alike). Two fire buttons.
-    5'd13: begin
+    5'd14: begin
         input_0 = ~{ m_service, 2'b00, m_a, m_b, m_b, 1'b0, m_coin1 };
         input_1 = ~{ m_up, m_down, m_left, m_right, m_up, m_down, m_left, m_right };
         input_2 = ~{ 7'b0000000, m_a };
@@ -1762,10 +1773,10 @@ wire [10:0] vram_a_m [0:3];
 wire [7:0]  vram_d_m [0:3];
 wire [3:0]  vram_we_m;
 assign vram_a_m[0]=m1_vram_a; assign vram_a_m[1]=m2_vram_a;
-assign vram_a_m[2]=m3_vram_a; assign vram_a_m[3]=ms_vram_a;
+assign vram_a_m[2]=11'd0;   // MCR-3 keeps its own vram assign vram_a_m[3]=ms_vram_a;
 assign vram_d_m[0]=m1_vram_d; assign vram_d_m[1]=m2_vram_d;
-assign vram_d_m[2]=m3_vram_d; assign vram_d_m[3]=ms_vram_d;
-assign vram_we_m = {ms_vram_we, m3_vram_we, m2_vram_we, m1_vram_we};
+assign vram_d_m[2]=8'd0; assign vram_d_m[3]=ms_vram_d;
+assign vram_we_m = {ms_vram_we, 1'b0, m2_vram_we, m1_vram_we};
 wire [10:0] sh_vram_a  = vram_a_m[run_sel];
 wire [7:0]  sh_vram_d  = vram_d_m[run_sel];
 wire        sh_vram_we = vram_we_m[run_sel];
@@ -1783,6 +1794,18 @@ gen_ram #(.dWidth(8), .aWidth(11)) sh_vram_ram (
 // shared RAMs and was the critical path in the 12-game build; separate
 // registers cut the fanout and give the placer four short local nets instead
 // of one long global one. A cycle of latency on a reset is immaterial.
+// Journey's MCR-2.5 select. REGISTERED, and declared HERE - above the mcr3
+// instance that consumes it, because Gowin turns a use-before-declaration into
+// a SILENT 1-BIT WIRE with only a warning (CLAUDE.md trap #1).
+// It needs registering more than the scroll selects do: it fans out to
+// mcr3.vhd's wram / sprite-cache / bg / palette address decodes and the CPU
+// clock divider, so combinationally it sits right in front of the
+// CPU -> shared-video-RAM path. It also UN-PRUNES all of that MCR-2.5 logic,
+// which synthesis had been deleting while the input was a constant 0 - which
+// is why adding Journey cost ~2.5 ns of clk_sys margin (Fmax 43.0 -> 38.1).
+reg m3_mcr2p5 = 1'b0;
+always @(posedge clk_sys) m3_mcr2p5 <= run_is_mcr3 && (game_id == 4'd3);
+
 reg m3_reset = 1'b1, m2_reset = 1'b1, ms_reset = 1'b1, m1_reset = 1'b1;
 always @(posedge clk_sys) begin
     m3_reset <= core_reset || !run_is_mcr3;
@@ -1814,6 +1837,7 @@ wire [13:0] m3_bg_addr, ms_bg_addr;
 wire [12:0] m2_bg_addr;
 wire [14:0] m3_sp_addr, ms_sp_addr, m2_sp_addr;
 wire        ms_halt_n;
+wire [7:0]  m3_out4;
 
 // MCR3Scroll mixes its Cheap Squeak Deluxe board into the main audio the same
 // way MiSTer's top does: `audio + {csd_audio, 5'd0}`.
@@ -1848,7 +1872,7 @@ mcr2 #(
     // this build at 127/118 BSRAM with them in block RAM. See gen_ram.sv.
     .GFX2_INIT(""), .GFX_LOADABLE(1), .SPRLINE_RAMSTYLE("distributed_ram"),
     .SP_EXTERNAL(1),           // 32 KB sprite ROM shared with MCR-1, in the top
-    .SCRATCH_EXTERNAL(1)
+    .SCRATCH_EXTERNAL(1), .VRAM_EXTERNAL(1)
 ) mcr2_core (
     .clock_40(clk_sys), .reset(m2_reset),
     .video_r(m2_r), .video_g(m2_g), .video_b(m2_b),
@@ -1877,7 +1901,14 @@ mcr2 #(
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
 
-mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
+mcr3 #(
+    .SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1),
+    // MCR-3 keeps its OWN video RAM (+1 BSRAM). With Journey live the MCR-2.5
+    // decodes are no longer pruned, and mcr3's CPU -> shared-vram path became
+    // the critical one; taking it out of the mux also drops that mux 4:1 -> 3:1
+    // for the other three cores.
+    .VRAM_EXTERNAL(0)
+) mcr3_core (
     .clock_40(clk_sys),
     .reset(m3_reset),
 
@@ -1908,8 +1939,16 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
     .input_2(in2_r),
     .input_3(in3_r),
     .input_4(in4_r),
-    .output_4(),           // SSIO output port (lamps/mux) - unused here
-    .mcr2p5(1'b0),         // Tapper is 91490 (not Journey/MCR-2.5)
+    // SSIO output port 4. Journey drives bit 0 as its CASSETTE transport:
+    // MAME starts the sample looping ONCE and thereafter only pauses/resumes
+    // it (set_custom_output(4, 0x01), pause = ~data & 1), i.e. an endless-loop
+    // tape with the motor gated. We do not play the music internally yet; the
+    // bit is brought out for an external MP3 module or a real deck.
+    .output_4(m3_out4),
+    // Journey (roster 3) is mcr_91475 = MCR-2.5: a different memory map
+    // (work RAM C000 not E000, sprite cache E000 not E800, bg E800 not F000,
+    // palette FF80 not F800) and a 2.5 MHz CPU. mcr3.vhd implements all of it.
+    .mcr2p5(m3_mcr2p5),
 
     // CPU + sound ROM (baked in BRAM below); bg is baked inside mcr3.vhd
     .cpu_rom_addr(m3_rom_addr),
@@ -1934,8 +1973,7 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
     .sh_spr_q(sh_spr_q),
     .sh_sprc_addr(m3_sprc_a), .sh_sprc_we(m3_sprc_we), .sh_sprc_d(m3_sprc_d),
     .sh_sprc_q(sh_sprc_q),
-    .sh_vram_addr(m3_vram_a), .sh_vram_we(m3_vram_we), .sh_vram_d(m3_vram_d),
-    .sh_vram_q(sh_vram_q),
+
     .dl_addr(core_dl_addr),
     .dl_wr(core_dl_wr),
     .dl_data(dl_data),
@@ -1959,13 +1997,13 @@ mcr3 #(.SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)) mcr3_core (
 // osd_inst/game_id -> scroll_core/sprlinebuf2a).
 reg ms_mod_crater = 1'b0, ms_mod_turbo = 1'b0;
 always @(posedge clk_sys) begin
-    ms_mod_crater <= run_is_scroll && (game_id == 4'd9);
-    ms_mod_turbo  <= run_is_scroll && (game_id == 4'd11);
+    ms_mod_crater <= run_is_scroll && (game_id == 4'd10);
+    ms_mod_turbo  <= run_is_scroll && (game_id == 4'd12);
 end
 
 mcr3scroll #(
     .CH_INIT(""), .GFX_LOADABLE(1), .CSD_ENABLE(SCROLL_CSD),
-    .SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1)
+    .SPRLINE_RAMSTYLE("distributed_ram"), .SCRATCH_EXTERNAL(1), .VRAM_EXTERNAL(1)
 ) scroll_core (
     .clock_40(clk_sys), .reset(ms_reset),
     .tv15Khz_mode(tv15khz),
@@ -2015,7 +2053,7 @@ mcr3scroll #(
 mcr1 #(
     .GFX1_1_INIT(""), .GFX1_2_INIT(""), .GFX2_INIT(""), .GFX_LOADABLE(1),
     .SP_EXTERNAL(1), .BG_EXTERNAL(1), .SPRLINE_RAMSTYLE("distributed_ram"),
-    .SCRATCH_EXTERNAL(1)
+    .SCRATCH_EXTERNAL(1), .VRAM_EXTERNAL(1)
 ) mcr1_core (
     .clock_40(clk_sys), .reset(m1_reset),
     .tv15Khz_mode(tv15khz),
@@ -2049,6 +2087,22 @@ mcr1 #(
     .dl_nvram_wr(1'b0), .dl_din(), .dl_nvram(1'b0)
 );
 
+// ---------------------------------------------------------------------------
+// JOURNEY CASSETTE TRANSPORT
+// ---------------------------------------------------------------------------
+// Journey's music came from an ENDLESS-LOOP cassette. The game does not
+// start/stop it - MAME registers set_custom_output(4, 0x01) and its handler
+// starts the sample looping ONCE, then only pauses and resumes it, so position
+// is preserved and the music picks up mid-phrase. High = tape running.
+//
+// We do NOT play the music internally yet (see handoff v10). This brings the
+// transport bit out so a cheap external MP3 module - or a real deck's motor
+// relay - can be driven from it. Held low unless Journey is the running game,
+// so nothing on the pin twitches while other games play.
+//
+// PIN: reserved, not yet placed in the .cst. See docs/shield_j10_pinout.md.
+wire journey_tape_run = m3_mcr2p5 && m3_out4[0];
+
 // --- Pixel timing shared by the analog and HDMI paths ----------------------
 // One strobe per core pixel: hcnt advances at the 20 MHz pixel rate (every
 // other clk_sys cycle).
@@ -2080,29 +2134,32 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(5'd0),          // Tapper
-    .NUM_GAMES(6'd15),
+    .NUM_GAMES(6'd16),
     // idx 3 shollow + idx 4 tron are ROT90; so are all three MCR3Scroll
     // titles (9 crater, 10 spyhunt, 11 turbotag - vertical cabinets).
     // Crater Raider is a LANDSCAPE cabinet (upstream sets landscape=1), so
     // only Spy Hunter (10) and Turbo Tag (11) join shollow (3) and tron (4).
-    // ...and all three MCR-1 titles (12-14) are ROT90 too.
-    .ROT_MASK(20'h07C18),
+    // ROT90 cabinets: Journey 3, Satan's Hollow 4, Tron 5, Spy Hunter 11,
+    // Turbo Tag 12, and all three MCR-1 titles 13-15. Crater Raider (10) is
+    // the only landscape game in the roster.
+    .ROT_MASK(20'h0F838),
     .TITLE ("    MCR GAME SELECT     "),
     .NAME0 ("   TAPPER               "),
     .NAME1 ("   TIMBER               "),
     .NAME2 ("   DISCS OF TRON        "),
-    .NAME3 ("   SATANS HOLLOW        "),
-    .NAME4 ("   TRON                 "),
-    .NAME5 ("   WACKO                "),
-    .NAME6 ("   KOZMIK KROOZR        "),
-    .NAME7 ("   TWO TIGERS           "),
-    .NAME8 ("   DOMINO MAN           "),
-    .NAME9 ("   CRATER RAIDER        "),
-    .NAME10("   SPY HUNTER           "),
-    .NAME11("   TURBO TAG            "),
-    .NAME12("   KICK                 "),
-    .NAME13("   SOLAR FOX            "),
-    .NAME14("   KICKMAN              ")
+    .NAME3 ("   JOURNEY              "),
+    .NAME4 ("   SATANS HOLLOW        "),
+    .NAME5 ("   TRON                 "),
+    .NAME6 ("   WACKO                "),
+    .NAME7 ("   KOZMIK KROOZR        "),
+    .NAME8 ("   TWO TIGERS           "),
+    .NAME9 ("   DOMINO MAN           "),
+    .NAME10("   CRATER RAIDER        "),
+    .NAME11("   SPY HUNTER           "),
+    .NAME12("   TURBO TAG            "),
+    .NAME13("   KICK                 "),
+    .NAME14("   SOLAR FOX            "),
+    .NAME15("   KICKMAN              ")
 ) osd_inst (
     .clk(clk_sys),
     .rst(core_reset_raw),

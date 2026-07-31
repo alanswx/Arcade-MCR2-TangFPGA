@@ -182,6 +182,41 @@ GAME_SPECS = {
         snd_pad_to=16 * 1024,
     ),
 
+    # Journey (1984) - MCR-2.5 hardware (mcr_91475), so the core needs
+    # mcr2p5 = 1: a completely different memory map (work RAM at C000 not E000,
+    # sprite cache E000 not E800, bg E800 not F000, palette FF80 not F800) and
+    # a 2.5 MHz CPU instead of 5 MHz. mcr3.vhd already implements all of it.
+    #
+    # ROM sizes here follow MAME, and the REPEATS follow the MRA. MAME's real
+    # regions are gfx1 = 16 KB (g3, g4) and gfx2 = 64 KB (8 files), but the
+    # core expects a 32 KB bg pair and a 128 KB sprite region, so the MRA fills
+    # them by repeating each file. Repetition rather than zero-padding is
+    # deliberate - it mirrors instead of blanking if the upper half is ever
+    # addressed. (Discs of Tron zero-pads its 64 KB sprite set and works, so
+    # either is probably fine; this follows the known-good MRA.)
+    #
+    # THE TAPE: Journey's music came from an endless-loop cassette gated by
+    # SSIO output port 4 bit 0 (see docs/mcr_game_input_matrix.md). We ship it
+    # WITHOUT music for now - the game plays with SSIO sound effects only, and
+    # the tape control signal is brought out for a future MP3 module.
+    "journey": dict(
+        family="mcr3",
+        define="GAME_JOURNEY",
+        zip_path="roms/journey.zip",
+        main_files=["d2", "d3", "d4", "d5", "d6"],   # 5 x 8K = 40K
+        main_pad_to=0xE000,                          # MRA: <part repeat=16384>00
+        snd_files=["a", "b", "c", "d"],              # 4 x 4K = 16K exactly
+        snd_pad_to=16 * 1024,
+        # MCR-3 rule: gfx1_1 is the ROM MAME loads SECOND. MAME has g3 at
+        # 0x0000 and g4 at 0x2000, so gfx1_1 = g4. Each repeated to fill 16 KB.
+        gfx1_1_files=["g4", "g4"],
+        gfx1_2_files=["g3", "g3"],
+        gfx2_files=["a7", "a8", "a7", "a8",   # plane 0
+                    "a5", "a6", "a5", "a6",   # plane 1
+                    "a3", "a4", "a3", "a4",   # plane 2
+                    "a1", "a2", "a1", "a2"],  # plane 3
+    ),
+
     # --- MCR3Scroll (core src/rtl/mcr3scroll.vhd) --------------------------
     # Two regions no other family has: a 4 KB CHAR/ALPHA plane (`chr`, loaded
     # into the core's own dpram at dl 0x8000) and the 32 KB 16-bit Cheap Squeak
@@ -450,9 +485,13 @@ def collect(game, quiet=False):
         gfx2_data = bytearray()
         if spec.get("family", "mcr2") in ("mcr3", "mcr3scroll"):
             per_plane = SPRITE_REGION // 4          # 32 KB
-            for i in range(0, len(files), 2):
+            # Files are spread evenly over the FOUR planes. Usually 8 files = 2
+            # per plane; Journey lists 16 because its real gfx2 region is only
+            # 64 KB and the MRA repeats each file to fill the core's 128 KB.
+            n_per = max(1, len(files) // 4)
+            for i in range(0, len(files), n_per):
                 plane = bytearray()
-                for fn in files[i:i + 2]:
+                for fn in files[i:i + n_per]:
                     plane.extend(z.read(fn))
                 if len(plane) > per_plane:
                     raise SystemExit(

@@ -74,7 +74,7 @@ def main():
     # i.e. the same order as this list.
     ROSTER = ["kick", "solarfox", "kickman",
               "shollow", "tron", "wacko", "kroozr", "twotiger", "domino",
-              "tapper", "timber", "dotron",
+              "tapper", "timber", "dotron", "journey",
               "crater", "spyhunt", "turbotag"]
     for game in ROSTER:
         spec = GAME_SPECS[game]
