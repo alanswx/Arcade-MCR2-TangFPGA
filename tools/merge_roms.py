@@ -122,6 +122,42 @@ GAME_SPECS = {
         gfx2_files=["loc-g.cp4", "loc-h.cp3", "loc-e.cp6", "loc-f.cp5",
                     "loc-c.cp8", "loc-d.cp7", "loc-a.cp0", "loc-b.cp9"],
     ),
+    # Discs of Tron (ENVIRONMENTAL, 1983) - the sit-down cabinet.
+    #
+    # This is a DIFFERENT ROM SET from `dotron` above, not a strap on it: the
+    # Environmental PCB carries a Bally Squawk & Talk speech board (MC6802 +
+    # 2x PIA6821 + TMS5200 + AD558) and its own CPU/SSIO revision. Verified
+    # against `mame -listxml`: dotron/dotrona are midssio+ay8910 only, with no
+    # speech hardware at all, so adding speech means adding this variant --
+    # there is nothing to "fix" in the upright set.
+    #
+    # ROM NAMES follow the MERGED dotron.zip in circulation, where the clone's
+    # ROMs sit under a `dotrone/` prefix and only the shared gfx is at the
+    # root. CRCs match current MAME either way; only the names differ.
+    #
+    # No other game in the roster uses Squawk & Talk -- Kozmik Kroozr and
+    # Wacko are SSIO-only in MAME, contrary to the obvious guess -- so this
+    # region buys exactly one variant.
+    "dotrone": dict(
+        family="mcr3",
+        define="GAME_DOTRONE",
+        zip_path="roms/dotron.zip",
+        main_files=["dotrone/loc-cpu1", "dotrone/loc-cpu2",
+                    "dotrone/loc-cpu3", "dotrone/loc-cpu4"],
+        snd_files=["dotrone/loc-a", "dotrone/loc-b",
+                   "dotrone/loc-c", "dotrone/loc-d"],
+        snd_pad_to=16 * 1024,
+        # Squawk & Talk: 4 KB of nothing for the empty U2 socket at $8000,
+        # then pre.u3/u4/u5 at $9000/$A000/$B000 exactly as MAME loads them.
+        snt_files=["dotrone/pre.u3", "dotrone/pre.u4", "dotrone/pre.u5"],
+        snt_pad_before=4 * 1024,
+        # Same plane order as the upright set - shared gfx, and mcr3.vhd wants
+        # the ROM MAME loads SECOND in gfx1_1.
+        gfx1_1_file="loc-bg1.5f",   # MAME 0x2000 (loaded second)
+        gfx1_2_file="loc-bg2.6f",   # MAME 0x0000 (loaded first)
+        gfx2_files=["loc-g.cp4", "loc-h.cp3", "loc-e.cp6", "loc-f.cp5",
+                    "loc-c.cp8", "loc-d.cp7", "loc-a.cp0", "loc-b.cp9"],
+    ),
     # Timber (1984, mcr_91490 = the Tapper board, ROT0).
     # gfx1 PLANE ORDER - fixed 2026-07-27, verified against `mame -listxml`.
     # The previous comment here claimed MAME loads timber's gfx1 "REVERSED vs
@@ -460,6 +496,16 @@ def collect(game, quiet=False):
         chr_data = bytes(cat(z, spec.get("chr_files", [])))
         csd_data = bytes(cat(z, spec.get("csd_files", [])))
 
+        # 3c. Squawk & Talk board ROM (Discs of Tron Environmental only).
+        # 16 KB, mapping 1:1 onto the 6802's $8000-$BFFF window so no address
+        # arithmetic is needed anywhere downstream. `snt_pad_before` is the
+        # UNPOPULATED U2 socket at $8000: MAME loads nothing there, but the
+        # 4 KB has to be PRESENT or pre.u3/u4/u5 land 4 KB low and the 6802's
+        # reset vector -- which it fetches through the $C000 mirror -- points
+        # at garbage. Invisible until a CPU exists to fetch it.
+        snt_data = bytes(b"\x00" * spec.get("snt_pad_before", 0)
+                         + cat(z, spec.get("snt_files", [])))
+
         # 4. Sprite graphics (gfx2), assembled BY BITPLANE.
         # The MCR-3 sprite engine fetches one 32-bit word as
         #   {Q3[i], Q2[i], Q1[i], Q0[i]}
@@ -519,6 +565,7 @@ def collect(game, quiet=False):
         "gfx2":   bytes(gfx2_data),
         "chr":    chr_data,      # MCR3Scroll char/alpha plane (else b"")
         "csd":    csd_data,      # MCR3Scroll CSD 68000 ROM     (else b"")
+        "snt":    snt_data,      # Squawk & Talk 6802 ROM       (else b"")
     }
 
 

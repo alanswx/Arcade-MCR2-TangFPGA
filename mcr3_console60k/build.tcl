@@ -90,6 +90,37 @@ add_file ../src/rtl/Z80CTC/ctc_controler.vhd
 add_file ../src/rtl/Z80CTC/ctc_counter.vhd
 add_file ../src/rtl/Z80CTC/z80ctc_top.vhd
 
+# --- Squawk & Talk speech board (Discs of Tron Environmental) ----------------
+# jt680x as the MC6802 + 2x pia6821 + TMS5200 + AD558. Ported from the MiSTer
+# prototype in refs/Arcade-MCR3_MiSTer 2026-08-01, where it was confirmed
+# speaking in-game.
+#
+# jt680x `include`s 6801.vh / 6801_param.vh and $readmemb's the 4096x40
+# microcode 6801.uc by BARE FILENAME, and the TMS5200 $readmemh's two
+# coefficient tables the same way. Gowin resolves those relative to the
+# INSTANTIATING SOURCE FILE's directory, so they resolve next to their own
+# sources and need no search path here (Quartus needed an explicit SEARCH_PATH;
+# Gowin does not).
+#
+# Expect the microcode to cost LOGIC, not BSRAM: 6801.vh reads it
+# asynchronously, which no block RAM can do. On Cyclone V it came to ~1.1k ALMs
+# once the unused bit-slices were stripped.
+add_file ../src/rtl/pia6821.vhd
+add_file ../src/rtl/jt680x/jt680x.v
+add_file ../src/rtl/jt680x/jt680x_ctrl.v
+add_file ../src/rtl/jt680x/jt680x_alu.v
+add_file ../src/rtl/jt680x/jt680x_regs.v
+add_file ../src/rtl/tms5200/tms5200_vsp.v
+add_file ../src/rtl/tms5200/tms5200_crom.v
+add_file ../src/rtl/tms5200/tms5200_prom.v
+add_file ../src/rtl/tms5200/tms5200_pram.v
+add_file ../src/rtl/tms5200/tms5200_fifo.v
+add_file ../src/rtl/tms5200/tms5200_bstack.v
+add_file ../src/rtl/tms5200/tms5200_kstack.v
+add_file ../src/rtl/tms5200/tms5200_multiplier.v
+add_file ../src/rtl/tms5200/tms5200_dac.v
+add_file ../src/rtl/squawk_n_talk.sv
+
 # Add constraints files
 add_file -type cst src/mcr3_console60k.cst
 add_file -type sdc src/mcr3_console60k.sdc

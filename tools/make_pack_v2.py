@@ -54,10 +54,15 @@ def blob(game, spec, r):
                 pad(r["gfx2"],0x20000) +
                 pad(r["chr"],0x1000) + b"\x00" * 0x3000 +
                 pad(r["csd"],0x8000))
-    # mcr3
-    return (pad(r["main"],0x10000) + pad(r["snd"],0x4000) +
+    # mcr3.  The Squawk & Talk ROM is APPENDED, not inserted: it lands at
+    # 0x3C000, immediately after the 128 KB sprite region, which is the first
+    # free dl address and still inside the 18-bit dl_addr the mcr3 tops use.
+    # Games with no speech board contribute b"" and so produce a byte-for-byte
+    # identical blob to before -- existing pack entries are unchanged.
+    base = (pad(r["main"],0x10000) + pad(r["snd"],0x4000) +
             pad(r["gfx1_1"],0x4000) + pad(r["gfx1_2"],0x4000) +
             pad(r["gfx2"],0x20000))
+    return base + (pad(r["snt"],0x4000) if r.get("snt") else b"")
 
 def main():
     minis, rich, payload = [], [], b""
@@ -75,7 +80,13 @@ def main():
     ROSTER = ["kick", "solarfox", "kickman",
               "shollow", "tron", "wacko", "kroozr", "twotiger", "domino",
               "tapper", "timber", "dotron", "journey",
-              "crater", "spyhunt", "turbotag"]
+              "crater", "spyhunt", "turbotag",
+              # APPENDED, never inserted. Slot numbers are per-family in this
+              # list's order, so putting dotrone next to dotron would push
+              # journey from mcr3 slot 3 to 4 and silently invalidate every
+              # saved preference and every top's OSD name list. At the end it
+              # simply takes mcr3 slot 4.
+              "dotrone"]
     for game in ROSTER:
         spec = GAME_SPECS[game]
         fam = FAM_ID[spec.get("family", "mcr2")]

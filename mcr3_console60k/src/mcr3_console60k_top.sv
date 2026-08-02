@@ -369,10 +369,18 @@ wire dl_cpu_rng = dl_v2 && (dl_addr[17:16] == 2'b00);
 wire dl_snd_rng = dl_v2 && (dl_addr[17:14] == 4'b0100);
 wire dl_bg1_rng = dl_v2 && (dl_addr[17:14] == 4'b0101);
 wire dl_bg2_rng = dl_v2 && (dl_addr[17:14] == 4'b0110);
-wire dl_sp_rng  = dl_v2 ? (dl_addr >= 18'h1C000) : 1'b1;  // v1: everything
+//   0x3C000-0x3FFFF Squawk & Talk 6802 ROM 16K -> snt_rom (dotrone only)
+// The sprite range is bounded ABOVE now that something follows it. It used to
+// be "everything from 0x1C000 up", which would also have shovelled the S&T
+// ROM into SDRAM at sprite offset 0x20000 - past the 128 KB the sprite engine
+// reads, so harmless, but it is not worth leaving a write aimed at memory the
+// region does not own.
+wire dl_sp_rng  = dl_v2 ? (dl_addr >= 18'h1C000 && dl_addr < 18'h3C000) : 1'b1;
 wire [16:0] dl_sp_off = dl_v2 ? (dl_addr[16:0] - 17'h1C000) : dl_addr[16:0];
+wire dl_snt_rng = dl_v2 && (dl_addr[17:14] == 4'b1111);   // 0x3C000-0x3FFFF
 wire cpu_rom_we = dl_wr && dl_cpu_rng;
 wire snd_rom_we = dl_wr && dl_snd_rng;
+wire snt_rom_we = dl_wr && dl_snt_rng;
 // core-facing dl bus: bg planes at the core's own decode addresses
 wire        core_dl_wr   = dl_wr && (dl_bg1_rng || dl_bg2_rng);
 // NOTE the core's crossed wiring (upstream quirk): the dpram INIT'd from
@@ -908,6 +916,79 @@ dpram #(
     .q_b() // port B is the ROM download port
 );
 
+// --- Squawk & Talk speech board (Discs of Tron Environmental only) ------------
+// Ported from the MiSTer prototype (refs/Arcade-MCR3_MiSTer) 2026-08-01, where
+// it was brought up end to end and confirmed speaking in-game. Read that repo's
+// CLAUDE.md before touching this: FOUR bugs cost that bring-up and every one
+// presented as a board that is demonstrably alive and silently says nothing --
+// no error, no warning, no failed build.
+//
+// The one most likely to bite again here is the CPU RATE. jt680x is a 6801
+// core (3-cycle branches) but the board has an MC6802 (4-cycle), and the
+// command handler assembles each byte from two reads of PIA2 port A separated
+// by a 193-iteration delay loop. At the true crystal rate that loop runs 1078us
+// where the real part takes 1294us, and the second read then beats the game's
+// second nibble -- the board assembles a doubled byte, dispatches it away from
+// the speech table, and stays correctly silent. squawk_n_talk.sv scales CPU_HZ
+// by 5/6 for this; sim/tb_time.v in the MiSTer repo regression-tests it.
+//
+// This board is 40 MHz clk_sys, the same as the MiSTer core's clock_40, so
+// every rate constant inside the module carries over unchanged.
+wire [7:0] output_4;                       // SSIO OP4 latch, from mcr3.vhd
+wire [13:0] snt_rom_addr;
+wire  [7:0] snt_rom_do;
+// Only Discs of Tron (Environmental) has this board. Pack slot 4 (mcr3
+// family); every other game leaves the ROM blank and the module in reset.
+wire        snt_active_game = (game_id == 4'd4);
+
+dpram #(
+    .dWidth(8),
+    .aWidth(14),              // 16 KB = the 6802's $8000-$BFFF window 1:1
+    .LOADABLE(1)              // NO BAKE (licensing) - see rom_cpu_inst above
+) rom_snt_inst (
+    .clk_a(clk_sys),
+    .we_a(1'b0),
+    .addr_a(snt_rom_addr),
+    .d_a(8'h00),
+    .q_a(snt_rom_do),
+
+    .clk_b(clk_sys),
+    .we_b(snt_rom_we),
+    .addr_b(dl_addr[13:0]),
+    .d_b(dl_data),
+    .q_b()
+);
+
+wire signed [15:0] snt_audio;
+squawk_n_talk snt_inst (
+    .clk(clk_sys),
+    // Held in reset for every game that has no speech board, so its 6802
+    // cannot run garbage out of a blank ROM and scribble on the mix.
+    .reset(core_reset_raw || !snt_active_game),
+
+    .sound_select(output_4[3:0]),   // MD3-0
+    .sound_int(output_4[4]),        // SEL0 - the strobe
+    // dbg_in2 feeds the JTAG probe ONLY, and that probe is Altera-specific and
+    // compiled out here. Tied off rather than wired to input_2, because
+    // input_2 is declared further DOWN this file and Gowin turns a
+    // use-before-declaration into a silent implicit 1-BIT wire -- the same trap
+    // that truncated jt680x's jsr_sel. Do not "restore" it without first moving
+    // this instance below the input mux.
+    .dbg_in2(8'h00),
+    .dbg_op4(output_4),
+
+    .rom_addr(snt_rom_addr),
+    .rom_do(snt_rom_do),
+
+    .audio_out(snt_audio),
+
+    // Bring-up observability - unused here; the MiSTer prototype drove a JTAG
+    // probe and a screen tint from these. Left unconnected deliberately.
+    .active(), .seen(), .cpu_run(), .progress(), .pia_loose(),
+    .tms_audio_nz(), .dac_written(), .dbg_dac(), .dbg_cpu_addr(),
+    .dbg_tms_wsn(), .dbg_tms_rsn()
+);
+
 // --- USB HID host (gamepad on USB-A port 1) -----------------------------------
 // nand2mario usb_hid_host: low-speed USB, standard HID pads (DInput). The
 // board provides the 15k host pulldowns and 5V VBUS. Runs at 12 MHz.
@@ -1070,6 +1151,26 @@ end
 // declaration into an implicit 1-bit net with only a warning.)
 wire [15:0] audio_l_val, audio_r_val;
 
+// Core mix + Squawk & Talk speech.
+//
+// CONVENTIONS DIFFER and getting it wrong sounds like a broken speech core
+// rather than a broken mixer: the core's audio is OFFSET BINARY (which is why
+// the HDMI path XORs 0x8000 to make it signed), while squawk_n_talk's output
+// is SIGNED. So sign-extend the core value into a wider signed accumulator,
+// add, and CLAMP AT BOTH ENDS. Clamping only the top wraps loud negative
+// swings to full scale.
+function automatic [15:0] snt_mix(input [15:0] core_u, input signed [15:0] snt_s);
+    reg signed [17:0] acc;
+    begin
+        acc = $signed({2'b00, core_u}) + $signed({{2{snt_s[15]}}, snt_s});
+        if (acc < 0)             snt_mix = 16'h0000;
+        else if (acc > 18'sd65535) snt_mix = 16'hFFFF;
+        else                     snt_mix = acc[15:0];
+    end
+endfunction
+wire [15:0] audio_l_mix = snt_mix(audio_l_val, snt_audio);
+wire [15:0] audio_r_mix = snt_mix(audio_r_val, snt_audio);
+
 wire [9:0] core_hcnt;
 wire [9:0] core_vcnt;
 wire       core_halt_n;
@@ -1123,7 +1224,7 @@ mcr3 mcr3_core (
     .input_2(input_2),
     .input_3(input_3),
     .input_4(input_4),
-    .output_4(),           // SSIO output port (lamps/mux) - unused here
+    .output_4(output_4),   // SSIO OP4: lamps/backlight + Squawk & Talk command
     .mcr2p5(1'b0),         // Tapper is 91490 (not Journey/MCR-2.5)
 
     // CPU + sound ROM (baked in BRAM below); bg is baked inside mcr3.vhd
@@ -1182,12 +1283,22 @@ end
 wire [8:0] osd_rgb;
 osd #(
     .GAME_DEFAULT(GAME_DEFAULT),
-    .NUM_GAMES(5'd3),
-    .ROT_MASK(16'h0000),      // all three MCR-3 titles are ROT0
+    // Entries are PACK SLOTS, not a free list: the OSD index is handed
+    // straight to the loader and stored in the SD prefs sector, so the roster
+    // must stay aligned with make_pack_v2's per-family slot order
+    // (tapper 0, timber 1, dotron 2, journey 3, dotrone 4). That is why
+    // Journey occupies slot 3 here even though this board cannot run it --
+    // it is MCR-2.5 (mcr_91475) and belongs to the mcr2 core, so it is listed
+    // as unavailable rather than silently skipped, which would shift dotrone
+    // down to 3 and invalidate every saved preference.
+    .NUM_GAMES(5'd5),
+    .ROT_MASK(16'h0000),      // all MCR-3 titles here are ROT0
     .TITLE("    MCR3 GAME SELECT    "),
     .NAME0("   TAPPER               "),
     .NAME1("   TIMBER               "),
-    .NAME2("   DISCS OF TRON        ")
+    .NAME2("   DISCS OF TRON        "),
+    .NAME3("   JOURNEY  (MCR2 CORE) "),
+    .NAME4("   DISCS OF TRON  ENV   ")
 ) osd_inst (
     .clk(clk_sys),
     .rst(core_reset_raw),
@@ -1620,8 +1731,8 @@ ascal_fb #(
     .fb_data(fb_data),
 
     // HDMI audio (offset-binary core mix -> signed PCM)
-    .sound_left(audio_l_val ^ 16'h8000),
-    .sound_right(audio_r_val ^ 16'h8000),
+    .sound_left(audio_l_mix ^ 16'h8000),
+    .sound_right(audio_r_mix ^ 16'h8000),
 
     // DDR3 (on-SOM 4Gb x16)
     .ddr_addr(ddr_addr),
@@ -1651,14 +1762,14 @@ ascal_fb #(
 ds_dac dac_l (
     .clk(clk_sys),
     .resetn(~core_reset),
-    .din(audio_l_val),
+    .din(audio_l_mix),
     .dout(audio_l)
 );
 
 ds_dac dac_r (
     .clk(clk_sys),
     .resetn(~core_reset),
-    .din(audio_r_val),
+    .din(audio_r_mix),
     .dout(audio_r)
 );
 
