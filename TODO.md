@@ -1821,6 +1821,50 @@ Open items:
 
 ---
 
+## Discs of Tron Environmental — CABINET BACKLIGHT OUTPUT (Tang) (2026-08-04)
+
+**Scope decision: the Tang drives the REAL cabinet's backlight. It does NOT
+render a backdrop image.** The backdrop artwork is a MiSTer-only feature (a
+monitor on a desk has no cabinet behind it); a Tang board is assumed to be
+sitting in an actual Environmental cabinet, which already has the backlit
+scenery. All the Tang owes it is the signal.
+
+**The signals already exist in the core.** `output_4` is wired out of
+`mcr3.vhd` and connected in `mcr3_console60k_top.sv` (done 2026-08-01 for the
+Squawk & Talk port). From MAME `mcr.cpp:565` `dotron_op4_w`:
+
+| OP4 bit | Cabinet net | Meaning |
+|---|---|---|
+| 6 | J1-4 (FL0) | backlight ENABLE - drives the lamp directly |
+| 7 | J1-3 (FL1) | flasher STROBE enable |
+
+On the real machine a flasher control board holds a 555 astable
+(R1=R2=56k, C=1uF -> **8.5714 Hz**, 77.616 ms high / 38.808 ms low), gated by
+J1-3 and clocked through a D flip-flop on AC sync; J1-4 drives the fixture
+directly, and the two outputs are **wire-OR'd**.
+
+**Therefore emit BOTH bits as two separate signals and let the cabinet's own
+flasher board do the timing.** Do not synthesise 8.57 Hz in RTL unless the
+target is a bare lamp/SSR with no flasher board, in which case one combined
+signal is what is wanted. Two signals is the cabinet-accurate interface and
+degrades gracefully - they can always be wire-OR'd externally.
+
+**Where it goes electrically.** `docs/shield_j10_pinout.md` §4 already designs
+the output path: a 2x 74HC595 chain (16 bits) on 4 pins, with a ULN2803 for
+12 V loads and `OUT_EN_N` pulled up so lamps stay off until the RTL drives it
+low. The backlight is one more bit in that chain. Until the shield exists, a
+spare J10 GPIO will do for bench work - see `docs/bench_wiring.md` for what
+that header currently drives.
+
+**Only the Environmental set moves these bits.** MAME installs
+`dotron_op4_w` from `init_dotrone` ONLY; the upright `dotron` never writes OP4
+at all. So the output sitting static on the upright is CORRECT, not a bug to
+chase. Verified on the MiSTer prototype: OP4 traffic on the upright is limited
+to the lamp-sequencer nibble, and bits 6/7 never move.
+
+**Not started.** No pin assigned, no RTL written. The core-side prerequisite
+(bringing `output_4` out) is already done.
+
 ## Cocktail mode — unaddressed across every game
 
 **Everything currently assumes an upright cabinet.** This is not one switch;
