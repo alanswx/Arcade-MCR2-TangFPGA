@@ -2110,16 +2110,6 @@
 	)
 	(wire
 		(pts
-			(xy 134.62 66.04) (xy 134.62 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "01f3bf66-7914-46d5-a275-659d78abae6e")
-	)
-	(wire
-		(pts
 			(xy 105.41 59.69) (xy 105.41 60.96)
 		)
 		(stroke
@@ -2177,6 +2167,16 @@
 			(type default)
 		)
 		(uuid "11b86960-8ae1-4c3f-9ad6-8cb65c12aacc")
+	)
+	(wire
+		(pts
+			(xy 113.03 66.04) (xy 114.3 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "11dd52cf-c48e-4f0b-92f9-796b874e812b")
 	)
 	(wire
 		(pts
@@ -2340,16 +2340,6 @@
 	)
 	(wire
 		(pts
-			(xy 90.17 66.04) (xy 90.17 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "341eaabd-c016-47c5-859e-51ad5be02380")
-	)
-	(wire
-		(pts
 			(xy 97.79 54.61) (xy 97.79 40.64)
 		)
 		(stroke
@@ -2367,6 +2357,16 @@
 			(type default)
 		)
 		(uuid "3a78c29d-64c2-4d42-a5f6-4455da296d89")
+	)
+	(wire
+		(pts
+			(xy 134.62 66.04) (xy 135.89 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3d0850b4-e77b-4881-83ea-6ee260988cfa")
 	)
 	(wire
 		(pts
@@ -2407,6 +2407,16 @@
 			(type default)
 		)
 		(uuid "4073697d-393d-43ee-a7a4-2af3c2be3725")
+	)
+	(wire
+		(pts
+			(xy 201.93 66.04) (xy 203.2 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "42d9c2d2-6b2a-49c4-870a-d892145d719b")
 	)
 	(wire
 		(pts
@@ -2520,16 +2530,6 @@
 	)
 	(wire
 		(pts
-			(xy 226.06 66.04) (xy 226.06 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "54d99367-532b-4def-becc-9f5b59b94176")
-	)
-	(wire
-		(pts
 			(xy 82.55 54.61) (xy 95.25 54.61)
 		)
 		(stroke
@@ -2547,16 +2547,6 @@
 			(type default)
 		)
 		(uuid "5c82e3b5-7ee6-4520-8426-a04c15058254")
-	)
-	(wire
-		(pts
-			(xy 201.93 66.04) (xy 201.93 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5ea5f940-5879-43c0-a628-25440a4a2078")
 	)
 	(wire
 		(pts
@@ -2620,13 +2610,13 @@
 	)
 	(wire
 		(pts
-			(xy 113.03 66.04) (xy 113.03 67.31)
+			(xy 67.31 66.04) (xy 68.58 66.04)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "7c261863-ebab-46e5-b41c-d08fc513e69c")
+		(uuid "77921fea-696b-4e91-90e7-d0d7721f7251")
 	)
 	(wire
 		(pts
@@ -2830,6 +2820,16 @@
 	)
 	(wire
 		(pts
+			(xy 158.75 66.04) (xy 160.02 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b7f02a8e-17cf-4ebd-b364-4390e50c7d2f")
+	)
+	(wire
+		(pts
 			(xy 151.13 48.26) (xy 151.13 49.53)
 		)
 		(stroke
@@ -2867,6 +2867,16 @@
 			(type default)
 		)
 		(uuid "bfc3dbc0-2325-408f-81d7-6e71511503b4")
+	)
+	(wire
+		(pts
+			(xy 226.06 66.04) (xy 227.33 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c05566a6-6a79-4282-a983-da85110e72ee")
 	)
 	(wire
 		(pts
@@ -2970,16 +2980,6 @@
 	)
 	(wire
 		(pts
-			(xy 67.31 66.04) (xy 67.31 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "d58d5907-ab61-4ab3-8b41-74b70deb141e")
-	)
-	(wire
-		(pts
 			(xy 172.72 54.61) (xy 184.15 54.61)
 		)
 		(stroke
@@ -3030,6 +3030,16 @@
 	)
 	(wire
 		(pts
+			(xy 90.17 66.04) (xy 91.44 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "edfe2d22-dfe0-4926-9e49-1cdeecb80d44")
+	)
+	(wire
+		(pts
 			(xy 227.33 90.17) (xy 227.33 102.87)
 		)
 		(stroke
@@ -3037,26 +3047,6 @@
 			(type default)
 		)
 		(uuid "f0fb4b8c-1b98-4abf-af27-3db434a814ab")
-	)
-	(wire
-		(pts
-			(xy 180.34 66.04) (xy 180.34 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f3e46b8a-fccc-47f3-acd7-b13ea77adcf9")
-	)
-	(wire
-		(pts
-			(xy 158.75 66.04) (xy 158.75 67.31)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f75e6002-5271-4f2a-9dc0-e1beedcea77c")
 	)
 	(wire
 		(pts
@@ -3077,6 +3067,16 @@
 			(type default)
 		)
 		(uuid "fdfcde36-bd54-406f-bc69-d8fbe6bebb79")
+	)
+	(wire
+		(pts
+			(xy 180.34 66.04) (xy 181.61 66.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fee9c9cc-bfe3-445c-b6ee-58e03b04ed36")
 	)
 	(wire
 		(pts
@@ -3218,7 +3218,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 218.44 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -3251,6 +3251,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 218.44 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "20f00d87-f66b-441b-9529-f8b3f1660489")
 		)
@@ -3267,8 +3278,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 67.31 67.31 0)
+		(lib_id "power:+5V")
+		(at 135.89 66.04 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -3276,10 +3287,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "07474cf6-6047-40c3-9e4a-7426c73bedd1")
-		(property "Reference" "#PWR0106"
-			(at 67.31 73.66 0)
+		(uuid "090cbca9-7f13-494a-a6cf-6d029a2628ab")
+		(property "Reference" "#PWR0115"
+			(at 135.89 69.85 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3289,8 +3299,8 @@
 				)
 			)
 		)
-		(property "Value" "GND"
-			(at 67.31 72.39 0)
+		(property "Value" "+5V"
+			(at 137.922 62.484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -3300,7 +3310,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 67.31 67.31 0)
+			(at 135.89 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3311,7 +3321,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 67.31 67.31 0)
+			(at 135.89 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3321,8 +3331,8 @@
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 67.31 67.31 0)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 135.89 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3333,12 +3343,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "35ca860d-3766-4b1d-b046-6e90fd5e34fc")
+			(uuid "ce93e6f3-77b1-47ed-b54b-23000f8732f6")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0106")
+					(reference "#PWR0115")
 					(unit 1)
 				)
 			)
@@ -3455,7 +3465,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 151.13 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -3478,6 +3488,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 151.13 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 151.13 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -3536,7 +3557,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 194.31 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -3559,6 +3580,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 194.31 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 194.31 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -3806,6 +3838,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 218.44 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "4b5db9e2-4868-42e3-b4dc-85d5243c9de1")
 		)
@@ -3856,7 +3899,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Horizontal"
 			(at 26.67 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -3879,6 +3922,17 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x10, script generated"
+			(at 26.67 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 26.67 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -3960,7 +4014,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 54.61 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -3993,6 +4047,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 54.61 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "98298c2b-942a-4819-8fd7-8c012e70ae20")
 		)
@@ -4003,84 +4068,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "R60")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 134.62 67.31 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "35ee628e-bb0e-45d3-9f52-c359a5167d5f")
-		(property "Reference" "#PWR0115"
-			(at 134.62 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 134.62 72.39 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 134.62 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 134.62 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 134.62 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "5d6e2a64-5a45-49f4-96e9-0a84ff055225")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0115")
 					(unit 1)
 				)
 			)
@@ -4152,6 +4139,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 82.55 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "d8c4650c-9d1a-481e-9a95-ca05c149d14e")
 		)
@@ -4203,7 +4201,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 82.55 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -4226,6 +4224,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 82.55 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -4283,7 +4292,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 213.36 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -4306,6 +4315,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 213.36 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 213.36 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -4443,7 +4463,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 172.72 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -4466,6 +4486,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 172.72 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 172.72 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -4648,6 +4679,83 @@
 	)
 	(symbol
 		(lib_id "power:+5V")
+		(at 181.61 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "45b0c5cf-0621-4f7e-8809-c5a1d4b1d2c0")
+		(property "Reference" "#PWR0121"
+			(at 181.61 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 183.642 62.484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 181.61 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 181.61 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 181.61 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "dedd26b9-0613-45af-9819-9e30f95a7630")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "#PWR0121")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
 		(at 194.31 48.26 0)
 		(unit 1)
 		(body_style 1)
@@ -4803,8 +4911,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 226.06 67.31 0)
+		(lib_id "power:+5V")
+		(at 160.02 66.04 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4812,10 +4920,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "55993bd6-014f-404f-9dfa-57d7e1d53c83")
-		(property "Reference" "#PWR0127"
-			(at 226.06 73.66 0)
+		(uuid "56a83ae2-f3e1-4f51-9c38-f533db04139f")
+		(property "Reference" "#PWR0118"
+			(at 160.02 69.85 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4825,8 +4932,8 @@
 				)
 			)
 		)
-		(property "Value" "GND"
-			(at 226.06 72.39 0)
+		(property "Value" "+5V"
+			(at 162.052 62.484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4836,7 +4943,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 226.06 67.31 0)
+			(at 160.02 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4847,7 +4954,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 226.06 67.31 0)
+			(at 160.02 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4857,8 +4964,8 @@
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 226.06 67.31 0)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 160.02 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4869,12 +4976,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "9f3f5480-ab94-4752-ba98-0043a0512691")
+			(uuid "95875809-0517-4edb-abfd-9b086afaaf11")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0127")
+					(reference "#PWR0118")
 					(unit 1)
 				)
 			)
@@ -4912,7 +5019,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 146.05 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -4945,6 +5052,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 146.05 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "fd9c9b02-166e-4cd8-9d4f-2533b5c5873d")
 		)
@@ -4961,8 +5079,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 201.93 67.31 0)
+		(lib_id "power:+5V")
+		(at 114.3 66.04 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -4970,10 +5088,9 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "5ed6230d-5697-47a6-9f19-bb61b6aec9d8")
-		(property "Reference" "#PWR0124"
-			(at 201.93 73.66 0)
+		(uuid "5daa2aab-dd89-4058-a74d-8a46d4c7687e")
+		(property "Reference" "#PWR0112"
+			(at 114.3 69.85 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4983,8 +5100,8 @@
 				)
 			)
 		)
-		(property "Value" "GND"
-			(at 201.93 72.39 0)
+		(property "Value" "+5V"
+			(at 116.332 62.484 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -4994,7 +5111,7 @@
 			)
 		)
 		(property "Footprint" ""
-			(at 201.93 67.31 0)
+			(at 114.3 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5005,7 +5122,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 201.93 67.31 0)
+			(at 114.3 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5015,8 +5132,8 @@
 				)
 			)
 		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 201.93 67.31 0)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 114.3 66.04 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5027,12 +5144,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "6a6dc257-3479-40c3-accf-f7dea31b92fd")
+			(uuid "2a18ef48-be23-47d6-9f6f-69324e3b3ed8")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0124")
+					(reference "#PWR0112")
 					(unit 1)
 				)
 			)
@@ -5195,84 +5312,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 90.17 67.31 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7146b60d-a7a0-4a6f-a68b-f715f8a8fab9")
-		(property "Reference" "#PWR0109"
-			(at 90.17 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 90.17 72.39 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 90.17 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 90.17 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 90.17 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "8fb5785e-ea09-4d3a-9442-0e08d5d444de")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0109")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:C_Small_US")
 		(at 194.31 57.15 0)
 		(unit 1)
@@ -5306,7 +5345,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 194.31 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5329,6 +5368,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 194.31 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 194.31 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5386,7 +5436,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 77.47 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -5409,6 +5459,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 77.47 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 77.47 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -5507,84 +5568,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "#PWR0113")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 180.34 67.31 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "78efc430-ce0c-4934-8621-71a8c9647ac5")
-		(property "Reference" "#PWR0121"
-			(at 180.34 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 180.34 72.39 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 180.34 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 180.34 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 180.34 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "ef7ba89c-ac4c-4f64-b492-b5757713e6cc")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0121")
 					(unit 1)
 				)
 			)
@@ -5702,7 +5685,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 82.55 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5725,6 +5708,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 82.55 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5784,7 +5778,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 127 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5807,6 +5801,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 127 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 127 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -5864,7 +5869,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
 			(at 252.73 102.87 0)
 			(hide yes)
 			(show_name no)
@@ -5887,6 +5892,17 @@
 			)
 		)
 		(property "Description" "Shift Register, 8-bit, Parallel Load"
+			(at 252.73 102.87 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 252.73 102.87 0)
 			(hide yes)
 			(show_name no)
@@ -5988,7 +6004,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 59.69 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -6011,6 +6027,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 59.69 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 59.69 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -6069,7 +6096,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 127 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -6102,6 +6129,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 127 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "f5ac543a-ca6b-48fd-a1c4-f371c629f6e4")
 		)
@@ -6112,84 +6150,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "R67")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 158.75 67.31 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "95b241bd-5c33-4b0e-9388-7e64144056fc")
-		(property "Reference" "#PWR0118"
-			(at 158.75 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 158.75 72.39 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 158.75 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 158.75 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 158.75 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "a42e7bfa-90ed-4a75-9418-5d184ab2a9f1")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0118")
 					(unit 1)
 				)
 			)
@@ -6228,7 +6188,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 105.41 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -6251,6 +6211,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 105.41 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 105.41 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -6310,7 +6281,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 151.13 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -6343,6 +6314,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 151.13 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "a35ba0e3-2240-4067-acf8-aa989d8005bb")
 		)
@@ -6353,6 +6335,160 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "C37")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 227.33 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ab79f715-1ada-49a9-8c31-b8f5e0e6bc18")
+		(property "Reference" "#PWR0127"
+			(at 227.33 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 229.362 62.484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 227.33 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 227.33 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 227.33 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8014b42f-a58a-4a35-a37f-a3fe917f4911")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "#PWR0127")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 68.58 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "b90be576-2719-4c40-8c3b-14af9f2cc810")
+		(property "Reference" "#PWR0106"
+			(at 68.58 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 70.612 62.484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 68.58 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 68.58 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 68.58 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "bb8e695f-2218-46fc-994a-8cb5f530d9a5")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "#PWR0106")
 					(unit 1)
 				)
 			)
@@ -6391,7 +6527,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 172.72 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -6414,6 +6550,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 172.72 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 172.72 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -6495,6 +6642,17 @@
 			)
 		)
 		(property "Description" "Vr 30V, If 200mA, Dual schottky barrier diode, in series, SOT-323"
+			(at 172.72 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 172.72 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -6745,6 +6903,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 105.41 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "538bb67a-7008-4354-9422-099a4688ab1f")
 		)
@@ -6795,7 +6964,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 100.33 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -6818,6 +6987,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 100.33 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 100.33 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -6909,6 +7089,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 59.69 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "30b3d58c-133b-4cd3-93d1-e79cc223ddef")
 		)
@@ -6959,7 +7150,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 189.23 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -6982,6 +7173,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 189.23 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 189.23 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -7041,7 +7243,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 105.41 57.15 0)
 			(hide yes)
 			(show_name no)
@@ -7074,6 +7276,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
+			(at 105.41 57.15 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "78f997d4-f20c-4da4-8b35-af77545c99cc")
 		)
@@ -7084,6 +7297,83 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "C35")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+5V")
+		(at 203.2 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "d86479f2-b380-4de0-bdee-8642b0b47e74")
+		(property "Reference" "#PWR0124"
+			(at 203.2 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 205.232 62.484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 203.2 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 203.2 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 203.2 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b2866b0e-1080-4fed-a9ba-00fb5a85967f")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "#PWR0124")
 					(unit 1)
 				)
 			)
@@ -7122,7 +7412,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 59.69 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -7145,6 +7435,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 59.69 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 59.69 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -7249,6 +7550,83 @@
 		)
 	)
 	(symbol
+		(lib_id "power:+5V")
+		(at 91.44 66.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "e037aeba-f75d-46f8-8316-4597fb8fb3d1")
+		(property "Reference" "#PWR0109"
+			(at 91.44 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+5V"
+			(at 93.472 62.484 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 91.44 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 91.44 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+5V\""
+			(at 91.44 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "24032593-f4a9-4b11-a88d-8bf85f9301df")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "#PWR0109")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 218.44 52.07 0)
 		(unit 1)
@@ -7281,7 +7659,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 218.44 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -7304,6 +7682,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 218.44 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 218.44 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -7385,6 +7774,17 @@
 			)
 		)
 		(property "Description" "Vr 30V, If 200mA, Dual schottky barrier diode, in series, SOT-323"
+			(at 194.31 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 194.31 66.04 0)
 			(hide yes)
 			(show_name no)
@@ -7557,6 +7957,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 127 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "d4d1846a-a6e3-423f-9f74-9207ffe10383")
 		)
@@ -7607,7 +8018,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.64 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -7630,6 +8041,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 167.64 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -7799,6 +8221,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 151.13 66.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "9f2796ee-2e78-49a8-b640-6aa476bb20ec")
 		)
@@ -7896,84 +8329,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 113.03 67.31 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "fa3e477e-8421-4bb4-b157-882e3a97a3c0")
-		(property "Reference" "#PWR0112"
-			(at 113.03 73.66 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 113.03 72.39 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 113.03 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 113.03 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 113.03 67.31 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f3fa6750-552f-4279-bf29-61e5c8de280e")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "#PWR0112")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Small_US")
 		(at 121.92 54.61 270)
 		(unit 1)
@@ -8005,7 +8360,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 121.92 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -8028,6 +8383,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 121.92 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 121.92 54.61 0)
 			(hide yes)
 			(show_name no)

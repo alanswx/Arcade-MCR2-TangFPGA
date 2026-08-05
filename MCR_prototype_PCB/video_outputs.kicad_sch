@@ -3877,7 +3877,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_1.00mm:PinHeader_1x02_P1.00mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 100.33 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -3900,6 +3900,17 @@
 			)
 		)
 		(property "Description" "Jumper, 2-pole, small symbol, open"
+			(at 100.33 170.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 100.33 170.18 0)
 			(hide yes)
 			(show_name no)
@@ -3958,7 +3969,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_1210_3225Metric"
 			(at 190.5 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -3981,6 +3992,17 @@
 			)
 		)
 		(property "Description" "capacitor, US symbol"
+			(at 190.5 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 190.5 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -4018,7 +4040,7 @@
 		(in_pos_files yes)
 		(dnp no)
 		(uuid "0c10a46b-fc28-4de0-8fc3-7d52f47d0b28")
-		(property "Reference" "J2_CPU1"
+		(property "Reference" "J2_RGBS_Out1"
 			(at 229.235 91.44 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4038,7 +4060,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x09_P2.54mm_Horizontal"
 			(at 229.87 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -4061,6 +4083,17 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x09, script generated"
+			(at 229.87 106.68 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 229.87 106.68 0)
 			(hide yes)
 			(show_name no)
@@ -4101,7 +4134,7 @@
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/e773e6c1-0e56-435e-af11-6124becd9fda"
-					(reference "J2_CPU1")
+					(reference "J2_RGBS_Out1")
 					(unit 1)
 				)
 			)
@@ -4139,7 +4172,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_1.00mm:PinHeader_1x02_P1.00mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 100.33 151.13 0)
 			(hide yes)
 			(show_name no)
@@ -4162,6 +4195,17 @@
 			)
 		)
 		(property "Description" "Jumper, 2-pole, small symbol, open"
+			(at 100.33 151.13 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 100.33 151.13 0)
 			(hide yes)
 			(show_name no)
@@ -4220,7 +4264,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 184.15 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -4243,6 +4287,17 @@
 			)
 		)
 		(property "Description" "capacitor, US symbol"
+			(at 184.15 69.85 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 184.15 69.85 0)
 			(hide yes)
 			(show_name no)
@@ -4378,7 +4433,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 120.396 90)
 			(hide yes)
 			(show_name no)
@@ -4401,6 +4456,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -4614,7 +4680,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 91.186 90)
 			(hide yes)
 			(show_name no)
@@ -4637,6 +4703,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 90.17 0)
 			(hide yes)
 			(show_name no)
@@ -4696,7 +4773,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_1210_3225Metric"
 			(at 191.77 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -4719,6 +4796,17 @@
 			)
 		)
 		(property "Description" "capacitor, US symbol"
+			(at 191.77 33.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 191.77 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -4776,7 +4864,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.894 51.054 90)
 			(hide yes)
 			(show_name no)
@@ -4799,6 +4887,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 52.07 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -4934,7 +5033,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 81.026 90)
 			(hide yes)
 			(show_name no)
@@ -4957,6 +5056,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 80.01 0)
 			(hide yes)
 			(show_name no)
@@ -5248,7 +5358,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 108.966 90)
 			(hide yes)
 			(show_name no)
@@ -5271,6 +5381,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 107.95 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 107.95 0)
 			(hide yes)
 			(show_name no)
@@ -5563,7 +5684,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 184.15 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -5586,6 +5707,17 @@
 			)
 		)
 		(property "Description" "capacitor, US symbol"
+			(at 184.15 33.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 184.15 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -5643,7 +5775,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_Dsub:DSUB-15-HD_Socket_Horizontal_P2.29x1.90mm_EdgePinOffset3.03mm_Housed_MountingHolesOffset4.94mm"
 			(at 208.28 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -5762,7 +5894,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 129.286 90)
 			(hide yes)
 			(show_name no)
@@ -5785,6 +5917,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 128.27 0)
 			(hide yes)
 			(show_name no)
@@ -5998,7 +6141,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 63.246 90)
 			(hide yes)
 			(show_name no)
@@ -6021,6 +6164,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 62.23 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 62.23 0)
 			(hide yes)
 			(show_name no)
@@ -6078,7 +6232,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 100.076 90)
 			(hide yes)
 			(show_name no)
@@ -6101,6 +6255,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 99.06 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 99.06 0)
 			(hide yes)
 			(show_name no)
@@ -6314,7 +6479,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.894 42.164 90)
 			(hide yes)
 			(show_name no)
@@ -6337,6 +6502,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 43.18 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 43.18 0)
 			(hide yes)
 			(show_name no)
@@ -6394,7 +6570,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_PinHeader_1.00mm:PinHeader_1x02_P1.00mm_Vertical"
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x02_P2.54mm_Vertical"
 			(at 101.6 186.69 0)
 			(hide yes)
 			(show_name no)
@@ -6417,6 +6593,17 @@
 			)
 		)
 		(property "Description" "Jumper, 2-pole, small symbol, open"
+			(at 101.6 186.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 101.6 186.69 0)
 			(hide yes)
 			(show_name no)
@@ -6474,7 +6661,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 72.136 90)
 			(hide yes)
 			(show_name no)
@@ -6497,6 +6684,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -6554,7 +6752,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 167.386 138.176 90)
 			(hide yes)
 			(show_name no)
@@ -6577,6 +6775,17 @@
 			)
 		)
 		(property "Description" "Resistor, US symbol"
+			(at 167.64 137.16 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 167.64 137.16 0)
 			(hide yes)
 			(show_name no)
@@ -6747,6 +6956,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "package/gullwing"
+			(at 204.47 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "11"
 			(uuid "87dc54fb-1c7b-41dd-8291-7b94a6e92409")
 		)
@@ -6854,6 +7074,17 @@
 			)
 		)
 		(property "Description" "4 channel SDTV Video Amplifier, TSSOP-14"
+			(at 199.39 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 199.39 86.36 0)
 			(hide yes)
 			(show_name no)

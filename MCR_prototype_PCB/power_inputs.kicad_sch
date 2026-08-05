@@ -3352,6 +3352,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "diode/THT"
+			(at 125.73 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "abb9ba0f-9130-45d6-ac4a-7a4739bbad6b")
 		)
@@ -3398,7 +3409,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_Bourns_SRR1260"
 			(at 132.08 73.66 0)
 			(hide yes)
 			(show_name no)
@@ -3746,6 +3757,17 @@
 				)
 			)
 		)
+		(property "KiLib_Generator" "diode/THT"
+			(at 124.46 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "54cadb0e-1a2d-4231-b832-7feef61c3f86")
 		)
@@ -3795,7 +3817,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm"
 			(at 82.55 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -3818,6 +3840,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 82.55 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
 			(at 82.55 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -4108,7 +4141,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Inductor_SMD:L_Bourns_SRR1260"
 			(at 130.81 35.56 0)
 			(hide yes)
 			(show_name no)
@@ -4213,6 +4246,17 @@
 			)
 		)
 		(property "Description" "5V 3A 150kHz Step-Down Voltage Regulator, TO-220"
+			(at 104.14 33.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/TO_SOT/THT"
 			(at 104.14 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -4670,7 +4714,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm"
 			(at 82.55 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -4693,6 +4737,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 82.55 33.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
 			(at 82.55 33.02 0)
 			(hide yes)
 			(show_name no)
@@ -4775,6 +4830,17 @@
 			)
 		)
 		(property "Description" "3.3V 3A 150kHz Step-Down Voltage Regulator, TO-220"
+			(at 104.14 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/TO_SOT/THT"
 			(at 104.14 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -5075,7 +5141,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Connector_PinHeader_2.54mm:PinHeader_1x20_P2.54mm_Horizontal"
 			(at 34.29 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -5098,6 +5164,17 @@
 			)
 		)
 		(property "Description" "Generic connector, single row, 01x20, script generated"
+			(at 34.29 50.8 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "connector/pin_header_socket"
 			(at 34.29 50.8 0)
 			(hide yes)
 			(show_name no)
@@ -5289,7 +5366,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm"
 			(at 137.16 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -5312,6 +5389,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 137.16 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
 			(at 137.16 38.1 0)
 			(hide yes)
 			(show_name no)
@@ -5449,7 +5537,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Capacitor_THT:CP_Radial_D8.0mm_P3.50mm"
 			(at 138.43 76.2 0)
 			(hide yes)
 			(show_name no)
@@ -5472,6 +5560,17 @@
 			)
 		)
 		(property "Description" "capacitor, small US symbol"
+			(at 138.43 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
 			(at 138.43 76.2 0)
 			(hide yes)
 			(show_name no)

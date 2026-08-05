@@ -532,7 +532,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_SMD:LED_0805_2012Metric"
 			(at 82.55 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -566,6 +566,17 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
+			(at 82.55 60.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 60.96 0)
 			(hide yes)
 			(show_name no)
@@ -625,7 +636,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_SMD:LED_0805_2012Metric"
 			(at 82.55 81.28 0)
 			(hide yes)
 			(show_name no)
@@ -659,6 +670,17 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
+			(at 82.55 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 81.28 0)
 			(hide yes)
 			(show_name no)
@@ -874,7 +896,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_SMD:LED_0805_2012Metric"
 			(at 82.55 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -908,6 +930,17 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
+			(at 82.55 119.38 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 119.38 0)
 			(hide yes)
 			(show_name no)
@@ -1123,7 +1156,7 @@
 				(justify right)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "LED_SMD:LED_0805_2012Metric"
 			(at 82.55 100.33 0)
 			(hide yes)
 			(show_name no)
@@ -1157,6 +1190,17 @@
 			)
 		)
 		(property "Sim.Pins" "1=K 2=A"
+			(at 82.55 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 82.55 100.33 0)
 			(hide yes)
 			(show_name no)
