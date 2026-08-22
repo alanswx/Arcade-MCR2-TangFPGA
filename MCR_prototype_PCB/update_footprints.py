@@ -12,6 +12,7 @@ mapping = {
     "ADS7830": "Package_SO:TSSOP-16_4.4x5mm_P0.65mm",
     "LM2596T-5": "Package_TO_SOT_THT:TO-220-5_P3.4x3.7mm_StaggerOdd_Lead3.8mm_Vertical",
     "LM2596T-3.3": "Package_TO_SOT_THT:TO-220-5_P3.4x3.7mm_StaggerOdd_Lead3.8mm_Vertical",
+    "SRV05-4": "Package_TO_SOT_SMD:SOT-23-6",
     "BAT54S": "Package_TO_SOT_SMD:SOT-23",
     "1N5824": "Diode_THT:D_DO-201AD_P15.24mm_Horizontal",
     "1N5822": "Diode_THT:D_DO-201AD_P15.24mm_Horizontal",
@@ -33,8 +34,8 @@ mapping = {
     "Conn_01x19_Pin": "Connector_PinHeader_2.54mm:PinHeader_1x19_P2.54mm_Horizontal",
     "Conn_01x23_Pin": "Connector_PinHeader_2.54mm:PinHeader_1x23_P2.54mm_Horizontal",
     "Conn_01x10_Pin": "Connector_PinHeader_2.54mm:PinHeader_1x10_P2.54mm_Horizontal",
-    # Exact KiCad built-in footprint for VGA HD15 Female Socket Horizontal
     "DE15_Socket_HighDensity": "Connector_Dsub:DSUB-15-HD_Socket_Horizontal_P2.29x1.90mm_EdgePinOffset3.03mm_Housed_MountingHolesOffset4.94mm",
+    "4.7k ohm": "Resistor_THT:R_Array_SIP9",
 }
 
 updated_total = 0
@@ -100,6 +101,7 @@ for filepath in sch_files:
                     pfx = re.match(r'([A-Za-z]+)', ref).group(1) if re.match(r'([A-Za-z]+)', ref) else ''
                     if pfx == 'R': target_fp = "Resistor_SMD:R_0805_2012Metric"
                     elif pfx == 'C': target_fp = "Capacitor_SMD:C_0805_2012Metric"
+                    elif pfx == 'RN': target_fp = "Resistor_THT:R_Array_SIP9"
                 
                 if target_fp:
                     block = re.sub(r'\(property\s+"Footprint"\s+"[^"]*"', f'(property "Footprint" "{target_fp}"', block, count=1)

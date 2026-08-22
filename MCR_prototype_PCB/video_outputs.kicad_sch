@@ -5023,7 +5023,7 @@
 				)
 			)
 		)
-		(property "Value" "2000"
+		(property "Value" "2k"
 			(at 167.64 76.2 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5348,7 +5348,7 @@
 				)
 			)
 		)
-		(property "Value" "2000"
+		(property "Value" "2k"
 			(at 167.64 104.14 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5884,7 +5884,7 @@
 				)
 			)
 		)
-		(property "Value" "1000"
+		(property "Value" "1k"
 			(at 167.64 124.46 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6222,7 +6222,7 @@
 				)
 			)
 		)
-		(property "Value" "1000"
+		(property "Value" "1k"
 			(at 167.64 95.25 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6651,7 +6651,7 @@
 				)
 			)
 		)
-		(property "Value" "1000"
+		(property "Value" "1k"
 			(at 167.64 67.31 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6742,7 +6742,7 @@
 				)
 			)
 		)
-		(property "Value" "2000"
+		(property "Value" "2k"
 			(at 167.64 133.35 90)
 			(show_name no)
 			(do_not_autoplace no)
