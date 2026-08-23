@@ -45,7 +45,7 @@ Ground rules:
 | 6 | P16 | `VID_B1` | out | live | blue bit 1 → 2 kΩ |
 | 7 | T18 | `VID_B2` | out | live | blue bit 2 → 1 kΩ |
 | 8 | R18 | `VID_B3` | out | live | blue bit 3 (MSB) → 510 Ω |
-| 9 | W17 | `SPARE0` | — | spare | |
+| 9 | W17 | `SERVICE_N` | in | reserved | cabinet service button (opens the OSD); shield pull-up to 3V3. **Moved here from pin 33 on 2026-08-23** when the prototype board took pin 33 for the '595 SRCLR - see `pcb_review_2026-08-22.md` |
 | 10 | V17 | `SPARE1` | — | spare | CSI_B config pin — needs the `-use_sspi_as_gpio` build option (already set) |
 | 11 | — | **+5 V** | — | power | rail **out of** the dock; light loads only; do NOT back-feed (spec §6.1) |
 | 12 | — | **GND** | — | power | star ground for the shield |
@@ -69,7 +69,7 @@ Ground rules:
 | 30 | AB18 | `SPARE5` | — | spare | EXIO1: 0 Ω-linked to DM1 — same caveat |
 | 31 | Y19 | `OUT_DATA` | out | reserved | serial data to U8.SER |
 | 32 | Y18 | `OUT_LATCH` | out | reserved | 74HC595 RCLK — output register update |
-| 33 | T20 | `SERVICE_N` | in | reserved | cabinet service button, direct (opens the OSD); shield pull-up to 3V3 |
+| 33 | T20 | `OUT_CLEAR_N` | out | reserved | 74HC595 SRCLR̄ on U8/U9. **As built on the prototype board.** Was `SERVICE_N`; that moved to pin 9. Note this is an FPGA OUTPUT - drive it high in normal operation, and do not leave it floating or the output chain clears |
 | 34 | N15 | `OUT_EN_N` | out | reserved | 74HC595 OE̅. **Shield MUST pull up to 3V3** so meters/lamps stay off until the RTL drives it low |
 | 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → RC filter → amp (spec §3) |
 | 36 | U17 | `AUD_PWM_R` | out | live | PWM audio right (mono cabinets: use L only) |

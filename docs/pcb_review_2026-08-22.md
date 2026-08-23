@@ -14,7 +14,85 @@ said before.
 
 ---
 
-## 1. Needs a decision — pin 33
+## 0. Answers added 2026-08-23
+
+Two follow-ups from Alan, both resolved below: **pin 33 is accepted as built**
+(service moves to pin 9), and **powering the console from the shield** is
+traced through the dock schematic.
+
+### 0a. Pin 33 stays as you built it — service moves to pin 9
+
+`docs/shield_j10_pinout.md` has been updated:
+
+| J10 pin | FPGA ball | now | was |
+|---|---|---|---|
+| 33 | T20 | `OUT_CLEAR_N` — output, '595 SRCLR | `SERVICE_N` |
+| **9** | **W17** | **`SERVICE_N` — input, pull-up to 3V3** | `SPARE0` |
+
+Pin 9 is a plain spare with no config-pin caveat (unlike pin 10, which is
+CSI_B). **This needs one wire added on the board**: cabinet service button to
+J0 pin 9, with a pull-up to 3V3, exactly as pin 33 had.
+
+Two notes:
+
+- I looked for a zero-pin option first, since the service button is just
+  another contact closure: **all 48 parallel inputs on the six '165s are
+  already used**, so there is no free slot in the scan chain. A dedicated pin
+  it is. (A seventh '165 would also work and cost no FPGA pins, if you would
+  rather keep pin 9 spare.)
+- `OUT_CLEAR_N` is an **FPGA output** and must be driven high in normal
+  operation. If it is left floating the output chain clears. Worth a pull-up
+  on the shield so lamps and meters stay in a known state before the FPGA is
+  configured, in the same spirit as `OUT_EN_N` on pin 34.
+
+### 0b. Powering the console from the shield
+
+Traced through `Tang_Mega_60K_Console_32001C__Schematics.pdf` sheet 3
+(SYS POWER) and sheet 8 (EX CONN). This closes open item #1 in
+`universal_mcr_shield_spec.md` §6, which had it as unverified.
+
+**The rail exists and it does reach the SOM.** J10 **pin 11 = +5 V**,
+**pin 12 = GND** (J9 pin 11/12 are the same rail). On sheet 3 that +5 V sits
+downstream of `VBUS_OUT` through ferrite FB4, and the SOM is fed from the same
+`VBUS_OUT` through ferrite FB5. So 5 V injected at pin 11 reaches the SOM by
+FB4 → `VBUS_OUT` → FB5. Both ferrites are UPZ2012U221-3R0TF, rated 3 A, so the
+path itself is not the limit.
+
+**But I do not recommend feeding pin 11, for one specific reason.** The dock
+OR-rings its three supplies (debug USB, soft USB, battery) through ideal-diode
+FETs into U13, and pin 11 is *downstream* of all of it. Inject there and:
+
+- it back-drives U13's output and bypasses the OVP entirely, and
+- more importantly, **if anyone plugs in a USB-C cable while the shield is
+  powering pin 11, the two supplies are in parallel with no OR-ing between
+  them.** That is a real failure mode in a cabinet, where USB-C will get
+  plugged in for programming.
+
+**Preferred route: feed our 5 V into the dock's USB-C power input instead.**
+That goes through the OR-ing FET as designed, so a second supply plugged in
+later is arbitrated rather than fought. Sheet 3 shows two such inputs
+(`5V_USB` from the debug port and `5V_USB_S` from the soft port), either of
+which is the intended way in. This is also what spec §6 already called the
+preferred route, and the trace now backs it up.
+
+So: **USB-C, not pin 11** — but the shield can absolutely be the source, no
+separate wall wart needed.
+
+**Current budget — please check before ordering.** The shield's 5 V comes from
+U24, an R-78B5.0-**2.0** (2 A). That has to carry the console *and* the
+shield's own logic, lamps excepted. I have not measured what a 60K console
+draws with DDR3, HDMI and USB active. If it is 1.5 A the margin is thin. Worth
+a measurement, or a 3 A part.
+
+**A bonus from sheet 8, which resolves a question in section 3 below:** J10
+pins 29/30 are `SDRAM1_EXID0/1`, 0 Ω-linked to `SDRAM1_DM0/DM1` via R29/R31 —
+and the optional pulls to +3V3 and GND (R30/R32) are **marked DNP**. So those
+pins are plain FPGA I/O with nothing fighting them, and the ADC address lines
+are safe. The caveat in our pin sheet can be retired.
+
+---
+
+## 1. Pin 33 — resolved, see 0a above
 
 |  | |
 |---|---|
