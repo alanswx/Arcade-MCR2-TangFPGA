@@ -90,6 +90,73 @@ and the optional pulls to +3V3 and GND (R30/R32) are **marked DNP**. So those
 pins are plain FPGA I/O with nothing fighting them, and the ADC address lines
 are safe. The caveat in our pin sheet can be retired.
 
+### 0c. USB-C: no PD chip needed, but mind the fuse (added 2026-08-23)
+
+Traced on sheet 7 (PERIPHERALS), "USB Soft Device", connector J17:
+
+```
+J17 VBUS (A4/B9) --> "Power Input Only" --> FU1 0805L125/6NR --> 5V_USB_S
+J17 CC1  (A5)    --> R45 5.1K 1% --> GND
+J17 CC2  (B5)    --> R47 5.1K 1% --> GND
+```
+
+**The console's USB-C port is a plain SINK with 5.1 kohm Rd on both CC lines
+and NO PD controller anywhere.** It never negotiates - it simply takes whatever
+appears on VBUS.
+
+So, to answer the question directly:
+
+**You can feed 5 V straight in. No USB PD or voltage-negotiation chip is
+needed.** Wire our regulated 5 V to VBUS and GND on a USB-C *plug* and the
+console powers up. Nothing on the console side has to be satisfied first.
+
+**Add two resistors anyway.** As the source we should present **Rp pull-ups**
+on CC1 and CC2, which is what tells a compliant sink how much current is on
+offer:
+
+| Advertised | Rp to 5 V | Rp to 3.3 V |
+|---|---|---|
+| Default (500/900 mA) | 56 kohm +/-20% | 36 kohm +/-20% |
+| 1.5 A | 22 kohm +/-5% | 12 kohm +/-5% |
+| 3.0 A | 10 kohm +/-5% | 4.7 kohm +/-5% |
+
+The console ignores them, so this is for correctness rather than function - but
+it costs two resistors and it means the cable behaves if it is ever plugged
+into something that *does* check.
+
+**Do NOT fit 5.1 kohm pull-downs on our end.** That is the *sink* role. Two
+sinks facing each other is a source that never turns on - and here, because the
+console does not gate VBUS on CC at all, it would "work" anyway, which is worse:
+a latent fault that only shows up against a compliant device later.
+
+### 0d. THE CATCH, and it may change 0b
+
+**FU1 is an 0805L125 PTC: 1.25 A hold, ~2.5 A trip.** Every amp we push through
+the soft USB-C port crosses it.
+
+That is a hard ceiling well below the 3 A the pin-11 ferrite path can carry, and
+quite possibly below what a 60K console draws with DDR3, HDMI and USB active. I
+have not measured it, so I will not pretend to know which side of the line we
+are on.
+
+**This makes the current measurement the gating item for the whole power
+question**, not a nice-to-have. Concretely:
+
+- **If the console draws under ~1 A**: use the soft USB-C port. It goes through
+  the dock's OR-ing as designed and everything in 0b stands.
+- **If it draws more**: the USB-C route is out, and the answer is pin 11 **with
+  our own OR-ing on the shield** - an ideal-diode controller or even a Schottky
+  in series with our 5 V feed. That removes the objection I raised in 0b (shield
+  and a plugged-in USB-C fighting each other), because whichever is higher wins
+  cleanly instead. It still bypasses the dock's OVP, but our 5 V is a regulated
+  local rail rather than an unknown charger, so OVP is doing much less work.
+- The **debug** USB port is a third possibility - it OR-rings the same way and
+  may have a larger fuse - but I have not found its sheet yet, so treat that as
+  unverified.
+
+Either way the shield can be the only supply. The question is purely which door
+it comes in through, and one measurement settles it.
+
 ---
 
 ## 1. Pin 33 — resolved, see 0a above
