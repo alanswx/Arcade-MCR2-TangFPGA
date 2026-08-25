@@ -704,9 +704,14 @@
         "filename": "status_leds.kicad_sch",
         "name": "Status_LEDs",
         "uuid": "ab0499e9-cc6f-4bb0-9f0c-f84603b92270"
+      },
+      {
+        "filename": "service_switch.kicad_sch",
+        "name": "Service_Switch",
+        "uuid": "08fc2143-0f49-4309-b36c-73646f69ff7b"
       }
     ],
-    "used_designators": "",
+    "used_designators": "TP1-9",
     "variants": []
   },
   "sheets": [
@@ -753,6 +758,10 @@
     [
       "ab0499e9-cc6f-4bb0-9f0c-f84603b92270",
       "Status_LEDs"
+    ],
+    [
+      "08fc2143-0f49-4309-b36c-73646f69ff7b",
+      "Service_Switch"
     ]
   ],
   "text_variables": {},

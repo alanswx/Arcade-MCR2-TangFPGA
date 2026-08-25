@@ -1423,6 +1423,129 @@
 			)
 			(embedded_fonts no)
 		)
+		(symbol "Connector:TestPoint"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0.762)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "TP"
+				(at 0 6.858 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "TestPoint"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 5.08 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "test point"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "test point tp"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "Pin* Test*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "TestPoint_0_1"
+				(circle
+					(center 0 3.302)
+					(radius 0.762)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "TestPoint_1_1"
+				(pin passive line
+					(at 0 0 90)
+					(length 2.54)
+					(name "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Device:C_US"
 			(pin_numbers
 				(hide yes)
@@ -2386,6 +2509,12 @@
 		(uuid "5434457c-d302-4903-a64e-972dfba58f69")
 	)
 	(junction
+		(at 234.95 43.18)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "56585db4-a5ab-41b5-8f8d-3ea942f366a7")
+	)
+	(junction
 		(at 222.25 63.5)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -2468,6 +2597,18 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "dc1cf268-c4c5-4bc2-b932-c61eed0596ac")
+	)
+	(junction
+		(at 210.82 118.11)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "ddd58389-c618-4a09-bed7-ef413df1cc38")
+	)
+	(junction
+		(at 243.84 48.26)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "de5b6522-e8fc-4ded-bb05-1a486a7e7106")
 	)
 	(junction
 		(at 220.98 43.18)
@@ -2561,7 +2702,7 @@
 	)
 	(wire
 		(pts
-			(xy 220.98 43.18) (xy 242.57 43.18)
+			(xy 220.98 43.18) (xy 234.95 43.18)
 		)
 		(stroke
 			(width 0)
@@ -2598,6 +2739,16 @@
 			(type default)
 		)
 		(uuid "0e7dba25-48eb-4144-a636-49da4a4d91ac")
+	)
+	(wire
+		(pts
+			(xy 234.95 35.56) (xy 234.95 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "111dd7be-6ac4-4699-a32e-53a700a1a816")
 	)
 	(wire
 		(pts
@@ -2751,6 +2902,16 @@
 	)
 	(wire
 		(pts
+			(xy 243.84 48.26) (xy 243.84 76.2)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "479f7f81-d089-488b-b902-f768df2adb3d")
+	)
+	(wire
+		(pts
 			(xy 242.57 43.18) (xy 242.57 71.12)
 		)
 		(stroke
@@ -2841,6 +3002,26 @@
 	)
 	(wire
 		(pts
+			(xy 255.27 48.26) (xy 255.27 36.83)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "57797f6e-0ed2-450b-9589-acd77ef62dd0")
+	)
+	(wire
+		(pts
+			(xy 243.84 48.26) (xy 255.27 48.26)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5aa7d157-43b4-4d81-b425-380c096c4278")
+	)
+	(wire
+		(pts
 			(xy 105.41 151.13) (xy 105.41 153.67)
 		)
 		(stroke
@@ -2848,6 +3029,16 @@
 			(type default)
 		)
 		(uuid "5e248ed9-f2aa-49e5-9dd4-e8eb7651a9c5")
+	)
+	(wire
+		(pts
+			(xy 210.82 118.11) (xy 210.82 119.38)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "5e714966-f747-423b-8e55-7896e213b319")
 	)
 	(wire
 		(pts
@@ -2948,6 +3139,16 @@
 			(type default)
 		)
 		(uuid "73d56bdb-62e2-4103-9416-f2e28e3dbe1b")
+	)
+	(wire
+		(pts
+			(xy 242.57 35.56) (xy 234.95 35.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "76f8d131-431b-433d-b2f4-9c8f5492f147")
 	)
 	(wire
 		(pts
@@ -3058,6 +3259,16 @@
 			(type default)
 		)
 		(uuid "8b69ed11-519a-4fe7-a244-6f6518e1bc26")
+	)
+	(wire
+		(pts
+			(xy 219.71 118.11) (xy 219.71 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d0ee397-ffd8-45e1-9d63-31bdd4faa941")
 	)
 	(wire
 		(pts
@@ -3231,6 +3442,16 @@
 	)
 	(wire
 		(pts
+			(xy 234.95 43.18) (xy 242.57 43.18)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b7d4588c-c4dc-43e0-bb75-1d95a141b000")
+	)
+	(wire
+		(pts
 			(xy 107.95 71.12) (xy 163.83 71.12)
 		)
 		(stroke
@@ -3241,7 +3462,7 @@
 	)
 	(wire
 		(pts
-			(xy 243.84 45.72) (xy 243.84 76.2)
+			(xy 243.84 45.72) (xy 243.84 48.26)
 		)
 		(stroke
 			(width 0)
@@ -3471,7 +3692,7 @@
 	)
 	(wire
 		(pts
-			(xy 210.82 109.22) (xy 210.82 119.38)
+			(xy 210.82 109.22) (xy 210.82 118.11)
 		)
 		(stroke
 			(width 0)
@@ -3488,6 +3709,16 @@
 			(type default)
 		)
 		(uuid "f76e9695-bb9c-4a5c-b150-ce1f58fb7260")
+	)
+	(wire
+		(pts
+			(xy 210.82 118.11) (xy 219.71 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "fa23dd69-d76e-45cd-ac3c-aac6a11b15d4")
 	)
 	(wire
 		(pts
@@ -5249,6 +5480,85 @@
 		)
 	)
 	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 242.57 35.56 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "57fa3f86-40bd-4791-9c4e-b91d17277ec1")
+		(property "Reference" "TP7"
+			(at 245.11 30.9879 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "VID_HS"
+			(at 245.11 33.5279 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded"
+			(at 247.65 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 247.65 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 242.57 35.56 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ba4bf335-6931-45fa-9a42-93e25bc02f28")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/e773e6c1-0e56-435e-af11-6124becd9fda"
+					(reference "TP7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 106.68 189.23 0)
 		(unit 1)
@@ -6448,6 +6758,85 @@
 		)
 	)
 	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 255.27 36.83 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c89b88e6-4af0-4f18-81d3-460efd2b23b3")
+		(property "Reference" "TP8"
+			(at 257.81 32.2579 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "VID_VS"
+			(at 257.81 34.7979 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded"
+			(at 260.35 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 260.35 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 255.27 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fa52dabb-cf69-49c6-ab64-3f608613736f")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/e773e6c1-0e56-435e-af11-6124becd9fda"
+					(reference "TP8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "Device:R_US")
 		(at 167.64 43.18 90)
 		(unit 1)
@@ -6884,6 +7273,85 @@
 			(project "MCR_prototype_PCB"
 				(path "/e773e6c1-0e56-435e-af11-6124becd9fda"
 					(reference "#PWR0139")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Connector:TestPoint")
+		(at 219.71 128.27 0)
+		(mirror x)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f68a014e-4d11-4bde-80d5-0c376e1cef35")
+		(property "Reference" "TP9"
+			(at 222.25 132.8421 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "GND"
+			(at 222.25 130.3021 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "TestPoint:TestPoint_Loop_D1.80mm_Drill1.0mm_Beaded"
+			(at 224.79 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 224.79 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "test point"
+			(at 219.71 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1bd7b8ed-54c1-45f2-8b12-131e3daf5afd")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/e773e6c1-0e56-435e-af11-6124becd9fda"
+					(reference "TP9")
 					(unit 1)
 				)
 			)

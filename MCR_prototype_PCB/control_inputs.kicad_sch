@@ -3553,6 +3553,12 @@
 		(uuid "c70e68f2-4533-4fc6-b527-a79c89f18e94")
 	)
 	(junction
+		(at 21.59 90.17)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "c8bffc9f-0b27-4b0a-8429-9f8c46ad71c6")
+	)
+	(junction
 		(at 121.92 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3601,10 +3607,6 @@
 		(uuid "f99a7d95-391c-45ad-a159-733dc5578eca")
 	)
 	(no_connect
-		(at 19.05 64.77)
-		(uuid "15b20366-097b-4cb4-a2c0-411d441292c3")
-	)
-	(no_connect
 		(at 262.89 93.98)
 		(uuid "97feb970-add6-4bce-8217-10ae9c5835bb")
 	)
@@ -3615,10 +3617,6 @@
 	(no_connect
 		(at 19.05 77.47)
 		(uuid "db4be3ed-fd1a-48fd-a298-f3f8f6b7d822")
-	)
-	(no_connect
-		(at 19.05 90.17)
-		(uuid "e807e3b1-796c-4801-bf64-0b003fe64619")
 	)
 	(wire
 		(pts
@@ -4332,6 +4330,16 @@
 	)
 	(wire
 		(pts
+			(xy 21.59 64.77) (xy 21.59 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3b4fbb03-48b8-42ca-b642-3ff86a0e628f")
+	)
+	(wire
+		(pts
 			(xy 78.74 39.37) (xy 91.44 39.37)
 		)
 		(stroke
@@ -4369,6 +4377,16 @@
 			(type default)
 		)
 		(uuid "3df18e70-7faa-4741-a4b6-b9d744558996")
+	)
+	(wire
+		(pts
+			(xy 19.05 90.17) (xy 21.59 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3e486b5b-4874-46b4-8336-9a92aea09cd2")
 	)
 	(wire
 		(pts
@@ -5919,6 +5937,16 @@
 			(type default)
 		)
 		(uuid "d15138da-fc73-4c2d-bcf9-9b369e5af42c")
+	)
+	(wire
+		(pts
+			(xy 19.05 64.77) (xy 21.59 64.77)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d1a7cc65-9697-41b1-a0e1-251a4a3c9e4a")
 	)
 	(wire
 		(pts
@@ -8882,6 +8910,84 @@
 			(project "MCR_prototype_PCB"
 				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
 					(reference "RN10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 21.59 90.17 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "98603dca-8edc-4745-a959-de1fa75517d8")
+		(property "Reference" "#PWR019"
+			(at 21.59 96.52 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 21.59 95.25 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 21.59 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 21.59 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 21.59 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7622e14c-abc4-439e-a640-899dd579cd0c")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
+					(reference "#PWR019")
 					(unit 1)
 				)
 			)
