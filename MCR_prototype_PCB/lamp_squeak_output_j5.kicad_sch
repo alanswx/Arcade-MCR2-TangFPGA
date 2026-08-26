@@ -2836,7 +2836,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-18W_7.5x11.6mm_P1.27mm"
 			(at 101.6 129.54 0)
 			(hide yes)
 			(show_name no)
@@ -2860,6 +2860,17 @@
 			)
 		)
 		(property "Description" "Darlington Transistor Arrays, SOIC18/DIP18"
+			(at 100.33 113.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 100.33 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -2966,7 +2977,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 34.29 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -2989,6 +3000,17 @@
 			)
 		)
 		(property "Description" "Resistor, small US symbol"
+			(at 34.29 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
 			(at 34.29 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -3202,7 +3224,7 @@
 				)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-18W_7.5x11.6mm_P1.27mm"
 			(at 100.33 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -3226,6 +3248,17 @@
 			)
 		)
 		(property "Description" "Darlington Transistor Arrays, SOIC18/DIP18"
+			(at 99.06 54.61 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 99.06 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -3567,7 +3600,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
 			(at 63.5 118.11 0)
 			(hide yes)
 			(show_name no)
@@ -3590,6 +3623,17 @@
 			)
 		)
 		(property "Description" "8-bit serial in/out Shift Register 3-State Outputs"
+			(at 63.5 118.11 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 63.5 118.11 0)
 			(hide yes)
 			(show_name no)
@@ -3769,7 +3813,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" ""
+		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
 			(at 62.23 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -3792,6 +3836,17 @@
 			)
 		)
 		(property "Description" "8-bit serial in/out Shift Register 3-State Outputs"
+			(at 62.23 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "package/gullwing"
 			(at 62.23 59.69 0)
 			(hide yes)
 			(show_name no)
