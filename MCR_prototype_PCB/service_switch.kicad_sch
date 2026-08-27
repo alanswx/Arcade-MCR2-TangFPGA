@@ -159,9 +159,12 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Switch:SW_DPDT_x2"
+		(symbol "Switch:SW_Push"
+			(pin_numbers
+				(hide yes)
+			)
 			(pin_names
-				(offset 0)
+				(offset 1.016)
 				(hide yes)
 			)
 			(exclude_from_sim no)
@@ -170,17 +173,18 @@
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
 			(property "Reference" "SW"
-				(at 0 5.08 0)
+				(at 1.27 2.54 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
 					(font
 						(size 1.27 1.27)
 					)
+					(justify left)
 				)
 			)
-			(property "Value" "SW_DPDT_x2"
-				(at 0 -5.08 0)
+			(property "Value" "SW_Push"
+				(at 0 -1.524 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -190,7 +194,7 @@
 				)
 			)
 			(property "Footprint" ""
-				(at 0 0 0)
+				(at 0 5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -201,6 +205,17 @@
 				)
 			)
 			(property "Datasheet" ""
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Push button switch, generic, two pins"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -211,7 +226,7 @@
 					)
 				)
 			)
-			(property "Description" "Switch, dual pole double throw, separate symbols"
+			(property "ki_keywords" "switch normally-open pushbutton push-button"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -222,29 +237,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "switch dual-pole double-throw DPDT spdt ON-ON"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_fp_filters" "SW*DPDT*"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "SW_DPDT_x2_0_0"
+			(symbol "SW_Push_0_1"
 				(circle
 					(center -2.032 0)
 					(radius 0.508)
@@ -256,9 +249,10 @@
 						(type none)
 					)
 				)
-				(circle
-					(center 2.032 -2.54)
-					(radius 0.508)
+				(polyline
+					(pts
+						(xy 0 1.27) (xy 0 3.048)
+					)
 					(stroke
 						(width 0)
 						(type default)
@@ -267,22 +261,20 @@
 						(type none)
 					)
 				)
-			)
-			(symbol "SW_DPDT_x2_0_1"
-				(rectangle
-					(start -3.175 3.81)
-					(end 3.175 -3.81)
+				(circle
+					(center 2.032 0)
+					(radius 0.508)
 					(stroke
-						(width 0.254)
+						(width 0)
 						(type default)
 					)
 					(fill
-						(type background)
+						(type none)
 					)
 				)
 				(polyline
 					(pts
-						(xy -1.524 0.254) (xy 1.5748 2.286)
+						(xy 2.54 1.27) (xy -2.54 1.27)
 					)
 					(stroke
 						(width 0)
@@ -292,23 +284,10 @@
 						(type none)
 					)
 				)
-				(circle
-					(center 2.032 2.54)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-			)
-			(symbol "SW_DPDT_x2_1_1"
 				(pin passive line
-					(at 5.08 2.54 180)
+					(at -5.08 0 0)
 					(length 2.54)
-					(name "A"
+					(name "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -324,9 +303,9 @@
 					)
 				)
 				(pin passive line
-					(at -5.08 0 0)
+					(at 5.08 0 180)
 					(length 2.54)
-					(name "B"
+					(name "2"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -334,80 +313,6 @@
 						)
 					)
 					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 -2.54 180)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(symbol "SW_DPDT_x2_2_1"
-				(pin passive line
-					(at 5.08 2.54 180)
-					(length 2.54)
-					(name "A"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "4"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "B"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "5"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 -2.54 180)
-					(length 2.54)
-					(name "C"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "6"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -679,22 +584,6 @@
 		(color 0 0 0 0)
 		(uuid "2f1ac310-b556-4257-bf2d-be8ca7970ca4")
 	)
-	(no_connect
-		(at 143.51 109.22)
-		(uuid "26be0c9b-cc1f-4b0f-94fb-5a2386860b67")
-	)
-	(no_connect
-		(at 133.35 106.68)
-		(uuid "2e871c5b-d6fc-4194-816b-99346b0c37ca")
-	)
-	(no_connect
-		(at 143.51 85.09)
-		(uuid "38b7f035-11cc-48c2-b60e-ead82568b2e8")
-	)
-	(no_connect
-		(at 143.51 104.14)
-		(uuid "b64a55c6-fb41-41a7-93c8-f631f5ddf7fb")
-	)
 	(wire
 		(pts
 			(xy 149.86 90.17) (xy 152.4 90.17)
@@ -714,6 +603,16 @@
 			(type default)
 		)
 		(uuid "72eee0b0-4307-401b-adb3-cfd2e801aba0")
+	)
+	(wire
+		(pts
+			(xy 143.51 87.63) (xy 143.51 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d7df672-0bbf-47b2-914a-636cbd243f01")
 	)
 	(wire
 		(pts
@@ -940,98 +839,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Switch:SW_DPDT_x2")
-		(at 138.43 106.68 0)
-		(unit 2)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "50d47669-df7e-41dd-8be3-5c7e58e45287")
-		(property "Reference" "SW4"
-			(at 138.43 97.79 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "Service"
-			(at 138.43 100.33 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPDT_CK_JS102011SAQN"
-			(at 138.43 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 138.43 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Switch, dual pole double throw, separate symbols"
-			(at 138.43 106.68 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "5"
-			(uuid "b366dfeb-b6a9-4e80-95b2-c1ae12d0b0f4")
-		)
-		(pin "1"
-			(uuid "2d6076ac-5499-4953-9ace-e419f13b7082")
-		)
-		(pin "2"
-			(uuid "9a241040-5e7c-4351-a9e9-da7c76c614f3")
-		)
-		(pin "4"
-			(uuid "9a50c41a-a790-44fe-80f2-9878058c0f93")
-		)
-		(pin "3"
-			(uuid "67c08d89-0bc5-4989-ba0f-092920ef7b20")
-		)
-		(pin "6"
-			(uuid "d78fffc7-3f2a-4de0-a533-306405b1bf2c")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/08fc2143-0f49-4309-b36c-73646f69ff7b"
-					(reference "SW4")
-					(unit 2)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:GND")
 		(at 124.46 93.98 0)
 		(unit 1)
@@ -1110,7 +917,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Switch:SW_DPDT_x2")
+		(lib_id "Switch:SW_Push")
 		(at 138.43 87.63 0)
 		(unit 1)
 		(body_style 1)
@@ -1120,9 +927,9 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced yes)
-		(uuid "f6572f81-2d93-4298-a93c-dee9005b9fcc")
-		(property "Reference" "SW4"
-			(at 138.43 78.74 0)
+		(uuid "ec049369-6b9a-415e-952f-cf0fef3d96d6")
+		(property "Reference" "SW3"
+			(at 138.43 80.01 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -1132,7 +939,7 @@
 			)
 		)
 		(property "Value" "Service"
-			(at 138.43 81.28 0)
+			(at 138.43 82.55 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -1141,8 +948,8 @@
 				)
 			)
 		)
-		(property "Footprint" "Button_Switch_SMD:SW_SPDT_CK_JS102011SAQN"
-			(at 138.43 87.63 0)
+		(property "Footprint" "Button_Switch_SMD:SW_SPST_PTS645Sx43SMTR92"
+			(at 138.43 82.55 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1153,7 +960,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 138.43 87.63 0)
+			(at 138.43 82.55 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1163,7 +970,7 @@
 				)
 			)
 		)
-		(property "Description" "Switch, dual pole double throw, separate symbols"
+		(property "Description" "Push button switch, generic, two pins"
 			(at 138.43 87.63 0)
 			(hide yes)
 			(show_name no)
@@ -1173,29 +980,17 @@
 					(size 1.27 1.27)
 				)
 			)
-		)
-		(pin "5"
-			(uuid "b366dfeb-b6a9-4e80-95b2-c1ae12d0b0f5")
-		)
-		(pin "1"
-			(uuid "2d6076ac-5499-4953-9ace-e419f13b7083")
 		)
 		(pin "2"
-			(uuid "9a241040-5e7c-4351-a9e9-da7c76c614f4")
+			(uuid "8d4b7337-9bee-42aa-bf89-76ea8971b9e1")
 		)
-		(pin "4"
-			(uuid "9a50c41a-a790-44fe-80f2-9878058c0f94")
-		)
-		(pin "3"
-			(uuid "67c08d89-0bc5-4989-ba0f-092920ef7b21")
-		)
-		(pin "6"
-			(uuid "d78fffc7-3f2a-4de0-a533-306405b1bf2d")
+		(pin "1"
+			(uuid "fbb44f0a-68cd-4c62-bc4b-50f0328966f9")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/08fc2143-0f49-4309-b36c-73646f69ff7b"
-					(reference "SW4")
+					(reference "SW3")
 					(unit 1)
 				)
 			)
