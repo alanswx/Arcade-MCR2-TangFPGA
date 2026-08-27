@@ -900,7 +900,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Device:C_Small_US"
+		(symbol "Device:C_Small"
 			(pin_numbers
 				(hide yes)
 			)
@@ -924,7 +924,7 @@
 					(justify left)
 				)
 			)
-			(property "Value" "C_Small_US"
+			(property "Value" "C_Small"
 				(at 0.254 -2.032 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -957,7 +957,7 @@
 					)
 				)
 			)
-			(property "Description" "capacitor, small US symbol"
+			(property "Description" "Unpolarized capacitor, small symbol"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -968,7 +968,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "cap capacitor"
+			(property "ki_keywords" "capacitor cap"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -990,7 +990,7 @@
 					)
 				)
 			)
-			(symbol "C_Small_US_0_1"
+			(symbol "C_Small_0_1"
 				(polyline
 					(pts
 						(xy -1.524 0.508) (xy 1.524 0.508)
@@ -1003,12 +1003,12 @@
 						(type none)
 					)
 				)
-				(arc
-					(start -1.524 -0.762)
-					(mid 0 -0.3734)
-					(end 1.524 -0.762)
+				(polyline
+					(pts
+						(xy -1.524 -0.508) (xy 1.524 -0.508)
+					)
 					(stroke
-						(width 0.3048)
+						(width 0.3302)
 						(type default)
 					)
 					(fill
@@ -1016,7 +1016,7 @@
 					)
 				)
 			)
-			(symbol "C_Small_US_1_1"
+			(symbol "C_Small_1_1"
 				(pin passive line
 					(at 0 2.54 270)
 					(length 2.032)
@@ -3030,16 +3030,40 @@
 		(uuid "35b98cd6-8b7d-40bf-bd70-e94d8c6e448c")
 	)
 	(junction
+		(at 97.79 127)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "37288a1c-888d-4926-ab66-f9be20dc4e59")
+	)
+	(junction
 		(at 59.69 54.61)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "4be343ba-3a82-4fe3-a2fc-cd130dc559a8")
 	)
 	(junction
+		(at 180.34 128.27)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "5fcf26d7-b5fa-4029-b02f-cebf1cb9af10")
+	)
+	(junction
+		(at 218.44 54.61)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "6a90aa01-d1c5-41f4-905b-be6e58cf7821")
+	)
+	(junction
 		(at 172.72 54.61)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "6d035a97-5461-488d-8415-a7efd2a00f4f")
+	)
+	(junction
+		(at 180.34 102.87)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "7403f999-db55-490d-a7bd-c9aaac3ae0ec")
 	)
 	(junction
 		(at 265.43 54.61)
@@ -3060,22 +3084,28 @@
 		(uuid "be6e912f-2c9d-4860-a288-bc06ce9968c9")
 	)
 	(junction
-		(at 218.44 54.61)
-		(diameter 0)
-		(color 0 0 0 0)
-		(uuid "bed09636-b127-4e17-a2d7-27c4b152def7")
-	)
-	(junction
 		(at 82.55 54.61)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "c77f2cd8-e181-41fd-8576-f976993c6026")
 	)
 	(junction
+		(at 97.79 101.6)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "cdcdd234-dcb6-48d1-95ba-c5b6735d2f9f")
+	)
+	(junction
 		(at 227.33 102.87)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "e8dd1223-9a6b-45ca-9f18-924b016057fd")
+	)
+	(junction
+		(at 275.59 107.95)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "f63d951a-72ac-47e4-9ccf-8fc0e2b5517a")
 	)
 	(no_connect
 		(at 31.75 50.8)
@@ -3101,17 +3131,17 @@
 	)
 	(wire
 		(pts
-			(xy 105.41 59.69) (xy 105.41 100.33)
+			(xy 223.52 102.87) (xy 227.33 102.87)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "04b88f7c-a3be-4e8a-a99d-4f87bd9e2df7")
+		(uuid "0726b4b3-f34c-4344-8834-77bc309fcc45")
 	)
 	(wire
 		(pts
-			(xy 82.55 59.69) (xy 82.55 111.76)
+			(xy 82.55 54.61) (xy 82.55 111.76)
 		)
 		(stroke
 			(width 0)
@@ -3131,6 +3161,16 @@
 	)
 	(wire
 		(pts
+			(xy 105.41 54.61) (xy 105.41 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b63ec8c-5ec8-4f48-9cb9-dff511286083")
+	)
+	(wire
+		(pts
 			(xy 247.65 90.17) (xy 247.65 83.82)
 		)
 		(stroke
@@ -3138,6 +3178,16 @@
 			(type default)
 		)
 		(uuid "1029639d-b068-49f9-8201-a70407b83292")
+	)
+	(wire
+		(pts
+			(xy 69.85 113.03) (xy 69.85 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "10e8d4ec-cb0a-43a8-8371-aeaa716bb797")
 	)
 	(wire
 		(pts
@@ -3158,6 +3208,16 @@
 			(type default)
 		)
 		(uuid "1c3c5b2b-46db-425f-8dd7-f84bfd6b9986")
+	)
+	(wire
+		(pts
+			(xy 151.13 54.61) (xy 151.13 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1c8958f3-da48-48aa-9e21-b342a1f7175b")
 	)
 	(wire
 		(pts
@@ -3238,6 +3298,16 @@
 			(type default)
 		)
 		(uuid "2716396f-9b39-409d-8134-b120676331cb")
+	)
+	(wire
+		(pts
+			(xy 160.02 128.27) (xy 180.34 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2a577e07-c59b-4582-be0d-7baf46f98447")
 	)
 	(wire
 		(pts
@@ -3401,6 +3471,16 @@
 	)
 	(wire
 		(pts
+			(xy 160.02 111.76) (xy 160.02 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3f01da18-c06c-4230-8444-03b23b938a58")
+	)
+	(wire
+		(pts
 			(xy 208.28 76.2) (xy 262.89 76.2)
 		)
 		(stroke
@@ -3461,23 +3541,13 @@
 	)
 	(wire
 		(pts
-			(xy 180.34 102.87) (xy 185.42 102.87)
+			(xy 69.85 101.6) (xy 97.79 101.6)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
-		(uuid "4add2fb4-f395-4a1d-9753-6b83c1ca9daf")
-	)
-	(wire
-		(pts
-			(xy 59.69 59.69) (xy 59.69 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "4aec4088-3ef8-4ac9-bc69-d571cd47d137")
+		(uuid "48606002-ee74-4300-af79-a00dbf716c34")
 	)
 	(wire
 		(pts
@@ -3511,6 +3581,16 @@
 	)
 	(wire
 		(pts
+			(xy 69.85 107.95) (xy 69.85 101.6)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4c7068b6-d8a9-448f-bdde-1fa0c852b931")
+	)
+	(wire
+		(pts
 			(xy 255.27 80.01) (xy 138.43 80.01)
 		)
 		(stroke
@@ -3541,6 +3621,16 @@
 	)
 	(wire
 		(pts
+			(xy 160.02 102.87) (xy 180.34 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "55d65eba-e96a-40ac-8565-5c1adff56c8c")
+	)
+	(wire
+		(pts
 			(xy 38.1 40.64) (xy 31.75 40.64)
 		)
 		(stroke
@@ -3568,16 +3658,6 @@
 			(type default)
 		)
 		(uuid "5c82e3b5-7ee6-4520-8426-a04c15058254")
-	)
-	(wire
-		(pts
-			(xy 151.13 59.69) (xy 151.13 118.11)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "5d6ac3f7-e4cc-4613-8a7a-60ce77186a09")
 	)
 	(wire
 		(pts
@@ -3671,16 +3751,6 @@
 	)
 	(wire
 		(pts
-			(xy 127 59.69) (xy 127 116.84)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7e16564b-1cbd-4f68-b3dd-ac66248e769f")
-	)
-	(wire
-		(pts
 			(xy 260.35 77.47) (xy 184.15 77.47)
 		)
 		(stroke
@@ -3691,23 +3761,33 @@
 	)
 	(wire
 		(pts
-			(xy 180.34 128.27) (xy 185.42 128.27)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "7eb2b3e5-9568-4514-a7fa-93a48f958330")
-	)
-	(wire
-		(pts
-			(xy 218.44 54.61) (xy 265.43 54.61)
+			(xy 210.82 54.61) (xy 218.44 54.61)
 		)
 		(stroke
 			(width 0)
 			(type default)
 		)
 		(uuid "80a42ff2-6639-45b8-8ab5-8eb308d7c5be")
+	)
+	(wire
+		(pts
+			(xy 223.52 128.27) (xy 223.52 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "82124011-15e1-49a4-9eeb-1302f9182800")
+	)
+	(wire
+		(pts
+			(xy 160.02 106.68) (xy 160.02 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "82d15000-882c-4860-8ee6-8a959d1b87d8")
 	)
 	(wire
 		(pts
@@ -3728,6 +3808,16 @@
 			(type default)
 		)
 		(uuid "84c32f38-026d-4657-a6e8-217f2a4d50c7")
+	)
+	(wire
+		(pts
+			(xy 180.34 102.87) (xy 185.42 102.87)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "84d40586-4e1d-47fb-b836-3ae8bf9dec98")
 	)
 	(wire
 		(pts
@@ -3801,6 +3891,26 @@
 	)
 	(wire
 		(pts
+			(xy 59.69 54.61) (xy 59.69 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "985587b5-f014-46e3-9ad4-e605edac69b7")
+	)
+	(wire
+		(pts
+			(xy 218.44 54.61) (xy 218.44 118.11)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "99b15673-0c13-4f4f-a24d-9b1ca1697ebc")
+	)
+	(wire
+		(pts
 			(xy 74.93 54.61) (xy 82.55 54.61)
 		)
 		(stroke
@@ -3841,6 +3951,16 @@
 	)
 	(wire
 		(pts
+			(xy 247.65 128.27) (xy 223.52 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "abe4e93f-a8fc-4a4d-bb88-e89d8a1ff156")
+	)
+	(wire
+		(pts
 			(xy 127 54.61) (xy 138.43 54.61)
 		)
 		(stroke
@@ -3871,6 +3991,16 @@
 	)
 	(wire
 		(pts
+			(xy 218.44 54.61) (xy 265.43 54.61)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b154262a-c05b-4d6b-b2f4-14b109bd8eec")
+	)
+	(wire
+		(pts
 			(xy 261.62 119.38) (xy 267.97 119.38)
 		)
 		(stroke
@@ -3891,7 +4021,7 @@
 	)
 	(wire
 		(pts
-			(xy 194.31 59.69) (xy 194.31 113.03)
+			(xy 194.31 54.61) (xy 194.31 113.03)
 		)
 		(stroke
 			(width 0)
@@ -3908,16 +4038,6 @@
 			(type default)
 		)
 		(uuid "b7bdc4fa-d15c-4d36-a9b3-c67940d88eb6")
-	)
-	(wire
-		(pts
-			(xy 210.82 54.61) (xy 218.44 54.61)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "b7c52e2f-fa6f-4e24-a07d-d77e68352a98")
 	)
 	(wire
 		(pts
@@ -3938,6 +4058,16 @@
 			(type default)
 		)
 		(uuid "bd7451dc-1abb-4101-9b76-41473f0f0bc8")
+	)
+	(wire
+		(pts
+			(xy 69.85 127) (xy 97.79 127)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "be0b927c-813b-4040-92bb-27fa450f6074")
 	)
 	(wire
 		(pts
@@ -3968,6 +4098,16 @@
 			(type default)
 		)
 		(uuid "bfc3dbc0-2325-408f-81d7-6e71511503b4")
+	)
+	(wire
+		(pts
+			(xy 127 54.61) (xy 127 116.84)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c0933218-d4e7-42e3-8572-7eb96c794f63")
 	)
 	(wire
 		(pts
@@ -4011,7 +4151,7 @@
 	)
 	(wire
 		(pts
-			(xy 172.72 59.69) (xy 172.72 60.96)
+			(xy 172.72 54.61) (xy 172.72 60.96)
 		)
 		(stroke
 			(width 0)
@@ -4191,6 +4331,36 @@
 	)
 	(wire
 		(pts
+			(xy 252.73 128.27) (xy 275.59 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e2459b18-024e-4175-b825-cf231abe959c")
+	)
+	(wire
+		(pts
+			(xy 180.34 128.27) (xy 185.42 128.27)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e5e2489f-42b3-4668-8e05-4f07bbfdf29c")
+	)
+	(wire
+		(pts
+			(xy 275.59 128.27) (xy 275.59 107.95)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e5f495e2-5eda-4908-9765-890547ecf915")
+	)
+	(wire
+		(pts
 			(xy 97.79 54.61) (xy 105.41 54.61)
 		)
 		(stroke
@@ -4268,16 +4438,6 @@
 			(type default)
 		)
 		(uuid "f4543e54-aa33-4483-ae9f-66ffc2fd13e2")
-	)
-	(wire
-		(pts
-			(xy 218.44 59.69) (xy 218.44 118.11)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "f9daa462-7e4f-43db-bdad-df096158c098")
 	)
 	(wire
 		(pts
@@ -4406,99 +4566,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 218.44 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "03bcf6ac-d741-48b4-9f50-0add16e78f7b")
-		(property "Reference" "C40"
-			(at 220.98 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 220.98 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 218.44 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 218.44 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 218.44 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 218.44 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "20f00d87-f66b-441b-9529-f8b3f1660489")
-		)
-		(pin "1"
-			(uuid "c7dfcf6c-6940-4bfd-bc21-412e36f2cd14")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C40")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Pack04")
 		(at 132.08 33.02 270)
 		(unit 1)
@@ -4590,6 +4657,86 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "RN13")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 250.19 128.27 270)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "19635aa9-05bd-433d-8033-d27c1a445a5f")
+		(property "Reference" "C55"
+			(at 250.1836 121.92 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "0.1 uF"
+			(at 250.1836 124.46 90)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+			(at 250.19 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 250.19 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 250.19 128.27 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "8c064eef-0a7a-4aa5-9d0a-c80c48c12cb6")
+		)
+		(pin "1"
+			(uuid "b5ccacdb-9b02-4371-b32d-de8677b51bc0")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
+					(reference "C55")
 					(unit 1)
 				)
 			)
@@ -4705,99 +4852,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "J6")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 172.72 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "3f93ddb2-935c-4b2f-a92d-eb516261888e")
-		(property "Reference" "C38"
-			(at 175.26 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 175.26 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 172.72 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 172.72 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 172.72 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 172.72 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "d543fb2a-0383-481c-8ab3-24784130cb77")
-		)
-		(pin "1"
-			(uuid "d1ff0f1c-7f90-41d7-a63f-c823bff7403f")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C38")
 					(unit 1)
 				)
 			)
@@ -5207,8 +5261,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 194.31 57.15 0)
+		(lib_id "Device:C_Small")
+		(at 160.02 109.22 180)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -5217,31 +5271,31 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced yes)
-		(uuid "7181e9ff-d705-4fb5-a166-4e5890112ca0")
-		(property "Reference" "C39"
-			(at 196.85 56.0069 0)
+		(uuid "778da633-2fc7-46da-a916-b512263f5f39")
+		(property "Reference" "C64"
+			(at 162.56 107.9435 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "0.01 uF"
-			(at 196.85 58.5469 0)
+		(property "Value" "0.1 uF"
+			(at 162.56 110.4835 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 194.31 57.15 0)
+			(at 160.02 109.22 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5252,7 +5306,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 194.31 57.15 0)
+			(at 160.02 109.22 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5262,19 +5316,8 @@
 				)
 			)
 		)
-		(property "Description" "capacitor, small US symbol"
-			(at 194.31 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 194.31 57.15 0)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 160.02 109.22 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5285,15 +5328,15 @@
 			)
 		)
 		(pin "2"
-			(uuid "5aa134ae-9b21-4547-849a-8195c603e7de")
+			(uuid "7cef8f8c-6d63-46db-b69a-649cce09c905")
 		)
 		(pin "1"
-			(uuid "40928f55-6106-41ed-a2bd-6d5402b95087")
+			(uuid "5eac6f6e-fa61-4f05-aeff-5c4494f8504f")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C39")
+					(reference "C64")
 					(unit 1)
 				)
 			)
@@ -5372,192 +5415,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "#PWR0129")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 82.55 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7a7c866a-95a1-4298-8aaf-8b303ca5a0a7")
-		(property "Reference" "C34"
-			(at 85.09 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 85.09 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 82.55 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 82.55 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 82.55 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 82.55 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "84542845-a371-46dd-a449-bc534b9248e6")
-		)
-		(pin "1"
-			(uuid "63baa129-8a6a-4d8c-b23b-870840a40f2e")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C34")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 127 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "7d5d63e5-d4db-42da-8ef1-f00225c46cf3")
-		(property "Reference" "C36"
-			(at 129.54 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 129.54 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 127 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 127 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 127 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 127 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "21d35b36-9cf1-4adc-a44b-9f5d57ba817f")
-		)
-		(pin "1"
-			(uuid "11419f5e-a5a0-4dad-9d8c-ca97c955768d")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C36")
 					(unit 1)
 				)
 			)
@@ -5697,99 +5554,6 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 59.69 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "8e26d124-fe45-409f-a3fd-6325c5985197")
-		(property "Reference" "C33"
-			(at 62.23 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 62.23 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 59.69 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 59.69 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 59.69 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 59.69 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "2f6e078f-9cbc-4549-afd6-7ea3d3804148")
-		)
-		(pin "1"
-			(uuid "c2b6e56b-7664-4798-a343-d1e462e38599")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C33")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "Device:R_Network08_US")
 		(at 259.08 21.59 0)
 		(unit 1)
@@ -5893,8 +5657,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 151.13 57.15 0)
+		(lib_id "Device:C_Small")
+		(at 69.85 110.49 180)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -5903,31 +5667,31 @@
 		(in_pos_files yes)
 		(dnp no)
 		(fields_autoplaced yes)
-		(uuid "a7d63b35-91d9-459f-82a8-f6d546188515")
-		(property "Reference" "C37"
-			(at 153.67 56.0069 0)
+		(uuid "b650bdd5-e6d6-4d21-b111-14dda1a09f84")
+		(property "Reference" "C63"
+			(at 72.39 109.2135 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
-		(property "Value" "0.01 uF"
-			(at 153.67 58.5469 0)
+		(property "Value" "0.1 uF"
+			(at 72.39 111.7535 0)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
 				(font
 					(size 1.27 1.27)
 				)
-				(justify left)
+				(justify right)
 			)
 		)
 		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 151.13 57.15 0)
+			(at 69.85 110.49 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5938,7 +5702,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 151.13 57.15 0)
+			(at 69.85 110.49 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5948,19 +5712,8 @@
 				)
 			)
 		)
-		(property "Description" "capacitor, small US symbol"
-			(at 151.13 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 151.13 57.15 0)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 69.85 110.49 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5971,15 +5724,15 @@
 			)
 		)
 		(pin "2"
-			(uuid "a35ba0e3-2240-4067-acf8-aa989d8005bb")
+			(uuid "13d6e0a5-3cde-4da8-8dba-046c87f38884")
 		)
 		(pin "1"
-			(uuid "4583ba19-d008-4dfb-82cc-9358c6852700")
+			(uuid "92a6ebd7-1032-4639-9ae0-ea352bdc6b69")
 		)
 		(instances
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C37")
+					(reference "C63")
 					(unit 1)
 				)
 			)
@@ -6170,99 +5923,6 @@
 			(project "MCR_prototype_PCB"
 				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
 					(reference "RN14")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Device:C_Small_US")
-		(at 105.41 57.15 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(fields_autoplaced yes)
-		(uuid "d7b6fe3f-81b4-4fe0-853a-b2b42e468330")
-		(property "Reference" "C35"
-			(at 107.95 56.0069 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Value" "0.01 uF"
-			(at 107.95 58.5469 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-				(justify left)
-			)
-		)
-		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
-			(at 105.41 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 105.41 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "capacitor, small US symbol"
-			(at 105.41 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "KiLib_Generator" "SMD_2terminal_chip_molded"
-			(at 105.41 57.15 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "2"
-			(uuid "78f997d4-f20c-4da4-8b35-af77545c99cc")
-		)
-		(pin "1"
-			(uuid "2c4f9487-312a-4d24-b02e-522246c0089e")
-		)
-		(instances
-			(project "MCR_prototype_PCB"
-				(path "/ece5a725-c11f-4121-af93-ce7b9d7aa838"
-					(reference "C35")
 					(unit 1)
 				)
 			)
