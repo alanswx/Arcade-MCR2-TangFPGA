@@ -1,5 +1,10 @@
 # Powering the Tang Console 60K from the MCR shield
 
+> **Status 2026-08-27: implemented on the prototype board** — J1.18 +12 V →
+> L1 → R-78B5.0 (U24) → **D4 = 1N5822** (3 A Schottky) → J10 pin 11, on a
+> 1.0 mm trace. The first upload had a 1N4148W there; fixed in `22d051d`.
+> §5 items 1, 2, 4 and 5 are still unverified.
+
 **Question:** can the shield power the console through a header pin, or do we
 have to use a USB-C port — and does USB-C need a PD/negotiation chip?
 

@@ -578,6 +578,12 @@ the 15-game core's audit (CPU swept to 0xE000, sound ROM in SDRAM so E4 reads
 - `docs/universal_mcr_shield_spec.md` — **consolidated shield spec** (net
   table, electrical, pin budget); supersedes the electrical sections of the
   two docs above for new work.
+- `docs/pcb_review_2026-08-25.md` — **pre-fab review of Mitch's prototype
+  shield PCB** (`MCR_prototype_PCB/`), with the 2026-08-27 re-check appended:
+  what was wrong, what he fixed, what is still open. Includes the
+  `kicad-cli` method (wrapper root over the unreferenced sub-sheets →
+  netlist → diff against the `.kicad_pcb`). `docs/for_mitch_2026-08-27.md`
+  is the plain-language summary. KiCad 10 is installed on this host for it.
 - `docs/shield_j10_pinout.md` — **the frozen 40-pin J10 header sheet for
   the shield PCB** (video + controls on one header via 74HC165/595
   chains); the authority over spec §4b for any pin question. Change this

@@ -37,17 +37,17 @@ Ground rules:
 
 | Pin | Ball | Net | Dir (FPGA) | Status | Function |
 |---:|---|---|---|---|---|
-| 1 | R19 | `VID_R0` | out | live | red bit 0 (= copy of bit 3; DAC may ignore) |
+| 1 | R19 | `AUD_PWM_L2` | out | **as built** | **Prototype board (2026-08-27) puts a second PWM audio pair here** (rear speakers on the Discs of Tron 10-pin J3). Was `VID_R0`, which the DAC never used. RTL still drives `vga_r[0]` on this ball — harmless into the RC filter, but the bit must be retired and a second audio pair (or silence) driven before it is useful |
 | 2 | P19 | `VID_R1` | out | live | red bit 1 → 2 kΩ |
 | 3 | U21 | `VID_R2` | out | live | red bit 2 → 1 kΩ |
 | 4 | T21 | `VID_R3` | out | live | red bit 3 (MSB) → 510 Ω |
-| 5 | R17 | `VID_B0` | out | live | blue bit 0 (copy of bit 3) |
+| 5 | R17 | `AUD_PWM_R2` | out | **as built** | second PWM audio pair, right (see pin 1). Was `VID_B0` |
 | 6 | P16 | `VID_B1` | out | live | blue bit 1 → 2 kΩ |
 | 7 | T18 | `VID_B2` | out | live | blue bit 2 → 1 kΩ |
 | 8 | R18 | `VID_B3` | out | live | blue bit 3 (MSB) → 510 Ω |
 | 9 | W17 | `SERVICE_N` | in | reserved | cabinet service button (opens the OSD); shield pull-up to 3V3. **Moved here from pin 33 on 2026-08-23** when the prototype board took pin 33 for the '595 SRCLR - see `pcb_review_2026-08-22.md` |
 | 10 | V17 | `SPARE1` | — | spare | CSI_B config pin — needs the `-use_sspi_as_gpio` build option (already set) |
-| 11 | — | **+5 V** | — | power | rail **out of** the dock; light loads only; do NOT back-feed (spec §6.1) |
+| 11 | — | **+5 V** | — | power | **The shield FEEDS the console here** (decided 2026-08-23, `shield_power_decision.md`): shield R-78B5.0 → D4 1N5822 Schottky → pin 11, 1.0 mm trace. Nothing else may back-feed this rail |
 | 12 | — | **GND** | — | power | star ground for the shield |
 | 13 | W22 | `VID_G0` | out | live | green bit 0 (copy of bit 3) |
 | 14 | W21 | `VID_G1` | out | live | green bit 1 → 2 kΩ |
@@ -55,8 +55,8 @@ Ground rules:
 | 16 | N17 | `VID_G3` | out | live | green bit 3 (MSB) → 510 Ω |
 | 17 | N14 | `VID_HS` | out | live | HSync, negative; carries **CSYNC** when strap pin 39 = GND |
 | 18 | N13 | `VID_VS` | out | live | VSync, negative |
-| 19 | V20 | `SPARE2` | — | spare | GCLK-capable |
-| 20 | U20 | `SPARE3` | — | spare | GCLK-capable |
+| 19 | V20 | `ADC_SDA` | inout | as built | ADS7830 I²C data (needs an I²C master in RTL; no pull-up on the board — use the FPGA's) |
+| 20 | U20 | `ADC_SCL` | out | as built | ADS7830 I²C clock |
 | 21 | Y22 | `LED_CALIB` | out | live | status LED: DDR3 trained (steady on = good) |
 | 22 | Y21 | `LED_PIX` | out | live | status LED: pixel-clock heartbeat ~1 Hz |
 | 23 | AB22 | `LED_27M` | out | live | status LED: 27 MHz heartbeat ~0.8 Hz |
@@ -65,14 +65,14 @@ Ground rules:
 | 26 | AA20 | `IN_LOAD_N` | out | reserved | 74HC165 SH/LD̄ — low pulse snapshots all inputs atomically |
 | 27 | AB20 | `IN_DATA` | in | reserved | serial data from U7.QH (CSO_B config pin — option already set) |
 | 28 | AA19 | `OUT_CLK` | out | reserved | 74HC595 chain shift clock (RDWR_B config pin — option already set) |
-| 29 | AA18 | `SPARE4` | — | spare | EXIO0: 0 Ω-linked to DM0 net on the dock — verify before use |
-| 30 | AB18 | `SPARE5` | — | spare | EXIO1: 0 Ω-linked to DM1 — same caveat |
+| 29 | AA18 | `ADC_A1` | out | as built | ADS7830 address bit 1. Dock caveat retired 2026-08-23: EXID0/1 pulls R30/R32 are DNP on sheet 8, so this is plain I/O |
+| 30 | AB18 | `ADC_A0` | out | as built | ADS7830 address bit 0 |
 | 31 | Y19 | `OUT_DATA` | out | reserved | serial data to U8.SER |
 | 32 | Y18 | `OUT_LATCH` | out | reserved | 74HC595 RCLK — output register update |
 | 33 | T20 | `OUT_CLEAR_N` | out | reserved | 74HC595 SRCLR̄ on U8/U9. **As built on the prototype board.** Was `SERVICE_N`; that moved to pin 9. Note this is an FPGA OUTPUT - drive it high in normal operation, and do not leave it floating or the output chain clears |
 | 34 | N15 | `OUT_EN_N` | out | reserved | 74HC595 OE̅. **Shield MUST pull up to 3V3** so meters/lamps stay off until the RTL drives it low |
-| 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → RC filter → amp (spec §3) |
-| 36 | U17 | `AUD_PWM_R` | out | live | PWM audio right (mono cabinets: use L only) |
+| 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → 2-stage RC → J3 (`AUD_PWM_L1` on the board). **The prototype has no amplifier** — see `pcb_review_2026-08-25.md` item 7 |
+| 36 | U17 | `AUD_PWM_R` | out | live | PWM audio right (`AUD_PWM_R1` on the board; mono cabinets: use L only) |
 | 37 | R16 | `MODE15_N` | in | live | **strap: GND = native 15 kHz** (cabinet), open = 31 kHz. Internal pull-up; solder-jumper on shield, closed by default |
 | 38 | P15 | `SPARE6` | — | spare | |
 | 39 | R14 | `SYNC_CSYNC_N` | in | live | strap: GND = composite sync on `VID_HS`; open = separate H/V (**default — real MCR monitors take separate H/V on Video-8/9**) |

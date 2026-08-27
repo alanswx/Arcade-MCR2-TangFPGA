@@ -2051,9 +2051,27 @@ budget exists anymore. See the Shield PCB section.
   ADC over spare J10 pins.
 
 
-- **5 V delivery route unverified** — J10 pin 11 exposes +5 V but sits behind
-  the dock's OR-ing/OVP chain; do not back-feed it until traced. USB-C is the
-  known-good path.
+- **5 V delivery route: DECIDED and built** — the shield feeds J10 pin 11
+  through a Schottky (`docs/shield_power_decision.md`). Still to verify on
+  the bench: console current draw, FB4/FB5 ferrite rating, U13 back-feed.
+- **Prototype PCB (Mitch, `MCR_prototype_PCB/`) — reviewed, not yet ordered.**
+  `docs/pcb_review_2026-08-25.md` (with the 08-27 re-check at the bottom)
+  is the checklist; `docs/for_mitch_2026-08-27.md` is the summary sent to
+  him. Open before ordering: ADS7830 logic levels (VDD should be 3.3 V),
+  mounting holes, THS7374 input shunt, no audio amplifier, DoT speaker pin
+  assignment. **Verify with `kicad-cli`, not by eye**: the root sheet does
+  not reference the sub-sheets, so build a wrapper root over all twelve
+  `.kicad_sch` files, export the netlist, and diff it against the
+  `.kicad_pcb` pad nets (the method is written up in the review).
+- **RTL work the prototype board creates** (none exists yet):
+  - I²C master for the ADS7830 on pins 19/20 (+ address on 29/30). Only
+    CH0 (volume pot) is wired on the prototype.
+  - `OUT_CLEAR_N` (pin 33) must be driven HIGH; `OUT_EN_N` (pin 34) low once
+    the '595 chain is loaded. Both are pulled up on the board.
+  - Pins 1 and 5 are now a second PWM audio pair (`AUD_PWM_L2/R2`, DoT rear
+    speakers). Retire `vga_r[0]`/`vga_b[0]` from those balls; decide what,
+    if anything, drives them.
+  - `SERVICE_N` is pin 9 (W17), active low, pulled up on the board.
 - **Header pinout is FROZEN (2026-07-21): `docs/shield_j10_pinout.md`.**
   Everything on J10 only — video/audio/straps/LEDs on the pins today's
   bitstreams already drive, ALL cabinet inputs + both DIP banks on a
