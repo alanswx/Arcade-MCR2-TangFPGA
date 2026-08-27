@@ -225,3 +225,33 @@ Discs of Tron J3 is 10-pin with 6/7 = speaker 1 +/− and 9/10 = speaker 2 +/−
   pin 11 → "powered from shield through D4".
 - `TODO.md`: RTL work — I²C master for the ADC, decision on a second audio
   pair, `OUT_CLEAR_N` driven high, video bit 0 outputs retired.
+
+---
+
+# Re-check of the 2026-08-27 upload (`9fb5ccc`, `22d051d`)
+
+Same method as above. Mitch now commits a real whole-design netlist,
+`MCR_prototype_PCB.net` (135 parts, 12 sheets) — it is **identical** in
+connectivity to the wrapper-generated one, and both are identical to the
+board's pad nets (185 nets, no differences). DRC: 0 unconnected, 0
+violations. ERC: only the three isolated `Start N Lamp` labels and the U14
+REF warning below. Gerbers regenerated 2026-08-27 14:33.
+
+| # | item | status |
+|---|---|---|
+| 1 | U1/U2 CLK-LOAD swap | **fixed** — all six '165s now `~PL`=IN_LOAD_N, `CP`=IN_CLK |
+| 2 | ESD arrays in series with caps | **fixed** — SRV05 IO pins now on the input nodes; the 32 filter caps were removed rather than regrounded (acceptable; the 1 k series + 4.7 k pull-up remain) |
+| 3 | ADS7830 REF vs VDD | **changed, new problem** — U14 VDD and REF are both +5 V now, so REF ≤ VDD is satisfied and the 5 V volume pot is in range. But the FPGA's I²C is 3.3 V and the ADS7830's VIH is 0.7 × VDD = **3.5 V** at 5 V — SCL/SDA highs are out of spec. Also REF is still hard-driven while the internal 2.5 V reference is on by default; the RTL must send PD1 = 0 on the first command. Simplest fix is the other way round: VDD = +3.3 V, REF left as 100 nF-to-GND output, pot across +3.3 V. |
+| 4 | 1N4148W on pin 11 | **fixed** — D4 = 1N5822 (3 A Schottky, DO-201AD), and the feed is now 1.0 mm. Expect ~0.4 V drop; the console's USB-A host port will sit near 4.6 V. Fine for a prototype; an ideal-diode part later if a gamepad is fussy |
+| 5 | decoupling | **fixed** — +3.3 V: 7 × 100 nF + 100 µF; +5 V: 9 × 100 nF + 100 µF + 2 × 22 µF. Still open: no capacitor on the regulator side of L1/L2 (U24/U25 IN nets contain only the inductor and the module pin) |
+| 6 | THS7374 | **mostly fixed** — BYPASS on both amps now on JP4 (5 V/GND select); 75 Ω series (R14–R18) on all five outputs. Still open: (a) no shunt at the ladder inputs, so full-scale is still 3.3 V × 2 into a ~2.3 V linear range — clips; (b) VGA and J2 hang off the same 75 Ω, so plugging both in halves the level |
+| 7 | audio amp / DoT speaker pins / J10 pins 1 & 5 | **unchanged** — still no amplifier, J3_DOT1 6/7 and 9/10 still carry different channels on one speaker's +/−, second pair still on J10 pins 1/5 |
+| 8 | J5 | **mostly fixed** — pins 9 and 18 are GND; meter now has +12 V on one side (J5.21) and the ULN sink on the other (J5.20); `Out_Clear` has R104 10 k to +3.3 V. Note the polarity is the reverse of the table (20 = Return, 21 = Meter 1) — harmless for a bare coil, but check how the cabinet harness uses "Return" before assuming. Start 1/2/3 lamps still go nowhere; J5.22 (Meter 2) / .23 (Kick light) still absent |
+| 9 | mechanical | **unchanged** — still **no mounting holes**: the only large drills are the DE-15 bracket pair (3.2 mm) and D4's leads (1.6 mm). J1 pin 18 / GND positions still unverified by me; J0 still top-side at (125, 148) |
+| — | I²C pull-ups | still none |
+
+**Verdict:** the four must-fix faults are closed. Before ordering I would still
+want (3) the ADC logic-level fix — it is two net changes — and (9) mounting
+holes. Items 6a and 7 are the ones that will show up the first time it is
+connected to a monitor and a speaker; they are the choice between fixing now
+and bodging on the bench.
