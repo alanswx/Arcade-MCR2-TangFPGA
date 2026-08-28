@@ -1,4 +1,4 @@
-### Footprint positions - created on 2026-08-27T14:34:08 ###
+### Footprint positions - created on 2026-08-28T09:51:27 ###
 ### Printed by KiCad version 10.0.1
 ## Unit = mm, Angle = deg.
 ## Side : All
@@ -15,6 +15,8 @@ C5            4.7_uF_50V                     CP_Radial_D10.0mm_P5.00mm          
 C6            0.01_uF                        C_0805_2012Metric                                                                                225.0440   -90.1192    0.0000  top
 C7            4.7_uF_50V                     CP_Radial_D10.0mm_P5.00mm                                                                         50.4152  -115.7224  180.0000  top
 C8            0.01_uF                        C_0805_2012Metric                                                                                224.9320   -93.6636    0.0000  top
+C9            10_uF_50V                      CP_Radial_D10.0mm_P5.00mm                                                                         72.1868  -124.1243  -90.0000  top
+C10           10_uF_50V                      CP_Radial_D10.0mm_P5.00mm                                                                         62.8396   -87.0928   90.0000  top
 C41           0.1_uF                         C_0805_2012Metric                                                                                187.6044   -40.4876    0.0000  top
 C42           0.1_uF                         C_0805_2012Metric                                                                                194.0204   -40.8940    0.0000  top
 C43           22_uF                          C_1210_3225Metric                                                                                187.3504   -35.0520    0.0000  top
@@ -39,6 +41,7 @@ C61           0.1_uF                         C_0805_2012Metric                  
 C62           0.1_uF                         C_0805_2012Metric                                                                                255.6256   -54.3560    0.0000  top
 C63           0.1_uF                         C_0805_2012Metric                                                                                238.6736  -116.2304    0.0000  top
 C64           0.1_uF                         C_0805_2012Metric                                                                                252.8468  -110.9980    0.0000  top
+C65           0.1_uF                         C_0805_2012Metric                                                                                249.8344   -82.7024  -90.0000  top
 D1            LED                            LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder                                                     89.7128  -134.8740   90.0000  top
 D2            LED                            LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder                                                     92.5576  -101.8032   90.0000  top
 D3            LED                            LED_0805_2012Metric_Pad1.15x1.40mm_HandSolder                                                     93.5736  -118.8630   90.0000  top
@@ -76,6 +79,11 @@ R15           75                             R_0805_2012Metric                  
 R16           75                             R_0805_2012Metric                                                                                170.1292   -32.0548    0.0000  top
 R17           75                             R_0805_2012Metric                                                                                174.4980   -32.0548    0.0000  top
 R18           75                             C_0805_2012Metric                                                                                179.7964   -34.2900    0.0000  top
+R19           75                             R_0805_2012Metric                                                                                166.9796   -56.2845  -90.0000  top
+R20           75                             R_0805_2012Metric                                                                                174.4980   -56.2356  -90.0000  top
+R21           75                             R_0805_2012Metric                                                                                180.6448   -56.1829  -90.0000  top
+R22           1k                             R_0805_2012Metric                                                                                249.1232   -77.5208  -90.0000  top
+R23           1k                             R_0805_2012Metric                                                                                244.8052   -76.4540  -90.0000  top
 R92           100                            R_0805_2012Metric                                                                                157.4292   -48.9693   90.0000  top
 R93           100                            R_0805_2012Metric                                                                                159.9292   -48.9693   90.0000  top
 R94           510                            R_0805_2012Metric                                                                                162.4292   -48.9693   90.0000  top

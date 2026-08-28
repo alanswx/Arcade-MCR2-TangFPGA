@@ -2731,6 +2731,12 @@
 		(uuid "2bc4df09-fdb1-4fb8-85c2-2197d8fcbecf")
 	)
 	(junction
+		(at 95.25 30.48)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "452f1586-3817-466c-be72-788a6f4ccbd9")
+	)
+	(junction
 		(at 73.66 30.48)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3040,6 +3046,16 @@
 	)
 	(wire
 		(pts
+			(xy 101.6 77.47) (xy 101.6 80.01)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3546c155-39db-45d6-80de-78794ef61bed")
+	)
+	(wire
+		(pts
 			(xy 45.72 50.8) (xy 45.72 76.2)
 		)
 		(stroke
@@ -3057,6 +3073,16 @@
 			(type default)
 		)
 		(uuid "37ff49e6-2f6f-4e65-933f-1b9be8b2821e")
+	)
+	(wire
+		(pts
+			(xy 101.6 68.58) (xy 101.6 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "3b4f1f71-a42f-4dbe-9f72-68bbae8e7e93")
 	)
 	(wire
 		(pts
@@ -3127,6 +3153,16 @@
 			(type default)
 		)
 		(uuid "490d3cf0-f7d9-480c-a650-59bfc93e78b4")
+	)
+	(wire
+		(pts
+			(xy 95.25 30.48) (xy 96.52 30.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4982fb52-91d3-46ad-8bb3-61481b5919eb")
 	)
 	(wire
 		(pts
@@ -3380,6 +3416,16 @@
 	)
 	(wire
 		(pts
+			(xy 95.25 30.48) (xy 95.25 34.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "b3d45aa8-6f39-4a31-ab75-9b6311db34f3")
+	)
+	(wire
+		(pts
 			(xy 39.37 40.64) (xy 45.72 40.64)
 		)
 		(stroke
@@ -3397,6 +3443,16 @@
 			(type default)
 		)
 		(uuid "b7017cbf-ea9e-484b-a097-f55bced5255d")
+	)
+	(wire
+		(pts
+			(xy 95.25 39.37) (xy 95.25 41.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ba0d9ce7-7156-410a-86cf-24174d07de42")
 	)
 	(wire
 		(pts
@@ -3510,7 +3566,7 @@
 	)
 	(wire
 		(pts
-			(xy 93.98 30.48) (xy 96.52 30.48)
+			(xy 93.98 30.48) (xy 95.25 30.48)
 		)
 		(stroke
 			(width 0)
@@ -4120,6 +4176,84 @@
 			(project "MCR_prototype_PCB"
 				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
 					(reference "L2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 95.25 41.91 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "250b2efd-a10a-468e-bf40-e74fd5e6de7f")
+		(property "Reference" "#PWR050"
+			(at 95.25 48.26 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 95.25 46.99 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 95.25 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 95.25 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 95.25 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "383c673a-d959-4c1f-9e66-de47d1b26dfa")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
+					(reference "#PWR050")
 					(unit 1)
 				)
 			)
@@ -5371,6 +5505,98 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C_Small_US")
+		(at 101.6 74.93 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8321ce36-561c-49fc-bbd9-5b82118cf0b5")
+		(property "Reference" "C9"
+			(at 96.52 73.152 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10 uF 50V"
+			(at 89.916 77.216 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm"
+			(at 101.6 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "capacitor, small US symbol"
+			(at 101.6 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
+			(at 101.6 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "84d18a98-d96b-401b-a465-fd5268ccac25")
+		)
+		(pin "2"
+			(uuid "3f5a0f1e-aef4-4a02-b46c-cf87454bc9f0")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
+					(reference "C9")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:PWR_FLAG")
 		(at 93.98 25.4 0)
 		(unit 1)
@@ -5522,6 +5748,84 @@
 			(project "MCR_prototype_PCB"
 				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
 					(reference "L1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 101.6 80.01 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "8ee44026-6b12-4ed6-ae9a-6606c002b8d7")
+		(property "Reference" "#PWR049"
+			(at 101.6 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 101.6 85.09 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 101.6 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ddbb6bbf-75a5-4105-a838-69da765e2332")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
+					(reference "#PWR049")
 					(unit 1)
 				)
 			)
@@ -5934,6 +6238,98 @@
 			(project "MCR_prototype_PCB"
 				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
 					(reference "C5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small_US")
+		(at 95.25 36.83 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "aee3bc00-c263-4a84-a098-e8244c95b08b")
+		(property "Reference" "C10"
+			(at 90.17 35.052 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "10 uF 50V"
+			(at 83.566 39.116 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Capacitor_THT:CP_Radial_D10.0mm_P5.00mm"
+			(at 95.25 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 95.25 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "capacitor, small US symbol"
+			(at 95.25 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KiLib_Generator" "capacitor/THT/other"
+			(at 95.25 36.83 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "871413ac-3b6a-46d0-b458-c4a2af2323a4")
+		)
+		(pin "2"
+			(uuid "787d93bd-7650-48f4-bba3-6a4eb109225d")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/b5aca9c5-0125-4b4b-8463-328311dbaf24"
+					(reference "C10")
 					(unit 1)
 				)
 			)
