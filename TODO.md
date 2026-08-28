@@ -2057,9 +2057,10 @@ budget exists anymore. See the Shield PCB section.
 - **Prototype PCB (Mitch, `MCR_prototype_PCB/`) — reviewed, not yet ordered.**
   `docs/pcb_review_2026-08-25.md` (with the 08-27 re-check at the bottom)
   is the checklist; `docs/for_mitch_2026-08-27.md` is the summary sent to
-  him. Open before ordering: ADS7830 logic levels (VDD should be 3.3 V),
-  mounting holes, THS7374 input shunt, no audio amplifier, DoT speaker pin
-  assignment. **Verify with `kicad-cli`, not by eye**: the root sheet does
+  him. As of the 2026-08-28 upload (`d5f0787`) **nothing is left to hold the
+  order for**; the audio-amp concern was wrong (the cabinet has an external
+  amplifier PCB) and is withdrawn. Mitch still to confirm J1's .156" pin
+  positions. **Verify with `kicad-cli`, not by eye**: the root sheet does
   not reference the sub-sheets, so build a wrapper root over all twelve
   `.kicad_sch` files, export the netlist, and diff it against the
   `.kicad_pcb` pad nets (the method is written up in the review).
@@ -2068,9 +2069,10 @@ budget exists anymore. See the Shield PCB section.
     CH0 (volume pot) is wired on the prototype.
   - `OUT_CLEAR_N` (pin 33) must be driven HIGH; `OUT_EN_N` (pin 34) low once
     the '595 chain is loaded. Both are pulled up on the board.
-  - Pins 1 and 5 are now a second PWM audio pair (`AUD_PWM_L2/R2`, DoT rear
-    speakers). Retire `vga_r[0]`/`vga_b[0]` from those balls; decide what,
-    if anything, drives them.
+  - Pins 1 and 5 are now a second PWM audio pair (`AUD_PWM_L2/R2` — Discs
+    of Tron Environmental's rear L/R; it has four independently driven
+    speakers). Retire `vga_r[0]`/`vga_b[0]` from those balls and generate
+    the rear pair (DoT's SSIO drives them separately — check the core).
   - `SERVICE_N` is pin 9 (W17), active low, pulled up on the board.
 - **Header pinout is FROZEN (2026-07-21): `docs/shield_j10_pinout.md`.**
   Everything on J10 only — video/audio/straps/LEDs on the pins today's

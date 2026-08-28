@@ -37,7 +37,7 @@ Ground rules:
 
 | Pin | Ball | Net | Dir (FPGA) | Status | Function |
 |---:|---|---|---|---|---|
-| 1 | R19 | `AUD_PWM_L2` | out | **as built** | **Prototype board (2026-08-27) puts a second PWM audio pair here** (rear speakers on the Discs of Tron 10-pin J3). Was `VID_R0`, which the DAC never used. RTL still drives `vga_r[0]` on this ball — harmless into the RC filter, but the bit must be retired and a second audio pair (or silence) driven before it is useful |
+| 1 | R19 | `AUD_PWM_L2` | out | **as built** | **Prototype board (2026-08-27) puts a second PWM audio pair here** (Discs of Tron Environmental has four independently driven speakers: front L/R on `AUD_PWM_L1/R1`, rear L/R on this pair, all line level to the cabinet's external amplifier PCB). Was `VID_R0`, which the DAC never used. RTL still drives `vga_r[0]` on this ball — harmless into the RC filter, but the bit must be retired and a second audio pair (or silence) driven before it is useful |
 | 2 | P19 | `VID_R1` | out | live | red bit 1 → 2 kΩ |
 | 3 | U21 | `VID_R2` | out | live | red bit 2 → 1 kΩ |
 | 4 | T21 | `VID_R3` | out | live | red bit 3 (MSB) → 510 Ω |
@@ -71,7 +71,7 @@ Ground rules:
 | 32 | Y18 | `OUT_LATCH` | out | reserved | 74HC595 RCLK — output register update |
 | 33 | T20 | `OUT_CLEAR_N` | out | reserved | 74HC595 SRCLR̄ on U8/U9. **As built on the prototype board.** Was `SERVICE_N`; that moved to pin 9. Note this is an FPGA OUTPUT - drive it high in normal operation, and do not leave it floating or the output chain clears |
 | 34 | N15 | `OUT_EN_N` | out | reserved | 74HC595 OE̅. **Shield MUST pull up to 3V3** so meters/lamps stay off until the RTL drives it low |
-| 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → 2-stage RC → J3 (`AUD_PWM_L1` on the board). **The prototype has no amplifier** — see `pcb_review_2026-08-25.md` item 7 |
+| 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → 2-stage RC → J3 (`AUD_PWM_L1` on the board) at line level; the cabinet's external dual-amplifier PCB does the rest (Mitch, 2026-08-28) |
 | 36 | U17 | `AUD_PWM_R` | out | live | PWM audio right (`AUD_PWM_R1` on the board; mono cabinets: use L only) |
 | 37 | R16 | `MODE15_N` | in | live | **strap: GND = native 15 kHz** (cabinet), open = 31 kHz. Internal pull-up; solder-jumper on shield, closed by default |
 | 38 | P15 | `SPARE6` | — | spare | |

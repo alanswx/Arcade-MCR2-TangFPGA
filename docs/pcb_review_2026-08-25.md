@@ -255,3 +255,28 @@ want (3) the ADC logic-level fix — it is two net changes — and (9) mounting
 holes. Items 6a and 7 are the ones that will show up the first time it is
 connected to a monitor and a speaker; they are the choice between fixing now
 and bodging on the bench.
+
+---
+
+# Re-check of the 2026-08-28 upload (`d5f0787`)
+
+Same method. Mitch's `MCR_prototype_PCB.net` (143 parts, 09:52), the
+wrapper-generated netlist and the `.kicad_pcb` pad nets all agree: 186
+nets, zero differences. Gerbers/drills regenerated 09:51. DRC: 0
+unconnected, 0 violations. ERC: only the three isolated `Start N Lamp`
+labels.
+
+| # | item | status |
+|---|---|---|
+| 3 | ADS7830 | **fixed** — VDD = +3.3 V, REF is an output with C65 100 nF to GND (internal 2.5 V), pot across +3.3 V, and R22/R23 1 k pull-ups on SDA/SCL |
+| 5 | L1/L2 | **fixed** — C9/C10 10 µF 50 V on the regulator side of each inductor |
+| 6a | THS7374 input level | **fixed** — R19/R20/R21 75 Ω shunts at U13's three inputs |
+| 6b | VGA + J2 share one 75 Ω per channel | unchanged — only matters if both are plugged in at once; bench note, not a fab blocker |
+| 7 | audio | **withdrawn — I had it wrong.** Mitch: the MCR cabinets (Discs of Tron upright and Environmental included) have an *external* dual-audio amplifier PCB, so J3 carries line level and no on-board amp is needed. DoT Environmental has four independently driven speakers (front L/R, rear L/R), so J3_DOT1 pins 6/7/9/10 as four separate channels is the right assignment. What stands from item 7 is only the RTL side: `AUD_PWM_L2/R2` on J10 pins 1/5 need a second stereo pair generated, and `vga_r[0]`/`vga_b[0]` retired from those balls |
+| 8 | start lamps | unchanged — U10.O3–O5 still go to no connector (harmless) |
+| 9 | mounting holes | **fixed** — five 4.3 mm M4 holes (REFUL/UR/LL/LM/LR) |
+| 9 | J1 pin positions | still unverified by me; Mitch to confirm against the manual |
+
+**Verdict: nothing left that I would hold the order for.** Remaining before
+the board is *useful* is on our side: the '165/'595 chain RTL, the I²C
+master, and the second audio pair.
