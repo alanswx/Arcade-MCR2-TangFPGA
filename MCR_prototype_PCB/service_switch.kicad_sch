@@ -938,7 +938,7 @@
 				)
 			)
 		)
-		(property "Value" "Service"
+		(property "Value" "PTS645SM43SMTR92LFS"
 			(at 138.43 82.55 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -971,6 +971,17 @@
 			)
 		)
 		(property "Description" "Push button switch, generic, two pins"
+			(at 138.43 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C221880"
 			(at 138.43 87.63 0)
 			(hide yes)
 			(show_name no)

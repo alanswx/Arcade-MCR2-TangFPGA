@@ -4123,7 +4123,7 @@
 				)
 			)
 		)
-		(property "Value" "3.3 uH"
+		(property "Value" "FAUL1360-3R3MT"
 			(at 97.79 66.04 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4157,6 +4157,17 @@
 		)
 		(property "Description" "Inductor, small symbol"
 			(at 97.79 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5298330"
+			(at 97.79 68.58 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5695,7 +5706,7 @@
 				)
 			)
 		)
-		(property "Value" "3.3 uH"
+		(property "Value" "FAUL1360-3R3MT"
 			(at 88.9 27.94 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5729,6 +5740,17 @@
 		)
 		(property "Description" "Inductor, small symbol"
 			(at 88.9 30.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C5298330"
+			(at 88.9 30.48 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5853,7 +5875,7 @@
 				)
 			)
 		)
-		(property "Value" "R-78B3.3-2.0"
+		(property "Value" "K7803-2000R3"
 			(at 110.49 64.77 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -5888,6 +5910,17 @@
 			)
 		)
 		(property "Description" "2A Step-Down DC/DC-Regulator, 4.75-32V input, 3.3V fixed Output Voltage, LM78xx replacement, -40°C to +85°C, SIP3"
+			(at 110.49 68.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C18212378"
 			(at 110.49 68.58 0)
 			(hide yes)
 			(show_name no)
@@ -6832,7 +6865,7 @@
 				)
 			)
 		)
-		(property "Value" "R-78B5.0-2.0"
+		(property "Value" "K7805-2000R3"
 			(at 104.14 26.67 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6867,6 +6900,17 @@
 			)
 		)
 		(property "Description" "2A Step-Down DC/DC-Regulator, 6.5-32V input, 5.0V fixed Output Voltage, LM78xx replacement, -40°C to +85°C, SIP3"
+			(at 104.14 30.48 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C18212380 "
 			(at 104.14 30.48 0)
 			(hide yes)
 			(show_name no)
