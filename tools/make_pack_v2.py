@@ -25,8 +25,18 @@ Per-family payload layouts (== each top's dl address map):
 
 Usage (repo root):  python3 tools/make_pack_v2.py   -> mcr_pack_v2.img
 Write on the Mac:   python3 tools/write_pack_v2.py mcr_pack_v2.img /dev/rdiskN
+
+Windows / any whole-disk imager (balenaEtcher, Win32DiskImager, Raspberry Pi
+Imager "custom image", dd of=/dev/sdX):
+    python tools/make_pack_v2.py --whole-card   -> mcr_pack_v2_wholecard.img
+That image is the same pack preceded by 2048 zero sectors (1 MiB), so a tool
+that writes from sector 0 puts the pack at sector 2048 where rom_loader looks.
+It ERASES the card's partition table: the card is dedicated to the console
+afterwards (Windows shows it as an uninitialised disk with no drive letter -
+that is expected; do not let Windows format it). It also zeroes the prefs
+sector, so the console boots its default game until one is picked in the OSD.
 """
-import struct, sys, zlib
+import argparse, struct, sys, zlib
 sys.path.insert(0, 'tools')
 from merge_roms import GAME_SPECS, collect
 
@@ -65,6 +75,12 @@ def blob(game, spec, r):
     return base + (pad(r["snt"],0x4000) if r.get("snt") else b"")
 
 def main():
+    ap = argparse.ArgumentParser(description="Build the MCRPACK2 SD image.")
+    ap.add_argument("--whole-card", action="store_true",
+                    help="also write mcr_pack_v2_wholecard.img: the pack "
+                         "preceded by 1 MiB of zeros, for imagers that write "
+                         "from sector 0 (balenaEtcher, Win32DiskImager, dd)")
+    args = ap.parse_args()
     minis, rich, payload = [], [], b""
     lba = PAYLOAD_LBA
     slots = {0: 0, 1: 0, 2: 0, 3: 0}
@@ -113,6 +129,14 @@ def main():
           f"({len(minis)} games, ends at LBA {lba})")
     print("Write at sector 2048 (Mac): "
           "python3 tools/write_pack_v2.py mcr_pack_v2.img /dev/rdiskN")
+    if args.whole_card:
+        # Sectors 0..2047 zero: no MBR (so no drive letter, no format prompt),
+        # prefs sector 2047 blank (rom_loader then uses its GAME_DEFAULT).
+        whole = b"\x00" * (PACK_BASE * SECTOR) + img
+        open("mcr_pack_v2_wholecard.img", "wb").write(whole)
+        print(f"wrote mcr_pack_v2_wholecard.img: {len(whole)} bytes - write it "
+              "to the WHOLE card (balenaEtcher / Win32DiskImager); this "
+              "erases the card's partitions")
 
 if __name__ == "__main__":
     main()

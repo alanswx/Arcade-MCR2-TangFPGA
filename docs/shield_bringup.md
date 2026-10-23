@@ -163,7 +163,40 @@ With **no shield fitted**, `IN_DATA`'s FPGA pull-up reads all-ones: every
 input idle and cabinet mode off. So the same bitstream remains correct on a
 bare console.
 
-## 5. Bring-up sequence
+## 5. Programming the console and making the SD card
+
+**The FPGA is NOT programmed from the SD card.** The card only holds game
+ROMs. The bitstream lives in the console's SPI flash and is written once over
+USB-C (section 4), with `openFPGALoader` or Gowin Programmer (Windows GUI:
+the same `.fs`, "External Flash Mode"). After that, picking a game in the
+OSD just reloads ROMs from the card.
+
+The card can't be downloaded from this repo: it is built from your own MAME
+ROM zips (copyright), listed in `tools/merge_roms.py`. Note it needs
+`twotigerc.zip`, not `twotiger.zip`. From the repo root, with the zips in
+`roms/`:
+
+```sh
+python tools/make_pack_v2.py --whole-card
+```
+
+**Read the output.** A missing zip prints `skip <game> (no zip)` and the
+exit code is still 0.
+
+- **Windows:** write `mcr_pack_v2_wholecard.img` to the card with
+  **balenaEtcher** or **Win32DiskImager**. It erases the card's
+  partitions. Afterwards Windows sees a disk with no drive letter; if it
+  offers to format the disk, click **Cancel**.
+- **macOS:** `sudo python3 tools/write_pack_v2.py diskN` writes the plain
+  `mcr_pack_v2.img` at sector 2048 and verifies it, keeping the card's
+  filesystem.
+- **Linux:** `sudo dd if=mcr_pack_v2_wholecard.img of=/dev/sdX bs=1M
+  conv=fsync`.
+
+Any card of 8 MB or more works. The pack is about 3 MB, plus 1 MiB of
+zeros in the whole-card image.
+
+## 6. Bring-up sequence
 
 Do the checks in §2 first. Then, with `mcr123s_console60k` flashed:
 
@@ -201,7 +234,7 @@ Do the checks in §2 first. Then, with `mcr123s_console60k` flashed:
 7. **Cabinet mode:** close SW2-1, set SW1 to the game's manual DIP
    settings, and plug the harness in.
 
-## 6. Known board gaps (prototype, fix on a respin)
+## 7. Known board gaps (prototype, fix on a respin)
 
 - **No mounting holes** (deleted in the Sept 8 version). The 267 × 199 mm
   board hangs off its connectors.

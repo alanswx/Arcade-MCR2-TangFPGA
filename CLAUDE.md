@@ -501,6 +501,16 @@ sudo python3 tools/write_pack_v2.py            # lists candidate cards
 sudo python3 tools/write_pack_v2.py disk4      # writes /dev/disk4
 ```
 
+**Windows (or any whole-disk imager):** `python tools/make_pack_v2.py
+--whole-card` additionally writes `mcr_pack_v2_wholecard.img`, i.e. the pack
+preceded by 2048 zero sectors. Write it to the whole card with balenaEtcher or
+Win32DiskImager. It erases the card's partition table, which is intended:
+Windows then shows an uninitialised disk with no drive letter, and must NOT be
+allowed to format it. It also zeroes the prefs sector, so the console boots
+`GAME_DEFAULT` until a game is picked. Like the plain image it holds ROM data:
+build it from your own zips, never commit or distribute it (`*.img` is
+gitignored).
+
 `write_pack_v2.py` only considers EXTERNAL physical disks, refuses a card whose
 partition table overlaps the pack's sectors, unmounts, writes at sector 2048 and
 then reads the WHOLE image back and verifies it byte for byte. Prefs live at
