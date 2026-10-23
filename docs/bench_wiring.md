@@ -9,6 +9,14 @@ What the **bitstreams in `bitstreams/` actually drive today**. Generated from
 > pins. Spec §4a remains the authority for which FPGA ball a J10 pin
 > reaches; this page is which *signal* is on it in today's bitstreams.
 
+> **`mcr123s_console60k` (the 15-game core) differs from the table below
+> on the shield pins**: J10-1/-5 carry the second PWM audio pair instead of
+> `vga_r[0]`/`vga_b[0]`, and J10-9 and 25–34 drive the shield's chains
+> (`docs/shield_bringup.md`). On a PmodVGA jumper hookup, just leave
+> J10-1/-5 unwired: they were the LSBs that the 3-bit DAC never used.
+> `docs/images/de15_terminal_breakout.jpg` is the screw-terminal DE-15
+> breakout used for the bench VGA hookup.
+
 ## Finding pin 1 on J10
 
 J10 is the 2×20 header **nearest the PMOD sockets** (the other one, J9, is

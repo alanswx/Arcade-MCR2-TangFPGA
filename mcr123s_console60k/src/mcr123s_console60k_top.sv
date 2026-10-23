@@ -57,9 +57,12 @@ module mcr123s_console60k_top (
 
     // Digilent PmodVGA (4:4:4 + HS/VS) wired to J10 header - see CST for the
     // jumper recipe. Analog output has no line buffer -> no shimmer/tearing.
-    output [3:0] vga_r,
+    // Bit 0 of red and blue is NOT a port: on the MCR shield those two balls
+    // (J10-1/J10-5) are the second PWM audio pair, and the shield's DAC only
+    // ever used bits 3:1. Green keeps bit 0 (J10-13, NC on the shield).
+    output [3:1] vga_r,
     output [3:0] vga_g,
-    output [3:0] vga_b,
+    output [3:1] vga_b,
     output       vga_hs,
     output       vga_vs,
 
@@ -88,6 +91,22 @@ module mcr123s_console60k_top (
     // PWM Audio output
     output       audio_l,
     output       audio_r,
+    // Second pair on the MCR shield (J10-1/5 -> AUD_PWM_L2/R2: Discs of Tron
+    // Environmental's rear speakers). Driven with the front mix for now.
+    output       audio_l2,
+    output       audio_r2,
+
+    // MCR shield expander chains + service button (J10-9, 25-28, 31-34).
+    // See src/rtl/shield_io.sv and docs/shield_bringup.md.
+    output       sh_in_clk,
+    output       sh_in_load_n,
+    input        sh_in_data,
+    output       sh_out_clk,
+    output       sh_out_data,
+    output       sh_out_latch,
+    output       sh_out_clear_n,
+    output       sh_out_en_n,
+    input        service_n,
 
     // Tang SDRAM module (J9) - holds the 128 KB sprite ROM (too big for BSRAM).
     // Pins from the verified sdram_memtest.cst (nand2mario snestang layout);
@@ -1388,11 +1407,75 @@ wire m_coin1   = (u_sel & ~osd_active) | key_s2;
 // Coin 1); the shield build will source this from Service instead, which
 // feeds no credits.
 reg [26:0] menu_hold_cnt = 27'd0;
-wire       menu_hold = (menu_hold_cnt == 27'd120_000_000);   // 3 s @40 MHz
+wire       key_menu_hold = (menu_hold_cnt == 27'd120_000_000);   // 3 s @40 MHz
 always @(posedge clk_sys) begin
     if (!key_s2)                 menu_hold_cnt <= 27'd0;
-    else if (!menu_hold)         menu_hold_cnt <= menu_hold_cnt + 27'd1;
+    else if (!key_menu_hold)     menu_hold_cnt <= menu_hold_cnt + 27'd1;
 end
+
+// --- MCR shield (MCR_prototype_PCB, as fabbed 2026-09) ----------------------
+// shield_io scans the six '165s (J4/J5/J6 harness + SW1/SW2) and drives the
+// two '595s. With no shield fitted IN_DATA's pull-up reads all-ones, i.e.
+// every input idle and cabinet mode off, so this build is still correct on a
+// bare console with a USB pad.
+//
+// SW2 position 1 CLOSED = CABINET MODE: the game reads the harness verbatim
+// (IP0/1/2/4 straight from J4/J5/J6, IP3 from SW1) and the USB pad is used
+// only for the OSD. Open (default) = pad mode: the compiled per-game maps
+// run as before, and only the coin door (IP0) is ANDed in, so a cabinet's
+// coin/start/test switches work alongside a pad.
+wire [15:0] sh_out_bits;            // assigned after the cores (output_4)
+wire [7:0]  sh_ip0, sh_ip1, sh_ip2, sh_ip4, sh_sw1, sh_sw2;
+shield_io shield_inst (
+    .clk(clk_sys), .rst(core_reset_raw),
+    .in_clk(sh_in_clk), .in_load_n(sh_in_load_n), .in_data(sh_in_data),
+    .out_clk(sh_out_clk), .out_data(sh_out_data), .out_latch(sh_out_latch),
+    .out_clear_n(sh_out_clear_n), .out_en_n(sh_out_en_n),
+    .out_bits(sh_out_bits),
+    .ip0(sh_ip0), .ip1(sh_ip1), .ip2(sh_ip2), .ip4(sh_ip4),
+    .sw1(sh_sw1), .sw2(sh_sw2), .scan_tick()
+);
+wire cab_mode = ~sh_sw2[0];
+
+// Cabinet buttons for the OSD (active high), from the coin door: Start 1 =
+// down, Start 2 = up, the J4-5 button = A (load). Service = B (below).
+wire cab_osd_down = ~sh_ip0[2];
+wire cab_osd_up   = ~sh_ip0[3];
+wire cab_osd_a    = ~sh_ip0[4];
+
+// SERVICE_N (J10-9, SW3 on the shield, pulled up): hold ~0.5 s to open the
+// game-select menu - the same combo the pad's Select+Start and the board's
+// coin-key hold give. A later press while the menu is open is B (exit).
+reg [1:0]  svc_s = 2'b11;
+reg [24:0] svc_cnt = 25'd0;
+reg        svc_armed = 1'b0;
+reg        svc_b = 1'b0;
+wire       svc_dn = ~svc_s[1];
+wire       svc_menu_hold = (svc_cnt == 25'd20_000_000);   // 0.5 s @40 MHz
+always @(posedge clk_sys) begin
+    svc_s <= {svc_s[0], service_n};
+    if (!svc_dn)                svc_cnt <= 25'd0;
+    else if (!svc_menu_hold)    svc_cnt <= svc_cnt + 25'd1;
+    // arm only after the opening press is released, so it cannot also exit
+    if (!osd_active)            svc_armed <= 1'b0;
+    else if (!svc_dn)           svc_armed <= 1'b1;
+    svc_b <= svc_armed & svc_dn;
+end
+wire menu_hold = key_menu_hold | svc_menu_hold;
+
+// Coin meter (U8.QA -> U10.O1 -> J5-21): ~100 ms pulse per coin from the
+// coin door. The cores do not export the SSIO coin-counter bit, so this
+// counts coins at the switch rather than as credited by the game.
+reg [1:0]  coin_p = 2'b11;
+reg [22:0] meter_cnt = 23'd0;
+always @(posedge clk_sys) begin
+    coin_p <= sh_ip0[1:0];
+    if ((coin_p[0] & ~sh_ip0[0]) | (coin_p[1] & ~sh_ip0[1]))
+        meter_cnt <= 23'd4_000_000;
+    else if (meter_cnt != 0)
+        meter_cnt <= meter_cnt - 23'd1;
+end
+wire coin_meter = (meter_cnt != 0);
 
 wire m_service = 1'b0;
 
@@ -1631,9 +1714,21 @@ end
 // fans into all four cores; these are cabinet switches sampled by a 2 MHz Z80,
 // so one 40 MHz cycle of latency is invisible while the path saved is long.
 reg [7:0] in0_r = 8'hFF, in1_r = 8'hFF, in2_r = 8'hFF, in3_r = 8'hFF, in4_r = 8'hFF;
+// The shield merges in here (see shield_inst): cabinet mode replaces the
+// ports with the harness, pad mode ANDs the coin door into IP0. Harness
+// inputs are masked to idle while the OSD is open, like the pad's.
+wire [7:0] sh_ip0_m = osd_active ? 8'hFF : sh_ip0;
 always @(posedge clk_sys) begin
-    in0_r <= input_0; in1_r <= input_1; in2_r <= input_2;
-    in3_r <= input_3; in4_r <= input_4;
+    if (cab_mode) begin
+        in0_r <= sh_ip0_m;
+        in1_r <= osd_active ? 8'hFF : sh_ip1;
+        in2_r <= osd_active ? 8'hFF : sh_ip2;
+        in3_r <= sh_sw1;
+        in4_r <= osd_active ? 8'hFF : sh_ip4;
+    end else begin
+        in0_r <= input_0 & sh_ip0_m; in1_r <= input_1; in2_r <= input_2;
+        in3_r <= input_3; in4_r <= input_4;
+    end
 end
 
 // --- Core Instantiation ---
@@ -2109,6 +2204,17 @@ mcr1 #(
 // PIN: reserved, not yet placed in the .cst. See docs/shield_j10_pinout.md.
 wire journey_tape_run = m3_mcr2p5 && m3_out4[0];
 
+// Shield '595 word. U9.QA..QH -> U11 -> J5-10..17 (MD0-3, ST0/1/SEL0-1,
+// ARD/FL0, SEL/FL1: the SSIO output_4 lines Discs of Tron and Spy Hunter
+// use for lamps and Spy Hunter's wheel/gas select). The ULN2803 SINKS when a
+// bit is 1, i.e. it inverts a TTL-level output - check the polarity against a
+// real cabinet (docs/shield_bringup.md) before relying on these lines.
+// U8: QA = coin meter (J5-21); QB-QG go to no connector on this board;
+// QH carries Journey's tape-run bit for a bodge wire to an MP3/deck module.
+wire [7:0] sh_out4 = run_is_mcr3 ? m3_out4 : run_is_scroll ? ms_out4 : 8'h00;
+assign sh_out_bits = { sh_out4,
+                       journey_tape_run, 6'b000000, coin_meter };
+
 // --- Pixel timing shared by the analog and HDMI paths ----------------------
 // One strobe per core pixel: hcnt advances at the 20 MHz pixel rate (every
 // other clk_sys cycle).
@@ -2176,8 +2282,8 @@ osd #(
     .mode15(tv15khz),
     .rgb_in({r, g, b}),
     .rgb_out(osd_rgb),
-    .btn_up(u_up), .btn_down(u_down),
-    .btn_a(u_btn_a), .btn_b(u_btn_b),
+    .btn_up(u_up | cab_osd_up), .btn_down(u_down | cab_osd_down),
+    .btn_a(u_btn_a | cab_osd_a), .btn_b(u_btn_b | svc_b),
     .btn_sel(u_sel), .btn_sta(u_sta), .btn_menu_hold(menu_hold),
     .game_id(game_id),
     .load_slot(osd_idx),
@@ -2223,9 +2329,12 @@ wire vblank_d = (cap_delay == 5'd0) ? vblank : vb_sr[vga_tap];
 // 3:3:3 -> 4:4:4 by MSB replication so full intensity maps to full scale.
 // Blank the DAC outside active video so the monitor sees black porches.
 wire cab_blank = hblank_d | vblank_d;
-assign vga_r = cab_blank ? 4'h0 : {vid_r, vid_r[2]};
-assign vga_g = cab_blank ? 4'h0 : {vid_g, vid_g[2]};
-assign vga_b = cab_blank ? 4'h0 : {vid_b, vid_b[2]};
+wire [3:0] ana_r = cab_blank ? 4'h0 : {vid_r, vid_r[2]};
+wire [3:0] ana_g = cab_blank ? 4'h0 : {vid_g, vid_g[2]};
+wire [3:0] ana_b = cab_blank ? 4'h0 : {vid_b, vid_b[2]};
+assign vga_r = ana_r[3:1];
+assign vga_g = ana_g;
+assign vga_b = ana_b[3:1];
 
 // Sync format. 31 kHz always uses separate negative H/V (standard RGBHV).
 //
@@ -2260,17 +2369,17 @@ wire row_swap  = ~map_rows_n;   // strap to GND to swap rows
 wire sock_swap = ~map_sock_n;   // strap to GND to swap sockets
 
 // Socket carrying PmodVGA J1 (R + B ladders)
-wire [7:0] j1_rows_a = {vga_b[3], vga_r[3], vga_b[2], vga_r[2],
-                        vga_b[1], vga_r[1], vga_b[0], vga_r[0]}; // IO7..IO0
-wire [7:0] j1_rows_b = {vga_r[3], vga_b[3], vga_r[2], vga_b[2],
-                        vga_r[1], vga_b[1], vga_r[0], vga_b[0]};
+wire [7:0] j1_rows_a = {ana_b[3], ana_r[3], ana_b[2], ana_r[2],
+                        ana_b[1], ana_r[1], ana_b[0], ana_r[0]}; // IO7..IO0
+wire [7:0] j1_rows_b = {ana_r[3], ana_b[3], ana_r[2], ana_b[2],
+                        ana_r[1], ana_b[1], ana_r[0], ana_b[0]};
 wire [7:0] j1_bus = row_swap ? j1_rows_b : j1_rows_a;
 
 // Socket carrying PmodVGA J2 (G ladder + HS/VS; Pmod pins 9/10 are NC)
-wire [7:0] j2_rows_a = {1'b0, vga_g[3], 1'b0, vga_g[2],
-                        vga_vs, vga_g[1], vga_hs, vga_g[0]};     // IO7..IO0
-wire [7:0] j2_rows_b = {vga_g[3], 1'b0, vga_g[2], 1'b0,
-                        vga_g[1], vga_vs, vga_g[0], vga_hs};
+wire [7:0] j2_rows_a = {1'b0, ana_g[3], 1'b0, ana_g[2],
+                        vga_vs, ana_g[1], vga_hs, ana_g[0]};     // IO7..IO0
+wire [7:0] j2_rows_b = {ana_g[3], 1'b0, ana_g[2], 1'b0,
+                        ana_g[1], vga_vs, ana_g[0], vga_hs};
 wire [7:0] j2_bus = row_swap ? j2_rows_b : j2_rows_a;
 
 assign pmod0_io = sock_swap ? j2_bus : j1_bus;
@@ -2482,9 +2591,9 @@ end
 assign wedge_kick = (!core_reset) && (wd_holdoff == 28'd134_217_712)
                     && (hwin == 22'd0);
 
-reg [27:0] diag_cnt = 0;   // 28 bits: diag_ph uses [27:25] (8 slots)
+reg [28:0] diag_cnt = 0;   // diag_ph uses [28:25] (16 slots, ~0.84 s each)
 always @(posedge clk_sys) diag_cnt <= diag_cnt + 1'b1;
-wire [2:0]  diag_ph = diag_cnt[27:25];   // 8 slots (was 4)
+wire [3:0]  diag_ph = diag_cnt[28:25];   // 16 slots (was 8; E8-EB = shield)
 
 // DIAGNOSTIC: core raster heartbeat. The beacon could not previously tell
 // "core halted in reset" apart from "core running, but no picture reaching
@@ -2513,11 +2622,18 @@ end
 // detached-handle artifact was, fixed by aligning dl_data's pipeline depth
 // with the address's).
 wire [15:0] diag_x = !aud_done_s      ? spw_count_s[23:8] :
+                     // E8..EB = MCR shield inputs, raw SSIO polarity (idle
+                     // = 1): E8 {IP0,IP1} E9 {IP2,IP4} EA {SW1,SW2}
+                     // EB {cab_mode, svc_dn, 14'b0}. docs/shield_bringup.md
+                     diag_ph == 4'd8  ? {sh_ip0, sh_ip1} :
+                     diag_ph == 4'd9  ? {sh_ip2, sh_ip4} :
+                     diag_ph == 4'd10 ? {sh_sw1, sh_sw2} :
+                     diag_ph[3]       ? {cab_mode, svc_dn, 14'd0} :
                      // E4..E7 = STORED (read-back) checksums, not stream
-                     diag_ph == 3'd5 ? ck_cpu :
-                     diag_ph == 3'd6 ? ck_bg1 :
-                     diag_ph == 3'd7 ? ck_bg2 :
-                     diag_ph == 3'd4 ? ck_snd :
+                     diag_ph == 4'd5 ? ck_cpu :
+                     diag_ph == 4'd6 ? ck_bg1 :
+                     diag_ph == 4'd7 ? ck_bg2 :
+                     diag_ph == 4'd4 ? ck_snd :
                      // TEMPORARY (2026-07-27): the sprite audit has done its
                      // job (bit-exact on every load), so slots E0/E1 now carry
                      // the CORE-LIVENESS counters instead. Timber boot-loads
@@ -2530,11 +2646,11 @@ wire [15:0] diag_x = !aud_done_s      ? spw_count_s[23:8] :
                      //        kick_n CLIMBING = the watchdog is resetting the
                      //        core over and over; that is the freeze.
                      //   E1 = {rr_rises[7:0], rst_evts[6:0], boot_kicked}
-                     diag_ph == 3'd0 ? {kick_n, hwin[21:14]} :
-                     diag_ph == 3'd1 ? {rr_rises, rst_evts[6:0], boot_kicked} :
+                     diag_ph == 4'd0 ? {kick_n, hwin[21:14]} :
+                     diag_ph == 4'd1 ? {rr_rises, rst_evts[6:0], boot_kicked} :
                                        aud_lat_s[diag_ph[1:0]];
 wire [7:0]  diag_q = !aud_done_s ? spw_count_s[7:0]  :
-                                   {5'h1C, diag_ph};   // 8'hE0 | ph
+                                   {4'hE, diag_ph};    // 8'hE0 | ph
 
 // DIAGNOSTIC: the one-shot SDRAM dump borrows the UART pin while it runs
 wire beacon_txd;
@@ -2629,5 +2745,7 @@ ds_dac dac_r (
     .din(audio_r_val),
     .dout(audio_r)
 );
+assign audio_l2 = audio_l;
+assign audio_r2 = audio_r;
 
 endmodule

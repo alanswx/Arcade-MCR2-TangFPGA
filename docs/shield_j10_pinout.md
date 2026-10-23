@@ -1,5 +1,13 @@
 # Shield ↔ Tang Console 60K: the J10 40-pin header (rev A freeze)
 
+> **Board fabricated (Mitch's Sept 8 version, `60363fa`); 2026-10-22
+> re-check: J0 on the board matches §1 below pin for pin.** For the board as
+> built — the six-'165 chain and its real bit order, the outputs, the
+> bring-up sequence — read **`docs/shield_bringup.md`**. Its §3 supersedes
+> §3/§4 of this file, which describe the pre-layout plan (seven '165s,
+> per-function wiring). All the "reserved" pins below are now **live in
+> `mcr123s_console60k`** (`src/rtl/shield_io.sv`).
+
 **This is the authoritative pin sheet for the shield PCB.** It supersedes
 the draft net plan in `universal_mcr_shield_spec.md` §4b (which spread
 video onto the PMOD sockets); the shield now connects to **J10 only** —
@@ -37,15 +45,15 @@ Ground rules:
 
 | Pin | Ball | Net | Dir (FPGA) | Status | Function |
 |---:|---|---|---|---|---|
-| 1 | R19 | `AUD_PWM_L2` | out | **as built** | **Prototype board (2026-08-27) puts a second PWM audio pair here** (Discs of Tron Environmental has four independently driven speakers: front L/R on `AUD_PWM_L1/R1`, rear L/R on this pair, all line level to the cabinet's external amplifier PCB). Was `VID_R0`, which the DAC never used. RTL still drives `vga_r[0]` on this ball — harmless into the RC filter, but the bit must be retired and a second audio pair (or silence) driven before it is useful |
+| 1 | R19 | `AUD_PWM_L2` | out | **live** (mcr123s) | second PWM audio pair (Discs of Tron Environmental's rear L/R; four independently driven speakers, all line level to the cabinet's external amplifier PCB). `mcr123s_console60k` drives `audio_l2` here, a copy of the front mix; `vga_r[0]` is retired from this ball. Older bitstreams still put video bit 0 here (harmless into the RC filter) |
 | 2 | P19 | `VID_R1` | out | live | red bit 1 → 2 kΩ |
 | 3 | U21 | `VID_R2` | out | live | red bit 2 → 1 kΩ |
 | 4 | T21 | `VID_R3` | out | live | red bit 3 (MSB) → 510 Ω |
-| 5 | R17 | `AUD_PWM_R2` | out | **as built** | second PWM audio pair, right (see pin 1). Was `VID_B0` |
+| 5 | R17 | `AUD_PWM_R2` | out | **live** (mcr123s) | second PWM audio pair, right (see pin 1). Was `VID_B0` |
 | 6 | P16 | `VID_B1` | out | live | blue bit 1 → 2 kΩ |
 | 7 | T18 | `VID_B2` | out | live | blue bit 2 → 1 kΩ |
 | 8 | R18 | `VID_B3` | out | live | blue bit 3 (MSB) → 510 Ω |
-| 9 | W17 | `SERVICE_N` | in | reserved | cabinet service button (opens the OSD); shield pull-up to 3V3. **Moved here from pin 33 on 2026-08-23** when the prototype board took pin 33 for the '595 SRCLR - see `pcb_review_2026-08-22.md` |
+| 9 | W17 | `SERVICE_N` | in | **live** (mcr123s): hold 0.5 s = OSD | cabinet service button (opens the OSD); shield pull-up to 3V3. **Moved here from pin 33 on 2026-08-23** when the prototype board took pin 33 for the '595 SRCLR - see `pcb_review_2026-08-22.md` |
 | 10 | V17 | `SPARE1` | — | spare | CSI_B config pin — needs the `-use_sspi_as_gpio` build option (already set) |
 | 11 | — | **+5 V** | — | power | **The shield FEEDS the console here** (decided 2026-08-23, `shield_power_decision.md`): shield R-78B5.0 → D4 1N5822 Schottky → pin 11, 1.0 mm trace. Nothing else may back-feed this rail |
 | 12 | — | **GND** | — | power | star ground for the shield |
@@ -61,16 +69,16 @@ Ground rules:
 | 22 | Y21 | `LED_PIX` | out | live | status LED: pixel-clock heartbeat ~1 Hz |
 | 23 | AB22 | `LED_27M` | out | live | status LED: 27 MHz heartbeat ~0.8 Hz |
 | 24 | AB21 | `LED_DDR_RST` | out | live | status LED: DDR reset (steady OFF = good) |
-| 25 | AA21 | `IN_CLK` | out | reserved | 74HC165 chain shift clock (≤2 MHz) |
-| 26 | AA20 | `IN_LOAD_N` | out | reserved | 74HC165 SH/LD̄ — low pulse snapshots all inputs atomically |
-| 27 | AB20 | `IN_DATA` | in | reserved | serial data from U7.QH (CSO_B config pin — option already set) |
-| 28 | AA19 | `OUT_CLK` | out | reserved | 74HC595 chain shift clock (RDWR_B config pin — option already set) |
+| 25 | AA21 | `IN_CLK` | out | **live** (mcr123s) | 74HC165 chain shift clock (≤2 MHz) |
+| 26 | AA20 | `IN_LOAD_N` | out | **live** (mcr123s) | 74HC165 SH/LD̄ — low pulse snapshots all inputs atomically |
+| 27 | AB20 | `IN_DATA` | in | **live** (mcr123s) | serial data from U7.QH (CSO_B config pin — option already set) |
+| 28 | AA19 | `OUT_CLK` | out | **live** (mcr123s) | 74HC595 chain shift clock (RDWR_B config pin — option already set) |
 | 29 | AA18 | `ADC_A1` | out | as built | ADS7830 address bit 1. Dock caveat retired 2026-08-23: EXID0/1 pulls R30/R32 are DNP on sheet 8, so this is plain I/O |
 | 30 | AB18 | `ADC_A0` | out | as built | ADS7830 address bit 0 |
-| 31 | Y19 | `OUT_DATA` | out | reserved | serial data to U8.SER |
-| 32 | Y18 | `OUT_LATCH` | out | reserved | 74HC595 RCLK — output register update |
-| 33 | T20 | `OUT_CLEAR_N` | out | reserved | 74HC595 SRCLR̄ on U8/U9. **As built on the prototype board.** Was `SERVICE_N`; that moved to pin 9. Note this is an FPGA OUTPUT - drive it high in normal operation, and do not leave it floating or the output chain clears |
-| 34 | N15 | `OUT_EN_N` | out | reserved | 74HC595 OE̅. **Shield MUST pull up to 3V3** so meters/lamps stay off until the RTL drives it low |
+| 31 | Y19 | `OUT_DATA` | out | **live** (mcr123s) | serial data to U8.SER |
+| 32 | Y18 | `OUT_LATCH` | out | **live** (mcr123s) | 74HC595 RCLK — output register update |
+| 33 | T20 | `OUT_CLEAR_N` | out | **live** (mcr123s, held high) | 74HC595 SRCLR̄ on U8/U9. **As built on the prototype board.** Was `SERVICE_N`; that moved to pin 9. Note this is an FPGA OUTPUT - drive it high in normal operation, and do not leave it floating or the output chain clears |
+| 34 | N15 | `OUT_EN_N` | out | **live** (mcr123s) | 74HC595 OE̅. **Shield MUST pull up to 3V3** so meters/lamps stay off until the RTL drives it low |
 | 35 | U18 | `AUD_PWM_L` | out | live | PWM audio left → 2-stage RC → J3 (`AUD_PWM_L1` on the board) at line level; the cabinet's external dual-amplifier PCB does the rest (Mitch, 2026-08-28) |
 | 36 | U17 | `AUD_PWM_R` | out | live | PWM audio right (`AUD_PWM_R1` on the board; mono cabinets: use L only) |
 | 37 | R16 | `MODE15_N` | in | live | **strap: GND = native 15 kHz** (cabinet), open = 31 kHz. Internal pull-up; solder-jumper on shield, closed by default |

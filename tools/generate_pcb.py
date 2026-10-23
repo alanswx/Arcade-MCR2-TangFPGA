@@ -1,3 +1,6 @@
+"""SUPERSEDED 2026-10: the fabricated shield is MCR_prototype_PCB/ (see
+docs/shield_bringup.md). Old output lives in archive/generated_shield_2026-07/.
+"""
 import pcbnew
 import sys
 import os

@@ -280,3 +280,26 @@ labels.
 **Verdict: nothing left that I would hold the order for.** Remaining before
 the board is *useful* is on our side: the '165/'595 chain RTL, the I²C
 master, and the second audio pair.
+
+---
+
+# Re-check of the fabricated "September 8 Version" (`60363fa`), 2026-10-22
+
+This is the version that was fabricated. I checked it against the photos of
+the assembled board: there are no mounting holes, the parts are the LCSC
+ones, and the rail LEDs are lit.
+
+- **Connectivity unchanged.** The `.kicad_pcb` pad nets match
+  `MCR_prototype_PCB.net` exactly: 183 nets, the same 143 parts, no
+  difference. J0 matches `shield_j10_pinout.md` §1 on all 40 pins.
+- **Part swaps only:** DIPs → DSIC08LHGET, L1/L2 → FAUL1360-3R3MT, U24/U25
+  → Mornsun K7805/K7803-2000R3, SW3 → PTS645SM43.
+- **Regression: the five M4 mounting holes are gone** (item 9 above had
+  closed this).
+- The committed gerbers/drills are still the 08-28 set, and the 08-28
+  drill file still has the 4.3 mm holes. The fab order came from the JLC
+  fabrication toolkit (`fabrication-toolkit-options.json`), so **regenerate
+  the gerbers before any re-order**.
+
+Bring-up, the as-built bit map and the RTL now live in
+**`docs/shield_bringup.md`**.

@@ -2054,7 +2054,19 @@ budget exists anymore. See the Shield PCB section.
 - **5 V delivery route: DECIDED and built** — the shield feeds J10 pin 11
   through a Schottky (`docs/shield_power_decision.md`). Still to verify on
   the bench: console current draw, FB4/FB5 ferrite rating, U13 back-feed.
-- **Prototype PCB (Mitch, `MCR_prototype_PCB/`) — reviewed, not yet ordered.**
+- **Prototype PCB FABRICATED and assembled (Mitch's Sept 8 version,
+  `60363fa`); powered alone 2026-10-22, all three rail LEDs on.**
+  `docs/shield_bringup.md` is now the starting point: the as-built bit map,
+  the console-orientation safety check, and the bring-up sequence. The
+  Sept 8 version changes no nets (only LCSC part swaps) but **deletes the
+  mounting holes**, and the gerbers committed in `MCR_prototype_PCB/` are
+  the stale 08-28 set. Open bring-up items:
+  - [ ] console seated + powered from the shield (§2 checks first)
+  - [ ] every '165 bit seen in beacon E8–EA; '595 outputs on J5-10…17/21
+  - [ ] polarity of J5-10…17 (the ULN inverts) vs a real cabinet
+  - [ ] J1 .156" pin positions vs the manual, before any real harness
+  - [ ] console current draw through D4
+- *History:* **Prototype PCB (Mitch, `MCR_prototype_PCB/`) — reviewed, not yet ordered.**
   `docs/pcb_review_2026-08-25.md` (with the 08-27 re-check at the bottom)
   is the checklist; `docs/for_mitch_2026-08-27.md` is the summary sent to
   him. As of the 2026-08-28 upload (`d5f0787`) **nothing is left to hold the
@@ -2064,16 +2076,20 @@ budget exists anymore. See the Shield PCB section.
   not reference the sub-sheets, so build a wrapper root over all twelve
   `.kicad_sch` files, export the netlist, and diff it against the
   `.kicad_pcb` pad nets (the method is written up in the review).
-- **RTL work the prototype board creates** (none exists yet):
-  - I²C master for the ADS7830 on pins 19/20 (+ address on 29/30). Only
+- **RTL for the prototype board — DONE in `mcr123s_console60k` (2026-10-22),
+  builds; not yet run on the shield.** `src/rtl/shield_io.sv` (sim:
+  `sim/shield_io/`) scans the six '165s and drives the two '595s
+  (`OUT_CLEAR_N` held high, `OUT_EN_N` low after the first latched word);
+  SW2-1 = cabinet mode; SERVICE_N hold = OSD; pins 1/5 = second audio pair
+  (`vga_r[0]`/`vga_b[0]` retired); beacon slots E8–EB show the shield.
+  Still open:
+  - [ ] I²C master for the ADS7830 on pins 19/20 (+ address on 29/30). Only
     CH0 (volume pot) is wired on the prototype.
-  - `OUT_CLEAR_N` (pin 33) must be driven HIGH; `OUT_EN_N` (pin 34) low once
-    the '595 chain is loaded. Both are pulled up on the board.
-  - Pins 1 and 5 are now a second PWM audio pair (`AUD_PWM_L2/R2` — Discs
-    of Tron Environmental's rear L/R; it has four independently driven
-    speakers). Retire `vga_r[0]`/`vga_b[0]` from those balls and generate
-    the rear pair (DoT's SSIO drives them separately — check the core).
-  - `SERVICE_N` is pin 9 (W17), active low, pulled up on the board.
+  - [ ] real rear channels for DoT Environmental (pins 1/5 copy the front
+    mix today)
+  - [ ] the cores do not export the SSIO coin-counter bit; the meter pulses
+    per coin-door coin instead
+  - [ ] other boards' tops (mcr2/mcr3/mcr23*) do not carry shield support
 - **Header pinout is FROZEN (2026-07-21): `docs/shield_j10_pinout.md`.**
   Everything on J10 only — video/audio/straps/LEDs on the pins today's
   bitstreams already drive, ALL cabinet inputs + both DIP banks on a
@@ -2081,16 +2097,11 @@ budget exists anymore. See the Shield PCB section.
   service button direct. This resolved the old J6/IP4 gap (chain device
   U5) and the lamp/coin-meter question ('595 chain, extensible free).
   Remaining on it:
-  - **Expander-chain RTL does not exist yet** — a small module scanning
-    the '165s into the input mux (ORed with the USB pad), driving the
-    '595s, and a SERVICE_N → OSD-open hook. J10 pins 25-34 are reserved
-    and high-Z until then; the shield works for video/audio/straps/LEDs
-    with current bitstreams on day one.
+  - Expander-chain RTL: **done**, see above (`shield_io.sv`).
   - J6's *cabinet-side* connector wiring wants a manual cross-check
     before crimping harnesses (the matrix PDF has no J6 sheet).
-- **`tools/generate_pcb.py` is not synced** to `shield_j10_pinout.md`, and
-  still assumes generic 2×20 headers; J9 must stay clear for the SDRAM
-  module.
+- `tools/generate_pcb.py` / `pcb_design.md` are **superseded** by Mitch's
+  board; output archived in `archive/generated_shield_2026-07/`.
 - **138K variant**: header nets are dock-level but the net→ball map is
   SOM-specific; re-extract before targeting it.
 

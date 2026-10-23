@@ -572,9 +572,16 @@ the 15-game core's audit (CPU swept to 0xE000, sound ROM in SDRAM so E4 reads
 - `handoff_v2_design.md` — SDRAM/V2 plan, shield electrical spec, MCR
   J2/J3/J4/J5 connector pinouts.
 - `board_comparison_and_bom.md` — board comparison + shield BOM.
-- `pcb_design.md` — Universal MCR shield PCB spec; generator at
-  `tools/generate_pcb.py` (run with KiCad's bundled python) →
-  `mcr_shield.kicad_pcb`.
+- **`docs/shield_bringup.md` — START HERE for the physical shield.** The
+  board was FABRICATED from Mitch's Sept 8 version (`60363fa`) and is
+  assembled; photos in `docs/shield_photos/`. Covers the console-orientation
+  safety check (the shield powers the console on J0-11), the AS-BUILT
+  '165/'595 bit map that `src/rtl/shield_io.sv` implements, beacon slots
+  E8–EB, and the board's known gaps (no mounting holes; the committed gerbers
+  are stale). Shield support (chains, SERVICE_N → OSD, second audio pair on
+  J10-1/5, SW2-1 = cabinet mode) is in `mcr123s_console60k` ONLY.
+- `pcb_design.md` / `tools/generate_pcb.py` — **superseded** July concept
+  layout; its output is in `archive/generated_shield_2026-07/`.
 - `docs/universal_mcr_shield_spec.md` — **consolidated shield spec** (net
   table, electrical, pin budget); supersedes the electrical sections of the
   two docs above for new work.
@@ -612,6 +619,9 @@ the 15-game core's audit (CPU swept to 0xE000, sound ROM in SDRAM so E4 reads
   fetched from nand2mario's nestang/snestang/gbatang and Sipeed's NEO_DOCK
   examples; the authority for 60K pin questions (USB, SD, SDRAM, DDR3,
   PMODs, UART).
+- `docs/Tang_Mega_NEO_Dock-60K_31004_Schematics.pdf` — the Mega NEO dock
+  (a different carrier, kept for reference); the board on the shield is the
+  Console, rev 32001C.
 - `docs/Tang_Mega_60K_Console_32001{A,C}__Schematics.pdf` — official dock
   schematics (rev A and C). Sheet 4/6 = SOM connector ball maps, sheet 8 =
   the two 2×20 headers (J9 "SDRAM0" near PCIe, J10 "SDRAM1"/GBA near

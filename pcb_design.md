@@ -1,5 +1,11 @@
 # Universal MCR Daughterboard PCB Design Specification
 
+> **SUPERSEDED (2026-10).** This is the July 2026 generated-layout concept.
+> The board that was actually designed and fabricated is Mitch's
+> `MCR_prototype_PCB/` (KiCad); start at `docs/shield_bringup.md`. The
+> generator's output (`mcr_shield.kicad_pcb`, renders, PDF) has moved to
+> `archive/generated_shield_2026-07/`.
+
 This document details the physical layout, component placement, and schematic netlist for the **Universal Bally Midway MCR Cabinet Interface Shield** designed to host the **Tang Console 60K/138K**. It includes an ASCII floorplan and a **KiCad Python Script** to programmatically generate the board layout.
 
 ---
