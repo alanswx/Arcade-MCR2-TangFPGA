@@ -86,7 +86,8 @@ Ground rules:
 | 39 | R14 | `SYNC_CSYNC_N` | in | live | strap: GND = composite sync on `VID_HS`; open = separate H/V (**default — real MCR monitors take separate H/V on Video-8/9**) |
 | 40 | P14 | `SYNC_VSOFF_N` | in | live | strap: GND = hold VS inactive (single-sync RGBS); open = normal |
 
-Sanity check for layout review: 20 live signals + 3 straps + 8 reserved +
+Sanity check for layout review (pre-2026-10 counts, when pins 9 and 25–34
+were still reserved): 20 live signals + 3 straps + 8 reserved +
 7 spare + 2 power = 40 exactly; every ball above matches spec §4a's
 schematic-verified table, and every **live** pin matches what the current
 bitstreams already drive (`bench_wiring.md`).
@@ -128,6 +129,11 @@ isolated build is ever wanted, it needs an isolated supply first; the
 opto variant is preserved in the spec's git history.)
 
 ## 3. Input chain — every switch in the cabinet on 3 pins
+
+> **Pre-layout plan.** The board as built has **six** 74AHC165s (U1–U4
+> harness, U6/U7 DIPs; U5 is an ESD array), wired by SSIO port, and U1 in
+> reverse bit order. `docs/shield_bringup.md` §3 has the real map and
+> `src/rtl/shield_io.sv` implements it. The electrical notes below still hold.
 
 Seven 74HC165s daisy-chained, read through 3 header pins. `IN_LOAD_N`
 snapshots **all 56 bits in the same instant**, which is what makes the
@@ -278,8 +284,10 @@ Journey's music came from an **endless-loop cassette** gated by SSIO output
 port 4 bit 0 (`set_custom_output(4, 0x01)`; MAME starts the sample looping once
 and thereafter only pauses/resumes it, so position is preserved &mdash; see
 `docs/mcr_game_input_matrix.md`). The gateware already produces this as
-`journey_tape_run` in `mcr123s_console60k_top.sv`; **it is not yet assigned a
-physical pin.**
+`journey_tape_run` in `mcr123s_console60k_top.sv`. **As built (2026-10)** the
+only outlet is '595 U8.QH, which `mcr123s_console60k` drives with it. Its
+ULN output (U10.O8) reaches no connector, so a deck or module needs a bodge
+wire. Every U9 bit went to J5-10…17.
 
 Two ways to spend it, both already provided for:
 
@@ -390,6 +398,9 @@ populate 2× '595 (§4), and treat J9 as reserved-mandatory.
 
 ## 7. Bring-up order for the board
 
+> Superseded by `docs/shield_bringup.md` §2/§6 for the fabricated board,
+> which was populated in one go.
+
 1. Populate video DAC + sync buffer + audio + straps + LEDs only. Flash
    any current `bitstreams/console60k_*.fs` → full game on the cabinet
    monitor (15 kHz strap closed), sound, LEDs. No new gateware needed.
@@ -400,9 +411,8 @@ populate 2× '595 (§4), and treat J9 as reserved-mandatory.
 
 ## 8. Change control
 
-- This table is the contract: `mcr2_console60k.cst`, the expander RTL, and
-  `tools/generate_pcb.py` must follow it. If a pin must move, change THIS
-  file first, in the same commit.
-- Current CST already matches every **live** pin (they are today's bench
-  assignments, deliberately). The **reserved** pins appear in the CST only
-  when the expander RTL lands.
+- This table is the contract: the 60K CSTs and `src/rtl/shield_io.sv`
+  must follow it. If a pin must move, change THIS file first, in the same
+  commit. (`tools/generate_pcb.py` is superseded by Mitch's board.)
+- `mcr123s_console60k.cst` carries every pin, including the expander chains
+  (2026-10-22). The other 60K CSTs carry only the original live pins.

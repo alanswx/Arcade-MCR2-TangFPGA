@@ -13,7 +13,20 @@ ROT90 (`ROT_MASK = 0x0F838`): Journey 3, Satan's Hollow 4, Tron 5, Spy Hunter
 11, Turbo Tag 12, and all three MCR-1 titles. Crater Raider (10) is the only
 landscape cabinet.
 
-## Journey needs a pin we have NOT assigned yet
+## MCR shield support (2026-10-22)
+
+This is the only top that drives the fabricated MCR shield
+(`MCR_prototype_PCB/`). `src/rtl/shield_io.sv` scans the six 74AHC165s
+(J4/J5/J6 harness + SW1/SW2 DIPs) and drives the two 74HC595s (coin meter on
+J5-21, SSIO `output_4` on J5-10…17). SW2-1 closed = cabinet mode (the
+harness and SW1 replace the pad's input maps). Holding SERVICE_N opens the
+OSD. J10-1/5 carry the second audio pair, so `vga_r[0]`/`vga_b[0]` are no
+longer ports. Beacon slots E8–EB report the shield. With no shield fitted
+everything reads idle, so the build is still correct on a bare console.
+Built clean (TNS 0, 117/118 BSRAM); not yet run on the shield. Details, the
+as-built bit map and the safety checks: `docs/shield_bringup.md`.
+
+## Journey's tape signal has no real pin yet
 
 **Journey currently plays with sound effects but NO MUSIC.** On the real
 machine the music came from an **endless-loop cassette**, gated by SSIO output
@@ -21,8 +34,9 @@ port 4 bit 0 — MAME starts the sample looping once and thereafter only pauses
 and resumes it, so position is preserved and it picks up mid-phrase.
 
 The gateware already produces that signal as **`journey_tape_run`** (high =
-tape running, low unless Journey is the running game). **It is not assigned to
-a physical pin.** Two ways to spend it, detailed in
+tape running, low unless Journey is the running game). On the fabricated
+shield it drives '595 bit U8.QH, but that ULN output (U10.O8) reaches no
+connector, so using it needs a bodge wire. Two ways to spend it, detailed in
 `docs/shield_j10_pinout.md`:
 
 - **one bit of the output 74HC595 chain** — zero extra header pins, and a real

@@ -240,13 +240,13 @@ when shield rev A is finalized — cabinet inputs then arrive via the J10
    only known dock-level reroute is SDRAM0_CS: F19 on the old NEO dock →
    F21 now — J9 side, doesn't affect the shield).
 3. **J6 / SSIO IP4** and **lamp/coin-meter outputs** — ✅ resolved by the
-   chain architecture in `shield_j10_pinout.md`: IP4/J6 is '165 device U5
+   chain architecture in `shield_j10_pinout.md`: IP4/J6 is a dedicated '165 (U5 in this plan; **U4 on the board as built**)
    (8 bits, zero extra pins) and outputs are a 74HC595+ULN2803 chain,
    extensible per game with no pin cost. J6's *cabinet-side* connector
    wiring still wants a manual cross-check before the harness is crimped.
-4. **Board outline/mounting** — `pcb_design.md` + `tools/generate_pcb.py`
-   own the physical layout; sync them to §4b (they currently assume generic
-   2×20 headers, and J9 must be left clear for the SDRAM module).
+4. **Board outline/mounting** — ✅ superseded: the physical board is Mitch's
+   `MCR_prototype_PCB/`, fabricated 2026-09 (`docs/shield_bringup.md`). The
+   Sept 8 version has **no mounting holes**; fix that on a respin.
 5. **138K variant** — same dock; header nets are dock-level, but the
    net→ball map on sheets 4–6 is SOM-specific. Re-extract from the 138K
    SOM schematic before targeting it.

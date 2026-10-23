@@ -1,5 +1,10 @@
 # Handoff v10 — the complete roster, and what is still missing (2026-07-30)
 
+> **2026-10-22: the shield PCB is fabricated and `mcr123s_console60k` drives
+> it.** For anything shield-related start at `docs/shield_bringup.md`; this
+> handoff remains current for the cores. The Journey row below is partly
+> stale: `journey_tape_run` now reaches the '595 chain (U8.QH, bodge point).
+
 Start here. Supersedes `handoff_v9_merged_core.md`, which predates MCR-1, the
 15-game merge and all hardware verification.
 

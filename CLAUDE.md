@@ -14,8 +14,9 @@ the whole family behind its OSD). **MCR-3** — Tapper, Timber and Discs of Tron
 latter mirrored, which is correct - the real cabinet has a mirror), plus
 **Journey** (2026-07-30), which is MCR-2.5 (`mcr_91475`) and runs on the same
 core via `mcr2p5=1`. **Journey has NO MUSIC yet**: its endless-loop cassette
-is gated by SSIO output 4 bit 0, exposed as `journey_tape_run`, and no pin is
-assigned - see `mcr123s_console60k/README.md`. **MCR-1** —
+is gated by SSIO output 4 bit 0, exposed as `journey_tape_run`. Its only
+physical outlet is the shield's U8.QH '595 bit, whose ULN output reaches no
+connector (a bodge point) - see `mcr123s_console60k/README.md`. **MCR-1** —
 Kick/Kickman/Solar Fox; Kickman verified 2026-07-27 (first ever MCR-1 run) and
 **all three verified 2026-07-30 in the merged 15-game core** (Kick and Solar
 Fox for the first time ever). **MCR3Scroll** — Crater
@@ -25,6 +26,14 @@ SOUND - the first FX68K on this platform. Crater Raider is the roster's only
 LANDSCAPE cabinet (correctly excluded from ROT_MASK). One pack-v2 SD card carries
 every game for every family (`tools/make_pack_v2.py`, now 15 games); the product
 roadmap toward the full-series jukebox is at the top of `TODO.md`.
+
+**THE MCR SHIELD PCB IS FABRICATED AND ASSEMBLED (2026-10)** - Mitch's
+`MCR_prototype_PCB/` (Sept 8 version). It has been powered alone (rails OK);
+the console is not yet seated on it. `mcr123s_console60k` now drives it (input/
+output chains, service button, second audio pair), built clean but NOT yet run
+on the shield: `bitstreams/console60k_mcr123s_shield.fs`. Start at
+**`docs/shield_bringup.md`**, and do its console-orientation check before the
+first power-up: the shield powers the console through J0 pin 11.
 
 **ALL FOUR FAMILIES ARE MERGED AND THE MERGE RUNS ON HARDWARE.**
 `mcr123s_console60k` (2026-07-30) holds **15 games — every MCR-1/2/3/MCR3Scroll
@@ -55,7 +64,7 @@ preserved in `TODO.md` item 4b. Budget and plan: `TODO.md` item 4a.
 | `mcr2_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — USB HID gamepad; all six games, OSD (Select+Start) switches at runtime via the SD pack; DDR3 framebuffer → 720p HDMI w/ audio; analog VGA on J10 with 15/31 kHz strap. No baked ROMs — Wacko verified loading from the card 2026-07-27 |
 | `mcr3_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working** — all three titles verified on hardware: Tapper, Timber, Discs of Tron (sprites from the Tang SDRAM module at 225-deg pin clock, colours verified vs MAME); HALT-watchdog boot (<10 s cold); no baked ROMs, full-from-SD; INSERT CARD screen + hot-insert recovery verified |
 | `mcr23_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Working — MERGED MCR-2 + MCR-3, 9 games in one bitstream.** Was the power-on default until 2026-07-30; SPI flash now holds the 15-game core. Archived at `bitstreams/console60k_mcr23_merged.fs` if it is ever needed back. Roster index <-> (family, slot) translation in the top; both cores instantiated, inactive one held in reset; CPU/sound ROM + bg gfx pair shared. 114/118 BSRAM. **All nine games verified on hardware** (Tapper, Timber, Discs of Tron, Satan's Hollow, Tron, Wacko, Kozmik Kroozr, Two Tigers, Domino Man) |
-| `mcr123s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **THE COMPLETE ROSTER: 16 games, four families (MCR-1 + MCR-2 + MCR-3 + MCR3Scroll) in one bitstream. Closes cleanly — 116/118 BSRAM, 75% logic, 0 setup/hold violations, clk_sys Fmax 43.0 vs 40.0 MHz. **FLASHED AS THE POWER-ON DEFAULT 2026-07-30** (`-f --verify`, clean readback). Seven games confirmed on hardware: Wacko, Kick, Kickman, Solar Fox, Spy Hunter, Turbo Tag and Crater Raider — i.e. ALL of MCR-1 and ALL of MCR3Scroll. ALL THREE audio configurations verified: SSIO-from-SDRAM alone (Kick, Kickman), SSIO + Cheap Squeak Deluxe together (Spy Hunter), and CSD ALONE with no SSIO board in the design (Turbo Tag). Remaining: a regression pass over the eight other MCR-2/MCR-3 games. Needed the build options above plus shared sprite ROM / scratch RAM across cores; see its `README.md` |
+| `mcr123s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **THE COMPLETE ROSTER: 16 games, four families (MCR-1 + MCR-2 + MCR-3 + MCR3Scroll) in one bitstream. Closes cleanly — 116/118 BSRAM, 75% logic, 0 setup/hold violations, clk_sys Fmax 43.0 vs 40.0 MHz. **FLASHED AS THE POWER-ON DEFAULT 2026-07-30** (`-f --verify`, clean readback). Seven games confirmed on hardware: Wacko, Kick, Kickman, Solar Fox, Spy Hunter, Turbo Tag and Crater Raider — i.e. ALL of MCR-1 and ALL of MCR3Scroll. ALL THREE audio configurations verified: SSIO-from-SDRAM alone (Kick, Kickman), SSIO + Cheap Squeak Deluxe together (Spy Hunter), and CSD ALONE with no SSIO board in the design (Turbo Tag). Remaining: a regression pass over the eight other MCR-2/MCR-3 games. Needed the build options above plus shared sprite ROM / scratch RAM across cores; see its `README.md`. **2026-10-22: the only top with MCR shield support** (`src/rtl/shield_io.sv`; J10-1/5 now audio, not video bit 0). That build: 117/118 BSRAM, TNS 0, Fmax 43.1 MHz, staged as `bitstreams/console60k_mcr123s_shield.fs`, not yet flashed. The SPI flash still holds the pre-shield image |
 | `mcr23s_console60k/` | Tang Console 60K | GW5AT-LV60PG484 | **Builds, 12 games (MCR-2 + MCR-3 + MCR3Scroll), 117/118 BSRAM, TNS 0.000 — NOT yet run on hardware.** The "can one core hold everything" experiment; adds Crater Raider, Spy Hunter, Turbo Tag with the Cheap Squeak Deluxe 68000 (FX68K). Needed two BSRAM levers to fit: sprite line buffers → LUT RAM and the **sound ROM → SDRAM**, neither hardware-verified. Read its `README.md` first |
 | `mcr2_console138k/` | Tang Console 138K | GW5AST-LV138 | Stale pre-fix top; needs same backport as 60K. Still baked |
 
@@ -462,6 +471,9 @@ Retention harnesses to re-verify any change:
 
 ### Buttons / diagnostics
 25K: S1 = reset, S2 = color-bar test pattern + Coin 1.
+60K shield (`mcr123s` only): hold SW3 / `SERVICE_N` 0.5 s = OSD (Start 1/2
+move, J4-5 button loads, Service exits); SW2-1 closed = cabinet mode; beacon
+`q` slots E8-EB carry the shield input bytes (`docs/shield_bringup.md`).
 60K: key AA13 = reset, key AB13 = Coin 1. **Select+Start opens the OSD
 game-select menu** (Up/Down move, A loads the highlighted game from the SD
 pack, B exits; all game inputs are masked while it is open; the raster

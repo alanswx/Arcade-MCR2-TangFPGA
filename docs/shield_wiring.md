@@ -105,7 +105,10 @@ parallel input**. The FPGA clocks the chain out on 3 J10 pins
 5 V harness levels directly (spec §2). Idle = 5 V = logic 1; a closed
 switch pulls to GND = logic 0 — the same polarity the SSIO saw.
 
-### 2b. Chain topology (7 devices, 3 FPGA pins)
+### 2b. Chain topology (6 devices, 3 FPGA pins)
+
+> As built, U1 takes J4-1 on input **H** (reversed); U2–U4 take D0 on A.
+> The exact traced map is `docs/shield_bringup.md` §3.
 
 ```mermaid
 flowchart LR

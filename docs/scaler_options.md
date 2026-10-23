@@ -190,7 +190,8 @@ to 64 is the lever, since BSRAM here is width-driven not depth-driven.
 ### The +10 gets worse as families are merged (measured 2026-07-30)
 
 Adding MCR3Scroll (`mcr23s_console60k`, 12 games) landed at 117/118, and
-adding MCR-1 on top (`mcr123s_console60k`, 15 games) at **116/118** - see
+adding MCR-1 on top (`mcr123s_console60k`, 15 games) at **116/118** (117/118
+on the 2026-10-22 shield build) - see
 `TODO.md` 4a-bis/4a-ter for the levers that got them there.
 
 **15 games IS the complete roster for this board**, so the squeeze is not about
