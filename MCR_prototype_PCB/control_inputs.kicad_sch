@@ -3409,6 +3409,12 @@
 		(uuid "04e13139-0baf-40d5-ab4f-edd7482d81cc")
 	)
 	(junction
+		(at 179.07 173.99)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "067043cd-02f8-4427-8529-44d321501ef4")
+	)
+	(junction
 		(at 36.83 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3425,6 +3431,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "0e2eb84e-c0e3-4edb-ba35-028f1274839f")
+	)
+	(junction
+		(at 58.42 172.72)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "1dd6cd69-4e49-4e72-9c39-382cb9119b92")
 	)
 	(junction
 		(at 121.92 118.11)
@@ -3469,6 +3481,12 @@
 		(uuid "3750fe28-a73e-4269-bbc9-94130808bd5f")
 	)
 	(junction
+		(at 91.44 68.58)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "389231d0-1716-4cc8-be88-658bc639af18")
+	)
+	(junction
 		(at 78.74 36.83)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -3497,6 +3515,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "4ec7e193-787e-4f9c-8e5a-1278247ffefd")
+	)
+	(junction
+		(at 180.34 68.58)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "52e0c9b5-ebce-49b1-acda-3db5d0a64f47")
 	)
 	(junction
 		(at 147.32 29.21)
@@ -3529,10 +3553,22 @@
 		(uuid "72ac97f6-3f66-41ac-bec9-37cadf1c878b")
 	)
 	(junction
+		(at 179.07 148.59)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "792f6824-456d-4f17-b55b-3948c56bcfcd")
+	)
+	(junction
 		(at 146.05 118.11)
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "86d0a079-7218-4e77-a8af-c28f29d9b4cd")
+	)
+	(junction
+		(at 91.44 93.98)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "8d934d85-95b7-4a11-9635-5417a17caec3")
 	)
 	(junction
 		(at 101.6 34.29)
@@ -3557,6 +3593,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "a902f1fa-e37a-44d5-8b3d-8dfa1d3b9ab4")
+	)
+	(junction
+		(at 180.34 93.98)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "aa0f2c46-f869-480d-a9ee-3815199d52eb")
 	)
 	(junction
 		(at 146.05 114.3)
@@ -3599,6 +3641,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "cfb39599-1c20-4814-ab9a-c3666e664e2f")
+	)
+	(junction
+		(at 58.42 147.32)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "d0350d5d-41b4-4634-a309-d17ef0a882e4")
 	)
 	(junction
 		(at 167.64 118.11)
@@ -3658,6 +3706,16 @@
 	)
 	(wire
 		(pts
+			(xy 31.75 147.32) (xy 31.75 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "02ff002d-ecec-4bb4-b956-1046427377f8")
+	)
+	(wire
+		(pts
 			(xy 255.27 105.41) (xy 271.78 105.41)
 		)
 		(stroke
@@ -3685,6 +3743,16 @@
 			(type default)
 		)
 		(uuid "04785c54-ece8-4e2a-93f3-d1a375f5f3ba")
+	)
+	(wire
+		(pts
+			(xy 72.39 93.98) (xy 72.39 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "08dcedcb-5566-4833-af66-6542f45e0583")
 	)
 	(wire
 		(pts
@@ -3928,6 +3996,16 @@
 	)
 	(wire
 		(pts
+			(xy 72.39 68.58) (xy 72.39 73.66)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "214a7033-361e-4408-9e1c-5c201c1c4931")
+	)
+	(wire
+		(pts
 			(xy 179.07 118.11) (xy 179.07 142.24)
 		)
 		(stroke
@@ -4128,6 +4206,16 @@
 	)
 	(wire
 		(pts
+			(xy 157.48 173.99) (xy 157.48 162.56)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "2e914e0b-e3de-4e77-a767-4ac0d1d4faf2")
+	)
+	(wire
+		(pts
 			(xy 38.1 39.37) (xy 55.88 39.37)
 		)
 		(stroke
@@ -4205,6 +4293,16 @@
 			(type default)
 		)
 		(uuid "356d6d75-744d-4df9-bd30-c33c33c1fd8f")
+	)
+	(wire
+		(pts
+			(xy 158.75 68.58) (xy 158.75 72.39)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "362bcf2e-9f7a-4241-b69c-50cdeb70da20")
 	)
 	(wire
 		(pts
@@ -4568,6 +4666,16 @@
 	)
 	(wire
 		(pts
+			(xy 180.34 68.58) (xy 158.75 68.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "4c290b95-8d47-4c3e-97fb-faf83f03ee10")
+	)
+	(wire
+		(pts
 			(xy 25.4 49.53) (xy 25.4 34.29)
 		)
 		(stroke
@@ -4758,6 +4866,16 @@
 	)
 	(wire
 		(pts
+			(xy 180.34 93.98) (xy 158.75 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "59340b4e-ab24-4b2a-b68d-320e1a38c2ce")
+	)
+	(wire
+		(pts
 			(xy 52.07 82.55) (xy 35.56 82.55)
 		)
 		(stroke
@@ -4928,6 +5046,16 @@
 	)
 	(wire
 		(pts
+			(xy 91.44 68.58) (xy 72.39 68.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "69a35c22-698a-4ae3-b61c-f74b4d75b1a8")
+	)
+	(wire
+		(pts
 			(xy 118.11 144.78) (xy 118.11 167.64)
 		)
 		(stroke
@@ -4935,6 +5063,26 @@
 			(type default)
 		)
 		(uuid "6af7f9a9-9f14-4727-93a0-e1b5572ffdad")
+	)
+	(wire
+		(pts
+			(xy 158.75 93.98) (xy 158.75 77.47)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6befa18f-919c-4988-bee7-63af9198b817")
+	)
+	(wire
+		(pts
+			(xy 58.42 172.72) (xy 31.75 172.72)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "6c874f9d-84da-4b08-bea5-992415cda3f4")
 	)
 	(wire
 		(pts
@@ -5728,6 +5876,16 @@
 	)
 	(wire
 		(pts
+			(xy 58.42 147.32) (xy 31.75 147.32)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "af7c74c5-4685-43e7-a24c-9c68db71b7ba")
+	)
+	(wire
+		(pts
 			(xy 110.49 140.97) (xy 110.49 167.64)
 		)
 		(stroke
@@ -5938,6 +6096,16 @@
 	)
 	(wire
 		(pts
+			(xy 91.44 93.98) (xy 72.39 93.98)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c5124468-cee7-4586-85a4-85e647af2ce9")
+	)
+	(wire
+		(pts
 			(xy 41.91 162.56) (xy 41.91 124.46)
 		)
 		(stroke
@@ -5975,6 +6143,16 @@
 			(type default)
 		)
 		(uuid "c7c7db38-a1dd-4900-9f59-8b114c2d9675")
+	)
+	(wire
+		(pts
+			(xy 31.75 172.72) (xy 31.75 161.29)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "c900c742-0698-4f3a-9489-22139af0d205")
 	)
 	(wire
 		(pts
@@ -6108,6 +6286,16 @@
 	)
 	(wire
 		(pts
+			(xy 179.07 148.59) (xy 157.48 148.59)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d633f979-0882-481e-8aed-e15271cc3909")
+	)
+	(wire
+		(pts
 			(xy 266.7 110.49) (xy 271.78 110.49)
 		)
 		(stroke
@@ -6155,6 +6343,16 @@
 			(type default)
 		)
 		(uuid "dc4131a0-9574-46e0-ba1f-07849b69b55f")
+	)
+	(wire
+		(pts
+			(xy 157.48 148.59) (xy 157.48 157.48)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dc484017-379e-4b97-b20f-25ee985e0bde")
 	)
 	(wire
 		(pts
@@ -6245,6 +6443,16 @@
 			(type default)
 		)
 		(uuid "e1d44172-4f76-456b-bed5-17b539f8955e")
+	)
+	(wire
+		(pts
+			(xy 179.07 173.99) (xy 157.48 173.99)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e1fc43ba-b28b-4a49-89f8-b3e904796011")
 	)
 	(wire
 		(pts
@@ -6707,7 +6915,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
+		(property "Footprint" "Package_SO:TSSOP-16_4.4x5mm_P0.65mm"
 			(at 105.41 180.34 0)
 			(hide yes)
 			(show_name no)
@@ -6742,6 +6950,39 @@
 		)
 		(property "KiLib_Generator" "package/gullwing"
 			(at 105.41 180.34 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C32498669"
+			(at 105.41 180.34 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 105.41 180.34 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 105.41 180.34 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6863,6 +7104,39 @@
 		)
 		(property "Description" "4 resistor network, parallel topology"
 			(at 30.48 85.09 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C110021"
+			(at 30.48 85.09 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 30.48 85.09 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 30.48 85.09 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7172,7 +7446,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_THT:R_Array_SIP9"
+		(property "Footprint" "Package_SIP:SIP-9_22.3x3mm_P2.54mm"
 			(at 276.86 125.095 90)
 			(hide yes)
 			(show_name no)
@@ -7183,7 +7457,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/31509/csc.pdf"
+		(property "Datasheet" "https://jlcpcb.com/partdetail/9635-A09472JP/C9112"
 			(at 276.86 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -7196,6 +7470,39 @@
 		)
 		(property "Description" "8 resistor network, star topology, bussed resistors, small US symbol"
 			(at 276.86 113.03 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C9112"
+			(at 276.86 113.03 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 276.86 113.03 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 276.86 113.03 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7275,7 +7582,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_THT:R_Array_SIP9"
+		(property "Footprint" "Package_SIP:SIP-9_22.3x3mm_P2.54mm"
 			(at 260.985 19.05 90)
 			(hide yes)
 			(show_name no)
@@ -7286,7 +7593,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/31509/csc.pdf"
+		(property "Datasheet" "https://jlcpcb.com/partdetail/9635-A09472JP/C9112"
 			(at 248.92 19.05 0)
 			(hide yes)
 			(show_name no)
@@ -7298,6 +7605,39 @@
 			)
 		)
 		(property "Description" "8 resistor network, star topology, bussed resistors, small US symbol"
+			(at 248.92 19.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C9112"
+			(at 248.92 19.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 248.92 19.05 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
 			(at 248.92 19.05 0)
 			(hide yes)
 			(show_name no)
@@ -7502,6 +7842,121 @@
 		)
 	)
 	(symbol
+		(lib_id "Device:C_Small")
+		(at 157.48 160.02 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "5c990a73-c36c-4fbf-940c-ab9f187f0db9")
+		(property "Reference" "C67"
+			(at 160.02 158.7435 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0.1 uF"
+			(at 160.02 161.2835 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C49678"
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 157.48 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "84a7ed5c-28c3-401c-a291-bddc0af72b8c")
+		)
+		(pin "1"
+			(uuid "11e68523-f50e-4fac-a8db-ddc130ee6054")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
+					(reference "C67")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:+5V")
 		(at 184.15 148.59 270)
 		(unit 1)
@@ -7646,6 +8101,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C558418"
+			(at 58.42 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 58.42 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 58.42 160.02 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "d8ccc242-0fbb-4549-b89c-54d71b63d637")
 		)
@@ -7668,6 +8156,121 @@
 			(project "MCR_prototype_PCB"
 				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
 					(reference "U15")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 31.75 158.75 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "6ae2b5d0-a965-4ddc-914c-5b9625f26f07")
+		(property "Reference" "C66"
+			(at 34.29 157.4735 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0.1 uF"
+			(at 34.29 160.0135 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C49678"
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 31.75 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "a61a0761-bb39-4b5b-82e8-b0e24e521323")
+		)
+		(pin "1"
+			(uuid "66f5ba97-1612-4ed6-9b61-da292cc12aeb")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
+					(reference "C66")
 					(unit 1)
 				)
 			)
@@ -7728,6 +8331,39 @@
 		)
 		(property "Description" "4 resistor network, parallel topology"
 			(at 33.02 59.69 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C110021"
+			(at 33.02 59.69 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 33.02 59.69 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 33.02 59.69 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7802,7 +8438,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
+		(property "Footprint" "Package_SO:TSSOP-16_4.4x5mm_P0.65mm"
 			(at 250.19 81.28 0)
 			(hide yes)
 			(show_name no)
@@ -7837,6 +8473,39 @@
 		)
 		(property "KiLib_Generator" "package/gullwing"
 			(at 250.19 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C32498669"
+			(at 250.19 81.28 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 250.19 81.28 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 250.19 81.28 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7958,6 +8627,39 @@
 		)
 		(property "Description" "4 resistor network, parallel topology"
 			(at 43.18 72.39 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C110021"
+			(at 43.18 72.39 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 43.18 72.39 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 43.18 72.39 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -8233,6 +8935,28 @@
 				)
 			)
 		)
+		(property "KLC_S3.3" ""
+			(at 13.97 67.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 13.97 67.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "16"
 			(uuid "91acfc88-0c94-4089-b74f-ed698097ddd5")
 		)
@@ -8442,6 +9166,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C49678"
+			(at 245.11 97.79 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 245.11 97.79 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 245.11 97.79 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "bcceda72-3dae-45f5-8a4e-40cce6c9c675")
 		)
@@ -8530,6 +9287,121 @@
 			(project "MCR_prototype_PCB"
 				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
 					(reference "#PWR026")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 72.39 76.2 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "b727352c-ab82-4e2c-98f2-d0459e42c027")
+		(property "Reference" "C69"
+			(at 74.93 74.9235 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0.1 uF"
+			(at 74.93 77.4635 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C49678"
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 72.39 76.2 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "a93c5dd7-d4ef-47ee-9d31-28dbf5bded1a")
+		)
+		(pin "1"
+			(uuid "f1c3f529-bec5-4647-b08c-5241b315f2a4")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
+					(reference "C69")
 					(unit 1)
 				)
 			)
@@ -8678,6 +9550,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C110021"
+			(at 33.02 36.83 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 33.02 36.83 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 33.02 36.83 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "4"
 			(uuid "3b3a66e4-252c-489d-993f-7f34c13534dc")
 		)
@@ -8706,6 +9611,121 @@
 			(project "MCR_prototype_PCB"
 				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
 					(reference "RN8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C_Small")
+		(at 158.75 74.93 180)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "c630a35d-abd9-4d1b-8de3-626c3ee71fc0")
+		(property "Reference" "C68"
+			(at 161.29 73.6535 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Value" "0.1 uF"
+			(at 161.29 76.1935 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify right)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor, small symbol"
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C49678"
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 158.75 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "2"
+			(uuid "13253059-c77d-40c7-aae6-1e4055df9337")
+		)
+		(pin "1"
+			(uuid "de279d09-a54f-42c8-a20c-e86c3f36cb11")
+		)
+		(instances
+			(project "MCR_prototype_PCB"
+				(path "/558b91ae-1f51-4604-a49b-2a82d580a522"
+					(reference "C68")
 					(unit 1)
 				)
 			)
@@ -8855,6 +9875,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C558418"
+			(at 91.44 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 91.44 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 91.44 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "1"
 			(uuid "fa991417-d5b8-49e0-9a88-24ce8701477f")
 		)
@@ -8938,6 +9991,39 @@
 			)
 		)
 		(property "Description" "ESD Protection Diodes with Low Clamping Voltage, SOT-23-6"
+			(at 180.34 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C558418"
+			(at 180.34 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 180.34 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
 			(at 180.34 81.28 0)
 			(hide yes)
 			(show_name no)
@@ -9197,6 +10283,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C49678"
+			(at 101.6 195.58 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 101.6 195.58 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 101.6 195.58 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "89f4ef2a-9872-4c9b-b180-9d58212ac39e")
 		)
@@ -9268,6 +10387,39 @@
 			)
 		)
 		(property "Description" "ESD Protection Diodes with Low Clamping Voltage, SOT-23-6"
+			(at 179.07 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C558418"
+			(at 179.07 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 179.07 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
 			(at 179.07 161.29 0)
 			(hide yes)
 			(show_name no)

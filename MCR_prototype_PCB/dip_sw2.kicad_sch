@@ -2920,7 +2920,29 @@
 				)
 			)
 		)
-		(property "LCSC" "C384877"
+		(property "LCSC" "C3293166"
+			(at 55.88 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 55.88 71.12 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
 			(at 55.88 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -3022,7 +3044,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "Resistor_THT:R_Array_SIP9"
+		(property "Footprint" "Package_SIP:SIP-9_22.3x3mm_P2.54mm"
 			(at 102.235 49.53 90)
 			(hide yes)
 			(show_name no)
@@ -3033,7 +3055,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "http://www.vishay.com/docs/31509/csc.pdf"
+		(property "Datasheet" "https://jlcpcb.com/partdetail/9635-A09472JP/C9112"
 			(at 90.17 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -3045,6 +3067,39 @@
 			)
 		)
 		(property "Description" "8 resistor network, star topology, bussed resistors, small US symbol"
+			(at 90.17 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C9112"
+			(at 90.17 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 90.17 49.53 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
 			(at 90.17 49.53 0)
 			(hide yes)
 			(show_name no)
@@ -3390,6 +3445,39 @@
 				)
 			)
 		)
+		(property "LCSC" "C49678"
+			(at 172.72 139.7 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 172.72 139.7 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 172.72 139.7 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
 		(pin "2"
 			(uuid "1d127077-aa51-41d1-bdb6-98b8cca5784a")
 		)
@@ -3437,7 +3525,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_SO:SOIC-16_3.9x9.9mm_P1.27mm"
+		(property "Footprint" "Package_SO:TSSOP-16_4.4x5mm_P0.65mm"
 			(at 177.8 115.57 0)
 			(hide yes)
 			(show_name no)
@@ -3472,6 +3560,39 @@
 		)
 		(property "KiLib_Generator" "package/gullwing"
 			(at 177.8 115.57 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C32498669"
+			(at 177.8 115.57 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S3.3" ""
+			(at 177.8 115.57 90)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "KLC_S5.1" ""
+			(at 177.8 115.57 90)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
