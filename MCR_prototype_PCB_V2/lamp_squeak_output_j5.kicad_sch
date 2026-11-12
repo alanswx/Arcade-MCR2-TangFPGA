@@ -701,7 +701,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Transistor_Array:ULN2803A"
+		(symbol "Mitch_Custom:ULN2803CDWR"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -717,7 +717,7 @@
 					)
 				)
 			)
-			(property "Value" "ULN2803A"
+			(property "Value" "ULN2803CDWR"
 				(at 0 11.43 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -727,7 +727,7 @@
 					)
 				)
 			)
-			(property "Footprint" ""
+			(property "Footprint" "Package_SO:SOIC-20W_7.5x12.8mm_P1.27mm"
 				(at 1.27 -16.51 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -739,7 +739,7 @@
 					(justify left)
 				)
 			)
-			(property "Datasheet" "http://www.ti.com/lit/ds/symlink/uln2803a.pdf"
+			(property "Datasheet" "https://www.ti.com/lit/ds/symlink/uln2803c.pdf"
 				(at 2.54 -5.08 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -750,7 +750,7 @@
 					)
 				)
 			)
-			(property "Description" "Darlington Transistor Arrays, SOIC18/DIP18"
+			(property "Description" "Darlington Transistor Arrays, SOIC-20W"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -772,7 +772,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "DIP*W7.62mm* SOIC*7.5x11.6mm*P1.27mm*"
+			(property "ki_fp_filters" "SOIC*20W*7.5x12.8mm*P1.27mm*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -783,7 +783,7 @@
 					)
 				)
 			)
-			(symbol "ULN2803A_0_1"
+			(symbol "ULN2803CDWR_0_1"
 				(rectangle
 					(start -7.62 -15.24)
 					(end 7.62 10.16)
@@ -923,7 +923,7 @@
 					)
 				)
 			)
-			(symbol "ULN2803A_1_1"
+			(symbol "ULN2803CDWR_1_1"
 				(pin input line
 					(at -10.16 5.08 0)
 					(length 2.54)
@@ -1086,6 +1086,42 @@
 						)
 					)
 				)
+				(pin no_connect line
+					(at -5.08 -17.78 90)
+					(length 2.54)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin no_connect line
+					(at 5.08 -17.78 90)
+					(length 2.54)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
 				(pin passive line
 					(at 10.16 7.62 180)
 					(length 2.54)
@@ -1096,7 +1132,7 @@
 							)
 						)
 					)
-					(number "10"
+					(number "12"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1114,7 +1150,7 @@
 							)
 						)
 					)
-					(number "11"
+					(number "13"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1132,7 +1168,7 @@
 							)
 						)
 					)
-					(number "12"
+					(number "14"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1150,7 +1186,7 @@
 							)
 						)
 					)
-					(number "13"
+					(number "15"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1168,7 +1204,7 @@
 							)
 						)
 					)
-					(number "14"
+					(number "16"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1186,7 +1222,7 @@
 							)
 						)
 					)
-					(number "15"
+					(number "17"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1204,7 +1240,7 @@
 							)
 						)
 					)
-					(number "16"
+					(number "18"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1222,7 +1258,7 @@
 							)
 						)
 					)
-					(number "17"
+					(number "19"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1240,7 +1276,7 @@
 							)
 						)
 					)
-					(number "18"
+					(number "20"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -1843,6 +1879,22 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "ee9d98c7-cc27-43ad-a607-bdbd26b52048")
+	)
+	(no_connect
+		(at 93.98 72.39)
+		(uuid "fa26dd07-cfd1-4216-b7a6-3f8c40891e75")
+	)
+	(no_connect
+		(at 104.14 72.39)
+		(uuid "6e945cce-8a1b-40ba-bf0a-e294e60ddb4a")
+	)
+	(no_connect
+		(at 95.25 130.81)
+		(uuid "a0d4c96a-0b81-4cf8-ad3e-444eabf03760")
+	)
+	(no_connect
+		(at 105.41 130.81)
+		(uuid "015990c3-278f-4c97-a4fd-1ac8e52ae9ed")
 	)
 	(no_connect
 		(at 109.22 52.07)
@@ -3061,7 +3113,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_Array:ULN2803A")
+		(lib_id "Mitch_Custom:ULN2803CDWR")
 		(at 100.33 113.03 0)
 		(unit 1)
 		(body_style 1)
@@ -3104,7 +3156,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/uln2803a.pdf"
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/uln2803c.pdf"
 			(at 102.87 118.11 0)
 			(hide yes)
 			(show_name no)
@@ -3115,7 +3167,7 @@
 				)
 			)
 		)
-		(property "Description" "Darlington Transistor Arrays, SOIC18/DIP18"
+		(property "Description" "Darlington Transistor Arrays, SOIC-20W"
 			(at 100.33 113.03 0)
 			(hide yes)
 			(show_name no)
@@ -3223,6 +3275,12 @@
 		)
 		(pin "16"
 			(uuid "5cd54e63-dd16-400b-b16d-de8486db6978")
+		)
+		(pin "19"
+			(uuid "04a818b6-d4ef-4c11-9dc0-4d8d6c2d09ed")
+		)
+		(pin "20"
+			(uuid "758112cd-e86c-40f8-adae-dad5a9f35092")
 		)
 		(instances
 			(project "MCR_prototype_PCB_V2"
@@ -3593,7 +3651,7 @@
 		)
 	)
 	(symbol
-		(lib_id "Transistor_Array:ULN2803A")
+		(lib_id "Mitch_Custom:ULN2803CDWR")
 		(at 99.06 54.61 0)
 		(unit 1)
 		(body_style 1)
@@ -3636,7 +3694,7 @@
 				(justify left)
 			)
 		)
-		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/uln2803a.pdf"
+		(property "Datasheet" "https://www.ti.com/lit/ds/symlink/uln2803c.pdf"
 			(at 101.6 59.69 0)
 			(hide yes)
 			(show_name no)
@@ -3647,7 +3705,7 @@
 				)
 			)
 		)
-		(property "Description" "Darlington Transistor Arrays, SOIC18/DIP18"
+		(property "Description" "Darlington Transistor Arrays, SOIC-20W"
 			(at 99.06 54.61 0)
 			(hide yes)
 			(show_name no)
@@ -3755,6 +3813,12 @@
 		)
 		(pin "16"
 			(uuid "db007965-ea18-404d-a171-2fbe1b866215")
+		)
+		(pin "19"
+			(uuid "16e2a710-4683-44c8-b59b-95a34d362f35")
+		)
+		(pin "20"
+			(uuid "0685115b-12e6-4356-b32f-ac290a1eb2a2")
 		)
 		(instances
 			(project "MCR_prototype_PCB_V2"
