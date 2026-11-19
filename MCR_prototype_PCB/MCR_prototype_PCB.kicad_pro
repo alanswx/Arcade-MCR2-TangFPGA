@@ -479,7 +479,7 @@
     "classes": [
       {
         "bus_width": 12,
-        "clearance": 0.2,
+        "clearance": 0.1524,
         "diff_pair_gap": 0.25,
         "diff_pair_via_gap": 0.25,
         "diff_pair_width": 0.2,
@@ -490,7 +490,7 @@
         "pcb_color": "rgba(0, 0, 0, 0.000)",
         "priority": 2147483647,
         "schematic_color": "rgba(0, 0, 0, 0.000)",
-        "track_width": 0.2,
+        "track_width": 0.1778,
         "tuning_profile": "",
         "via_diameter": 0.6,
         "via_drill": 0.3,
@@ -547,7 +547,7 @@
       "method": 0,
       "sort_order": 0
     },
-    "bom_export_filename": "${PROJECTNAME}.csv",
+    "bom_export_filename": "C:\\Users\\Effie Trinket\\Desktop\\BOM_new9.csv",
     "bom_fmt_presets": [],
     "bom_fmt_settings": {
       "field_delimiter": ",",
@@ -632,6 +632,24 @@
           "group_by": false,
           "label": "KiLib_Generator",
           "name": "KiLib_Generator",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "LCSC",
+          "name": "LCSC",
+          "show": true
+        },
+        {
+          "group_by": false,
+          "label": "KLC_S5.1",
+          "name": "KLC_S5.1",
+          "show": false
+        },
+        {
+          "group_by": false,
+          "label": "KLC_S3.3",
+          "name": "KLC_S3.3",
           "show": false
         }
       ],
@@ -738,7 +756,7 @@
         "uuid": "08fc2143-0f49-4309-b36c-73646f69ff7b"
       }
     ],
-    "used_designators": "",
+    "used_designators": "C66-69",
     "variants": []
   },
   "sheets": [
